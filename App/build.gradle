@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'app.nooraliman'
+    compileSdk 35
+    buildToolsVersion '35.0.1'
+
+    defaultConfig {
+        applicationId 'app.nooraliman'
+        minSdk 23
+        targetSdk 34
+        versionCode 14
+        versionName '1.12'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('NOOR_ALIMAN_KEYSTORE') ?: '../../outputs/noor-aliman-release.jks')
+            storePassword System.getenv('NOOR_ALIMAN_STORE_PASSWORD')
+            keyAlias 'noor-aliman'
+            keyPassword System.getenv('NOOR_ALIMAN_KEY_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+}
