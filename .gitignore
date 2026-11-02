@@ -1,0 +1,9 @@
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+key.properties
+*signing-info*.txt
+outputs/
+.DS_Store
