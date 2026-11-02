@@ -1,104 +1,170 @@
-📱 Noor Al-Iman | نور الإيمان
+🌙 نور الإيمان | Noor Al-Iman
 
-<div align="center">🌙 نور الإيمان
+<div align="center">رفيقك اليومي للقرآن الكريم والعبادة والذكر
 
-رفيقك اليومي للعبادة والذكر والقرآن الكريم
+تطبيق إسلامي متكامل يجمع الأدوات الأساسية التي تعين المسلم على المحافظة على عباداته اليومية، في تجربة استخدام منظمة وسهلة.
 
-<br><a href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">
-  <img src="https://img.shields.io/badge/⬇️_حمّل_التطبيق_من_هنا-16a34a?style=for-the-badge&logo=android&logoColor=white" alt="تحميل تطبيق نور الإيمان">
-</a><br><br>
+""Download" (https://img.shields.io/badge/تحميل_التطبيق-الإصدار_المستقر_1.12-16865B?style=for-the-badge&logo=android&logoColor=white)" (https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
 
-<a href="https://asimalimikial-rgb.github.io/Noor-aliman/">
-  <img src="https://img.shields.io/badge/🌐_افتح_موقع_التطبيق-2563eb?style=for-the-badge" alt="موقع نور الإيمان">
-</a><br><br>
+""Website" (https://img.shields.io/badge/الموقع_الإلكتروني-زيارة_الموقع-2563EB?style=for-the-badge&logo=google-chrome&logoColor=white)" (https://asimalimikial-rgb.github.io/Noor-aliman/)
 
-<table align="center">
-<tr>
-<td><img src="https://img.shields.io/badge/Version-1.12-blue" alt="Version 1.12"></td>
-<td><img src="https://img.shields.io/badge/Android-6.0%2B-green" alt="Android 6.0+"></td>
-<td><img src="https://img.shields.io/badge/Platform-Android-brightgreen" alt="Platform Android"></td>
-</tr>
-</table></div>---
+""GitHub Releases" (https://img.shields.io/badge/GitHub-Releases-181717?style=for-the-badge&logo=github)" (https://github.com/asimalimikial-rgb/Noor-aliman/releases)
 
-✨ عن التطبيق
+<br>"Version" (https://img.shields.io/badge/الإصدار-1.12-0F766E?style=flat-square)
+"Android" (https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)
+"Platform" (https://img.shields.io/badge/Platform-Android-2563EB?style=flat-square)
+"Status" (https://img.shields.io/badge/الحالة-مستقر-16865B?style=flat-square)
 
-نور الإيمان تطبيق إسلامي يهدف إلى مساعدة المسلم في المحافظة على عباداته اليومية، من خلال مجموعة من الأدوات والخدمات الإسلامية في مكان واحد، بواجهة سهلة الاستخدام.
+</div>---
 
-🌟 مميزات التطبيق
+📖 نبذة عن المشروع
 
-- 🕌 مواقيت الصلاة.
-- 🔔 الأذان والتنبيهات.
-- 🧭 اتجاه القبلة والبوصلة.
-- 📖 المصحف الشريف برواية حفص.
-- 📚 مصحف المدينة المنورة – 604 صفحات.
-- 🎧 قارئ القرآن الكريم وإمكانية تكرار الآيات.
-- 📘 التفسير: تفسير السعدي، والتفسير المختصر، والسراج في غريب القرآن.
-- 🤲 أذكار الصباح والمساء.
-- 📿 المسبحة الإلكترونية.
-- 🔊 الذكر الصوتي الدوري.
-- 🌙 الوضع الليلي.
-- ⚙️ إعدادات وخيارات للتخصيص.
-- 📡 دعم عدد من الوظائف دون اتصال بالإنترنت.
+نور الإيمان تطبيق إسلامي يهدف إلى توفير مجموعة متكاملة من الأدوات والخدمات الدينية في تطبيق واحد، بما يساعد المستخدم على تنظيم عباداته اليومية والوصول إلى القرآن الكريم والأذكار ومواقيت الصلاة بسهولة.
 
-📥 تحميل التطبيق
+يركز المشروع على سهولة الاستخدام، وتنظيم المحتوى، وتوفير تجربة عملية تجمع بين الوظائف الأساسية للمسلم في واجهة واحدة.
 
-<div align="center">حمّل تطبيق نور الإيمان الآن
+✨ المميزات والوظائف
 
-<a href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">
-  <img src="https://img.shields.io/badge/⬇️_اضغط_هنا_لتحميل_التطبيق-Download_Now-16a34a?style=for-the-badge&logo=android&logoColor=white" alt="Download Noor Al-Iman">
-</a></div>🌐 الموقع الإلكتروني
+🕌 الصلاة والتنبيهات
 
-يمكنك زيارة الموقع الإلكتروني للتطبيق:
+- عرض مواقيت الصلاة.
+- تنبيهات الصلاة والأذان.
+- إعدادات مرتبطة بالتنبيهات.
 
-"افتح موقع نور الإيمان" (https://asimalimikial-rgb.github.io/Noor-aliman/)
+🧭 القبلة
 
-📱 معلومات التطبيق
+- تحديد اتجاه القبلة.
+- بوصلة إلكترونية للمساعدة في معرفة الاتجاه.
+
+📖 القرآن الكريم
+
+- المصحف الشريف برواية حفص.
+- مصحف المدينة المنورة المكوّن من 604 صفحات.
+- قارئ القرآن الكريم.
+- إمكانية تكرار الآيات لدعم الاستماع والمراجعة.
+
+📚 التفسير وعلوم القرآن
+
+يضم التطبيق مجموعة من مصادر التفسير، تشمل:
+
+- تفسير السعدي.
+- التفسير المختصر.
+- السراج في غريب القرآن.
+
+🤲 الأذكار والعبادة
+
+- أذكار الصباح والمساء.
+- المسبحة الإلكترونية.
+- الذكر الصوتي الدوري.
+
+⚙️ تجربة الاستخدام
+
+- واجهة استخدام سهلة ومنظمة.
+- الوضع الليلي.
+- خيارات وإعدادات للتخصيص.
+- دعم عدد من الوظائف دون اتصال بالإنترنت.
+
+---
+
+📲 تحميل التطبيق
+
+<div align="center">الإصدار الرسمي المتاح حالياً
+
+Noor Al-Iman v1.12
+
+"⬇️ تحميل ملف APK مباشرة" (https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
+
+"عرض صفحة الإصدارات على GitHub" (https://github.com/asimalimikial-rgb/Noor-aliman/releases)
+
+</div>⚠️ ملاحظة مهمة حول الإصدارات السابقة
+
+الإصدارات السابقة من التطبيق غير متاحة للتنزيل حالياً؛ لأنها كانت إصدارات تطويرية وتجريبية لم تصل إلى مستوى الاستقرار المطلوب للاعتماد عليها كإصدارات رسمية.
+
+حرصاً على تقديم تجربة استخدام أكثر موثوقية، تم اعتماد الإصدار 1.12 بوصفه الإصدار المتاح حالياً للتنزيل.
+
+لذلك، فإن عدم ظهور الإصدارات السابقة في صفحة Releases أمر مقصود، ولا يعني وجود مشكلة في رابط التحميل.
+
+سيتم نشر الإصدارات اللاحقة بعد استكمال الاختبارات والتحقق من استقرارها.
+
+---
+
+📋 المعلومات التقنية
 
 البيان| التفاصيل
-اسم التطبيق| نور الإيمان
+اسم التطبيق| نور الإيمان – Noor Al-Iman
 Package ID| "app.nooraliman"
-Version| 1.12
-Version Code| 14
-Minimum Android| 6.0
+الإصدار الحالي| "1.12"
+Version Code| "14"
+الحد الأدنى لنظام Android| "6.0"
+المنصة| Android
+صيغة التوزيع| APK
 
 🛠️ التقنيات المستخدمة
 
-- Android SDK
-- Gradle
-- HTML
-- CSS
-- JavaScript
-- GitHub Actions
-- GitHub Pages
+يعتمد المشروع على مجموعة من التقنيات والأدوات البرمجية، تشمل:
 
-🏗️ بناء التطبيق
+- Android SDK — تطوير تطبيق Android.
+- Gradle — إدارة البناء والاعتماديات.
+- HTML5 — بناء الواجهات.
+- CSS3 — تصميم وتنسيق الواجهات.
+- JavaScript — الوظائف والتفاعلات.
+- GitHub — إدارة المستودع والإصدارات.
+- GitHub Actions — أتمتة عمليات البناء والنشر.
+- GitHub Pages — استضافة الموقع الإلكتروني.
 
-يمكن بناء نسخة Debug باستخدام الأمر:
+🏗️ بناء المشروع
+
+يمكن بناء نسخة Debug من المشروع باستخدام Gradle، من داخل مجلد المشروع:
 
 ./gradlew assembleDebug
 
-📂 ملفات المشروع
+سيتم إنشاء ملف APK ضمن مجلد مخرجات البناء الخاص بتطبيق Android.
 
-- "index.html" — صفحة الموقع الإلكتروني.
-- "App/src/main/assets/noor-aliman.html" — ملف واجهة التطبيق.
-- ".github/workflows/" — ملفات إعداد عمليات البناء والنشر.
+«ملاحظة: هذا الأمر مخصص لبيئة تطوير مجهزة بمتطلبات Android SDK وGradle اللازمة.»
 
-🚀 النشر
+📂 بنية المشروع
 
-يتم نشر الموقع الإلكتروني باستخدام GitHub Pages، مع تشغيل عملية النشر عبر GitHub Actions.
+من الملفات والمسارات الأساسية:
 
-💚 إهداء
+Noor-aliman/
+│
+├── index.html
+│
+├── App/
+│   └── src/
+│       └── main/
+│           └── assets/
+│               └── noor-aliman.html
+│
+├── .github/
+│   └── workflows/
+│
+└── README.md
+
+🌐 الموقع الإلكتروني
+
+يمكن زيارة الموقع الرسمي للمشروع من خلال الرابط:
+
+https://asimalimikial-rgb.github.io/Noor-aliman/
+
+💚 إهداء وصدقة جارية
 
 هذا العمل صدقة جارية عن روح المرحومة:
 
 عزيزة القنديل علي
 
-نسأل الله أن يتغمدها بواسع رحمته، وأن يجعل هذا العمل في ميزان حسناتها.
+نسأل الله تعالى أن يتغمدها بواسع رحمته ومغفرته، وأن يجعل هذا العمل نوراً في قبرها، وصدقة جارية في ميزان حسناتها، وأن يجزي كل من ساهم في نشر الخير والاستفادة من هذا العمل خير الجزاء.
+
+اللهم اجعل القرآن العظيم ربيع قلوبنا، ونور صدورنا، واجعل هذا العمل خالصاً لوجهك الكريم.
 
 ---
 
-<div align="center">Developed by Asim Ali Mikial
+<div align="center">تطوير وإشراف
 
-🌙 نور الإيمان — نورٌ في يومك وطمأنينةٌ في قلبك
+Asim Ali Mikial
+
+نور الإيمان
+
+نورٌ في يومك، وطمأنينةٌ في قلبك.
 
 </div>
