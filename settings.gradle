@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = 'NoorAlIman'
 include ':app'
+project(':app').projectDir = file('App')
