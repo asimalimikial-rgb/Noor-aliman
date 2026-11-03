@@ -11,7 +11,7 @@
 
 <br>
 
-[![تحميل التطبيق](https://img.shields.io/badge/⬇_تحميل_التطبيق-APK_1.12-16865B?style=for-the-badge&logo=android&logoColor=white)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
+[![تحميل التطبيق](https://img.shields.io/badge/⬇_تحميل_التطبيق-APK_1.12-16865B?style=for-the-badge&logo=android&logoColor=white)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-release.apk)
 
 [🌐 زيارة التطبيق](https://asimalimikial-rgb.github.io/Noor-aliman/)  
 [📦 جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
@@ -80,13 +80,13 @@
 | اسم التطبيق | نور الإيمان |
 | الإصدار | 1.12 |
 | Package ID | `app.nooraliman` |
-| نوع الملف | APK |
+| نوع الملف | APK — Release موقّع |
 | الحد الأدنى لنظام Android | 6.0 |
 | المطور | Asim Ali Mikial |
 
 ### رابط التحميل المباشر
 
-[تحميل Noor Al-Iman v1.12](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
+[تحميل Noor Al-Iman v1.12 — Signed Release APK](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-release.apk)
 
 ### صفحة الإصدارات
 
