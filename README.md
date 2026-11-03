@@ -5,13 +5,13 @@
 
 **رفيقك اليومي للعبادة والذكر وتلاوة القرآن الكريم**
 
-[![الإصدار](https://img.shields.io/badge/الإصدار-1.12-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
+[![الإصدار](https://img.shields.io/badge/الإصدار-1.13-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![الحالة](https://img.shields.io/badge/الحالة-مستقر-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman)
 
 <br>
 
-[![تحميل التطبيق](https://img.shields.io/badge/⬇_تحميل_التطبيق-APK_1.12-16865B?style=for-the-badge&logo=android&logoColor=white)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-release.apk)
+[![تحميل التطبيق](https://img.shields.io/badge/⬇_تحميل_التطبيق-APK_1.12-16865B?style=for-the-badge&logo=android&logoColor=white)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
 
 [🌐 زيارة التطبيق](https://asimalimikial-rgb.github.io/Noor-aliman/)  
 [📦 جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
@@ -78,15 +78,16 @@
 | البيان | التفاصيل |
 |---|---|
 | اسم التطبيق | نور الإيمان |
-| الإصدار | 1.12 |
+| إصدار المصدر القادم | 1.13 |
+| آخر APK منشور | 1.12 |
 | Package ID | `app.nooraliman` |
-| نوع الملف | APK — Release موقّع |
+| نوع الملف | APK |
 | الحد الأدنى لنظام Android | 6.0 |
 | المطور | Asim Ali Mikial |
 
 ### رابط التحميل المباشر
 
-[تحميل Noor Al-Iman v1.12 — Signed Release APK](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-release.apk)
+[تحميل Noor Al-Iman v1.12](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.12/app-debug.apk)
 
 ### صفحة الإصدارات
 
@@ -103,7 +104,7 @@
 - الإصدارات السابقة كانت إصدارات تجريبية وتطويرية.
 - لم تحقق تلك الإصدارات مستوى الاستقرار المطلوب للنشر العام.
 - لذلك لم تعد متاحة للتنزيل العام.
-- الإصدار **v1.12** هو الإصدار المتاح حالياً.
+- آخر APK منشور حالياً هو **v1.12**؛ مصدر البناء المحدّث أصبح **v1.13** ولم يُنشر APK جديد بعد.
 - سيتم نشر الإصدارات المستقبلية بعد الاختبار والتحقق من عمل الوظائف الأساسية واستقرار التطبيق.
 
 نهدف إلى تقديم تجربة موثوقة، مع تحسين التطبيق بصورة مستمرة.
@@ -116,7 +117,8 @@
 |---|---|
 | Application Name | Noor Al-Iman |
 | Package Name | `app.nooraliman` |
-| Version | `1.12` |
+| Source version | `1.13` |
+| Latest published APK | `1.12` |
 | Version Code | `14` |
 | Minimum Android | `6.0` |
 | Developer | Asim Ali Mikial |

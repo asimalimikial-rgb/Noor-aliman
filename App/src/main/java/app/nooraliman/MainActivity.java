@@ -8,6 +8,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.graphics.Insets;
+import android.view.WindowInsets;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.GeolocationPermissions;
@@ -31,16 +35,44 @@ public class MainActivity extends Activity {
     private String locationOrigin;
     private CompassBridge compassBridge;
     private PermissionRequest cameraPermissionRequest;
+    private OnBackInvokedCallback backInvokedCallback;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
+        if (Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
+        if (Build.VERSION.SDK_INT >= 35) {
+            // Android 15+ enforces edge-to-edge for apps targeting API 35 and above.
+            getWindow().setDecorFitsSystemWindows(false);
+            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        }
 
         webView = new WebView(this);
+        webView.setOnApplyWindowInsetsListener((view, insets) -> {
+            int left, top, right, bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars()
+                        | WindowInsets.Type.displayCutout());
+                left = bars.left; top = bars.top; right = bars.right; bottom = bars.bottom;
+            } else {
+                left = insets.getSystemWindowInsetLeft();
+                top = insets.getSystemWindowInsetTop();
+                right = insets.getSystemWindowInsetRight();
+                bottom = insets.getSystemWindowInsetBottom();
+            }
+            view.setPadding(left, top, right, bottom);
+            return insets;
+        });
         setContentView(webView);
         compassBridge = new CompassBridge(this);
+        if (Build.VERSION.SDK_INT >= 33) {
+            backInvokedCallback = this::handleBackNavigation;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback);
+        }
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -57,13 +89,14 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                if (uri.getHost() == null || uri.getHost().equals("appassets.androidplatform.net")) {
-                    return false;
+                if (isTrustedAppOrigin(uri)) return false;
+                String scheme = uri.getScheme();
+                if ("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme)) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    } catch (Exception ignored) { }
                 }
-                try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
-                } catch (Exception ignored) {
-                }
+                // Block file:, content:, javascript:, intent: and unknown schemes.
                 return true;
             }
         });
@@ -71,6 +104,11 @@ public class MainActivity extends Activity {
             @Override
             public void onGeolocationPermissionsShowPrompt(
                     String origin, GeolocationPermissions.Callback callback) {
+                Uri requestedOrigin = Uri.parse(origin == null ? "" : origin);
+                if (!isTrustedAppOrigin(requestedOrigin)) {
+                    callback.invoke(origin, false, false);
+                    return;
+                }
                 if (hasLocationPermission()) {
                     callback.invoke(origin, true, false);
                     return;
@@ -86,8 +124,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
                 Uri origin = request.getOrigin();
-                if (!"https".equals(origin.getScheme())
-                        || !"appassets.androidplatform.net".equals(origin.getHost())) {
+                if (!isTrustedAppOrigin(origin)) {
                     request.deny();
                     return;
                 }
@@ -119,6 +156,17 @@ public class MainActivity extends Activity {
             }
         });
 
+        boolean restored = state != null && webView.restoreState(state) != null;
+        if (!restored) loadApplicationAssets();
+    }
+
+    private static boolean isTrustedAppOrigin(Uri uri) {
+        return uri != null && "https".equalsIgnoreCase(uri.getScheme())
+                && "appassets.androidplatform.net".equalsIgnoreCase(uri.getHost())
+                && (uri.getPort() == -1 || uri.getPort() == 443);
+    }
+
+    private void loadApplicationAssets() {
         try {
             String html = readAsset("noor-aliman.html");
             String enhancements = readAsset("enhancements.js");
@@ -127,17 +175,33 @@ public class MainActivity extends Activity {
             html = html.substring(0, bodyEnd)
                     + "\n<script>\n" + enhancements + "\n</script>\n"
                     + html.substring(bodyEnd);
-            webView.loadDataWithBaseURL(
-                    "https://appassets.androidplatform.net/",
-                    html,
-                    "text/html",
-                    "UTF-8",
-                    null);
+            webView.loadDataWithBaseURL("https://appassets.androidplatform.net/", html,
+                    "text/html", "UTF-8", null);
         } catch (Exception error) {
-            webView.loadDataWithBaseURL(null,
+            webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
                     "<meta charset='utf-8'><p dir='rtl'>تعذّر فتح التطبيق.</p>",
                     "text/html", "UTF-8", null);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (webView != null) webView.saveState(outState);
+        super.onSaveInstanceState(outState);
+    }
+
+    private void handleBackNavigation() {
+        if (webView == null) { finish(); return; }
+        if (webView.canGoBack()) { webView.goBack(); return; }
+        webView.evaluateJavascript(
+                "window.handleAndroidBack ? window.handleAndroidBack() : false", value -> {
+                    if (!"true".equals(value)) finish();
+                });
+    }
+
+    @Override
+    public void onBackPressed() {
+        handleBackNavigation();
     }
 
     private String readAsset(String name) throws Exception {
@@ -161,6 +225,23 @@ public class MainActivity extends Activity {
                 return "[]";
             }
         }
+    }
+
+    private static boolean oneOf(String value, String... allowed) {
+        if (value == null) return false;
+        for (String candidate : allowed) if (candidate.equals(value)) return true;
+        return false;
+    }
+
+    private static boolean isValidTimezone(String value) {
+        if (value == null || value.length() > 64) return false;
+        for (String id : java.util.TimeZone.getAvailableIDs()) if (id.equals(value)) return true;
+        return false;
+    }
+
+    private static boolean isValidClock(String value) {
+        if (value == null || !value.matches("(?:[01]\\d|2[0-3]):[0-5]\\d")) return false;
+        return true;
     }
 
     private boolean hasLocationPermission() {
@@ -277,6 +358,12 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void configure(double lat, double lng, String timezone, String method,
                               String asr, boolean adhan, boolean reminder, String adhanSound) {
+            if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
+                    || Double.isNaN(lng) || Double.isInfinite(lng) || lng < -180 || lng > 180
+                    || !isValidTimezone(timezone)
+                    || !oneOf(method, "mwl", "umm", "egypt", "karachi")
+                    || !oneOf(asr, "std", "hanafi")
+                    || !oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah")) return;
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putFloat("latitude", (float) lat)
                     .putFloat("longitude", (float) lng)
@@ -292,6 +379,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void preview(String sound) {
+            if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah")) return;
             runOnUiThread(() -> {
                 Intent service = new Intent(MainActivity.this, AdhanPlaybackService.class)
                         .setAction(AdhanPlaybackService.ACTION_PLAY)
@@ -330,7 +418,31 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean canUseFullScreenIntent() {
+            return Build.VERSION.SDK_INT < 34
+                    || ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                    .canUseFullScreenIntent();
+        }
+
+        @JavascriptInterface
+        public void requestFullScreenIntentAccess() {
+            if (Build.VERSION.SDK_INT < 34 || canUseFullScreenIntent()) return;
+            try {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                        Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            } catch (Exception ignored) { }
+        }
+
+        @JavascriptInterface
+        public void configureFaceDownStop(boolean enabled) {
+            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("stopAdhanFaceDown", enabled).apply();
+        }
+
+        @JavascriptInterface
         public void configurePrayerAdjustments(String offsets) {
+            if (offsets == null || offsets.length() > 2048) return;
             String safeOffsets = "{}";
             try {
                 org.json.JSONObject parsed = new org.json.JSONObject(offsets);
@@ -347,6 +459,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void previewSalawat(double volume) {
+            if (Double.isNaN(volume) || Double.isInfinite(volume)) return;
             runOnUiThread(() -> {
                 Intent service = new Intent(MainActivity.this, DhikrPlaybackService.class)
                         .setAction(DhikrPlaybackService.ACTION_PLAY)
@@ -361,11 +474,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void configureDhikr(boolean enabled, int every, String type, double volume,
                                    String from, String to) {
+            if (!oneOf(type, "subhan", "hamd", "akbar", "salawat")
+                    || Double.isNaN(volume) || Double.isInfinite(volume)
+                    || !isValidClock(from) || !isValidClock(to)) return;
+            int safeEvery = Math.max(5, Math.min(120, every));
+            float safeVolume = (float) Math.max(0d, Math.min(1d, volume));
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putBoolean("dhikrOn", enabled)
-                    .putInt("dhikrEvery", every)
+                    .putInt("dhikrEvery", safeEvery)
                     .putString("dhikrType", type)
-                    .putFloat("dhikrVol", (float) volume)
+                    .putFloat("dhikrVol", safeVolume)
                     .putString("dhikrFrom", from)
                     .putString("dhikrTo", to)
                     .apply();
@@ -386,7 +504,16 @@ public class MainActivity extends Activity {
             cameraPermissionRequest = null;
         }
         if (compassBridge != null) compassBridge.stop();
-        if (webView != null) webView.destroy();
+        if (Build.VERSION.SDK_INT >= 33 && backInvokedCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+            backInvokedCallback = null;
+        }
+        if (webView != null) {
+            webView.removeJavascriptInterface("NativeAlarms");
+            webView.removeJavascriptInterface("NativeCompass");
+            webView.removeJavascriptInterface("NativeTafsir");
+            webView.destroy();
+        }
         super.onDestroy();
     }
 }

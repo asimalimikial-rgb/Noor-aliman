@@ -8,24 +8,64 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 
-public class AdhanPlaybackService extends Service {
+public class AdhanPlaybackService extends Service implements SensorEventListener {
     static final String ACTION_PLAY = "app.nooraliman.action.PLAY_ADHAN";
     static final String ACTION_STOP = "app.nooraliman.action.STOP_ADHAN";
     static final String ACTION_STOP_PREVIEW = "app.nooraliman.action.STOP_PREVIEW";
     static final String ACTION_UPDATE_NOTIFICATION = "app.nooraliman.action.UPDATE_ADHAN_NOTIFICATION";
-    private static final String CHANNEL = "adhan_playback_controls_v2";
+    private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final int NOTIFICATION_ID = 71;
     private static volatile boolean playing;
     private MediaPlayer player;
     private boolean preview;
     private String prayerName = "";
     private String currentSound = "classic";
+    private AudioManager audioManager;
+    private AudioFocusRequest focusRequest;
+    private boolean hasAudioFocus;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private boolean faceDownStopPending;
+    private final Runnable stopIfStillFaceDown = () -> {
+        faceDownStopPending = false;
+        stopSelf();
+    };
+    private final AudioManager.OnAudioFocusChangeListener focusListener = change -> {
+        MediaPlayer active = player;
+        if (active == null) return;
+        if (change == AudioManager.AUDIOFOCUS_LOSS) {
+            stopSelf();
+        } else if (change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            try { if (active.isPlaying()) active.pause(); } catch (IllegalStateException ignored) { }
+        } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
+            try { if (!active.isPlaying()) active.start(); } catch (IllegalStateException ignored) { }
+        }
+    };
 
     static boolean isPlaying() { return playing; }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometer = sensorManager == null ? null
+                : sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -39,9 +79,8 @@ public class AdhanPlaybackService extends Service {
             return START_NOT_STICKY;
         }
         if (intent != null && ACTION_UPDATE_NOTIFICATION.equals(intent.getAction())) {
-            if (player != null) {
-                startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
-            } else stopSelf(startId);
+            if (player != null) startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
+            else stopSelf(startId);
             return START_NOT_STICKY;
         }
 
@@ -50,7 +89,7 @@ public class AdhanPlaybackService extends Service {
         currentSound = intent == null ? "classic"
                 : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
         preview = intent != null && intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_PREVIEW, false);
-        if (currentSound == null) currentSound = "classic";
+        if (!isAllowedSound(currentSound)) currentSound = "classic";
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
         playAdhan(currentSound);
         return START_NOT_STICKY;
@@ -59,13 +98,12 @@ public class AdhanPlaybackService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationChannel channel = new NotificationChannel(CHANNEL,
-                "تشغيل الأذان", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("يظهر أثناء تشغيل الأذان الكامل");
+                "تشغيل الأذان", NotificationManager.IMPORTANCE_HIGH);
+        channel.setDescription("إشعار الأذان وأدوات إيقافه");
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         channel.setSound(null, null);
         channel.enableVibration(false);
-        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-                .createNotificationChannel(channel);
+        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(channel);
     }
 
     private Notification buildNotification(String prayer, String sound) {
@@ -80,48 +118,120 @@ public class AdhanPlaybackService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL)
-                : new Notification.Builder(this).setPriority(Notification.PRIORITY_LOW);
+                : new Notification.Builder(this).setPriority(Notification.PRIORITY_MAX);
         builder.setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle(preview ? "تجربة صوت الأذان" : showControls
-                        ? "حان الآن موعد أذان " + (prayer == null ? "" : prayer)
-                        : "الأذان قيد التشغيل")
-                .setContentText(showControls ? "يُشغّل " + soundName(sound) : "")
+                .setContentTitle(preview ? "تجربة صوت الأذان" : "حان الآن موعد أذان " + (prayer == null ? "" : prayer))
+                .setContentText(showControls ? "يُشغّل " + soundName(sound) : "الأذان قيد التشغيل")
                 .setCategory(Notification.CATEGORY_ALARM)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setOngoing(true)
                 .setContentIntent(openPending);
         if (showControls) builder.addAction(android.R.drawable.ic_media_pause, "إيقاف الأذان", stopPending);
+
+        // Android 14+ may deny full-screen intents unless the user grants the special access.
+        // In that case the ordinary high-priority notification remains available.
+        PendingIntent fullScreen = PendingIntent.getActivity(this, 74,
+                new Intent(this, AdhanAlertActivity.class)
+                        .putExtra(PrayerAlarmScheduler.EXTRA_NAME, prayer)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        boolean canUseFullScreen = Build.VERSION.SDK_INT < 34
+                || ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).canUseFullScreenIntent();
+        if (!preview && canUseFullScreen) builder.setFullScreenIntent(fullScreen, true);
         return builder.build();
+    }
+
+    private boolean requestAudioFocus() {
+        if (audioManager == null) return false;
+        AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
+        int result;
+        if (Build.VERSION.SDK_INT >= 26) {
+            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(attributes)
+                    .setOnAudioFocusChangeListener(focusListener, handler)
+                    .setWillPauseWhenDucked(true).build();
+            result = audioManager.requestAudioFocus(focusRequest);
+        } else {
+            result = audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_ALARM,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        }
+        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        return hasAudioFocus;
+    }
+
+    private void abandonAudioFocus() {
+        if (!hasAudioFocus || audioManager == null) return;
+        if (Build.VERSION.SDK_INT >= 26 && focusRequest != null) audioManager.abandonAudioFocusRequest(focusRequest);
+        else audioManager.abandonAudioFocus(focusListener);
+        hasAudioFocus = false;
+        focusRequest = null;
     }
 
     private void playAdhan(String sound) {
         releasePlayer();
+        if (!requestAudioFocus()) { stopSelf(); return; }
         try (AssetFileDescriptor audio = getAssets().openFd(soundAsset(sound))) {
-            player = new MediaPlayer();
-            player.setAudioAttributes(new AudioAttributes.Builder()
+            MediaPlayer created = new MediaPlayer();
+            player = created;
+            created.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
-            player.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
-            player.setDataSource(audio.getFileDescriptor(), audio.getStartOffset(), audio.getLength());
-            player.setOnCompletionListener(mp -> stopSelf());
-            player.setOnErrorListener((mp, what, extra) -> {
-                stopSelf();
-                return true;
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
+            created.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
+            created.setDataSource(audio.getFileDescriptor(), audio.getStartOffset(), audio.getLength());
+            created.setOnPreparedListener(mp -> {
+                if (player != mp) return;
+                try {
+                    mp.start();
+                    playing = true;
+                    startFaceDownSensorIfEnabled();
+                } catch (IllegalStateException error) { stopSelf(); }
             });
-            player.prepare();
-            player.start();
-            playing = true;
+            created.setOnCompletionListener(mp -> stopSelf());
+            created.setOnErrorListener((mp, what, extra) -> { stopSelf(); return true; });
+            created.prepareAsync();
         } catch (Exception error) {
             stopSelf();
         }
+    }
+
+    private void startFaceDownSensorIfEnabled() {
+        boolean enabled = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+                .getBoolean("stopAdhanFaceDown", false);
+        if (enabled && accelerometer != null && sensorManager != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER || event.values.length < 3) return;
+        // A phone lying screen-down has gravity directed toward the back of the device.
+        if (event.values[2] < -7.5f) {
+            if (!faceDownStopPending) {
+                faceDownStopPending = true;
+                handler.postDelayed(stopIfStillFaceDown, 650L);
+            }
+        } else {
+            handler.removeCallbacks(stopIfStillFaceDown);
+            faceDownStopPending = false;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) { }
+
+    private boolean isAllowedSound(String sound) {
+        return "classic".equals(sound) || "aqib".equals(sound) || "short".equals(sound)
+                || "azemmour".equals(sound) || "makkah".equals(sound);
     }
 
     private String soundAsset(String sound) {
         if ("aqib".equals(sound)) return "adhan-aqib.mp3";
         if ("short".equals(sound)) return "adhan-short.ogg";
         if ("azemmour".equals(sound)) return "adhan-azemmour.mp3";
-        if ("quseir".equals(sound)) return "adhan-quseir.mp3";
+        if ("makkah".equals(sound)) return "adhan-makkah.mp3";
         return "adhan.ogg";
     }
 
@@ -129,22 +239,21 @@ public class AdhanPlaybackService extends Service {
         if ("aqib".equals(sound)) return "أذان عقيب عزيز";
         if ("short".equals(sound)) return "الأذان المختصر";
         if ("azemmour".equals(sound)) return "أذان أزمور، المغرب";
-        if ("quseir".equals(sound)) return "أذان القصير، البحر الأحمر";
+        if ("makkah".equals(sound)) return "أذان مكة";
         return "الأذان الكامل";
     }
 
     private void releasePlayer() {
-        if (player == null) {
-            playing = false;
-            return;
+        if (sensorManager != null) sensorManager.unregisterListener(this);
+        handler.removeCallbacks(stopIfStillFaceDown);
+        faceDownStopPending = false;
+        if (player != null) {
+            try { player.setOnPreparedListener(null); player.setOnCompletionListener(null); player.setOnErrorListener(null); } catch (Exception ignored) { }
+            try { player.release(); } catch (Exception ignored) { }
+            player = null;
         }
-        try {
-            player.stop();
-        } catch (Exception ignored) {
-        }
-        player.release();
-        player = null;
         playing = false;
+        abandonAudioFocus();
     }
 
     @Override

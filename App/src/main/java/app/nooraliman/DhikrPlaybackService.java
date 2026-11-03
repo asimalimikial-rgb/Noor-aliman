@@ -7,6 +7,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -18,6 +20,26 @@ public class DhikrPlaybackService extends Service {
     private static final String CHANNEL = "dhikr_playback";
     private static final int NOTIFICATION_ID = 72;
     private MediaPlayer player;
+    private AudioManager audioManager;
+    private AudioFocusRequest focusRequest;
+    private boolean hasAudioFocus;
+    private final AudioManager.OnAudioFocusChangeListener focusListener = change -> {
+        MediaPlayer active = player;
+        if (active == null) return;
+        if (change == AudioManager.AUDIOFOCUS_LOSS) stopSelf();
+        else if (change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            try { if (active.isPlaying()) active.pause(); } catch (IllegalStateException ignored) { }
+        } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
+            try { if (!active.isPlaying()) active.start(); } catch (IllegalStateException ignored) { }
+        }
+    };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -62,28 +84,55 @@ public class DhikrPlaybackService extends Service {
 
     private void play(String type, float volume) {
         releasePlayer();
+        if (!requestAudioFocus()) { stopSelf(); return; }
         try {
             AudioAttributes attributes = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build();
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
             Uri audio = Uri.parse("android.resource://" + getPackageName() + "/" + audioResource(type));
-            player = new MediaPlayer();
-            player.setAudioAttributes(attributes);
-            player.setDataSource(this, audio);
-            player.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
+            MediaPlayer created = new MediaPlayer();
+            player = created;
+            created.setAudioAttributes(attributes);
+            created.setDataSource(this, audio);
+            created.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
             float level = Math.max(0f, Math.min(1f, volume));
-            player.setVolume(level, level);
-            player.setOnCompletionListener(mp -> stopSelf());
-            player.setOnErrorListener((mp, what, extra) -> {
-                stopSelf();
-                return true;
+            created.setVolume(level, level);
+            created.setOnPreparedListener(mp -> {
+                if (player != mp) return;
+                try { mp.start(); } catch (IllegalStateException error) { stopSelf(); }
             });
-            player.prepare();
-            player.start();
+            created.setOnCompletionListener(mp -> stopSelf());
+            created.setOnErrorListener((mp, what, extra) -> { stopSelf(); return true; });
+            created.prepareAsync();
         } catch (Exception error) {
             stopSelf();
         }
+    }
+
+    private boolean requestAudioFocus() {
+        if (audioManager == null) return false;
+        AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
+        int result;
+        if (Build.VERSION.SDK_INT >= 26) {
+            focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(attributes).setOnAudioFocusChangeListener(focusListener).build();
+            result = audioManager.requestAudioFocus(focusRequest);
+        } else {
+            result = audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        }
+        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        return hasAudioFocus;
+    }
+
+    private void abandonAudioFocus() {
+        if (!hasAudioFocus || audioManager == null) return;
+        if (Build.VERSION.SDK_INT >= 26 && focusRequest != null) audioManager.abandonAudioFocusRequest(focusRequest);
+        else audioManager.abandonAudioFocus(focusListener);
+        hasAudioFocus = false;
+        focusRequest = null;
     }
 
     private int audioResource(String type) {
@@ -105,10 +154,12 @@ public class DhikrPlaybackService extends Service {
     }
 
     private void releasePlayer() {
-        if (player == null) return;
-        try { player.stop(); } catch (Exception ignored) {}
-        player.release();
-        player = null;
+        if (player != null) {
+            try { player.stop(); } catch (Exception ignored) {}
+            player.release();
+            player = null;
+        }
+        abandonAudioFocus();
     }
 
     @Override
