@@ -363,7 +363,7 @@ public class MainActivity extends Activity {
                     || !isValidTimezone(timezone)
                     || !oneOf(method, "mwl", "umm", "egypt", "karachi")
                     || !oneOf(asr, "std", "hanafi")
-                    || !oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah")) return;
+                    || !oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")) return;
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putFloat("latitude", (float) lat)
                     .putFloat("longitude", (float) lng)
@@ -379,7 +379,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void preview(String sound) {
-            if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah")) return;
+            if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah", "doha")) return;
             runOnUiThread(() -> {
                 Intent service = new Intent(MainActivity.this, AdhanPlaybackService.class)
                         .setAction(AdhanPlaybackService.ACTION_PLAY)

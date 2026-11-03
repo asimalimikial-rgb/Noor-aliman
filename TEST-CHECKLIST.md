@@ -21,6 +21,10 @@ Run these checks after building and installing the APK. A source-only review doe
 - [ ] Disable face-down stop; verify the accelerometer no longer stops playback.
 - [ ] Start another audio source, then trigger adhan/dhikr; verify audio focus is acquired and released correctly.
 - [ ] Test each bundled adhan asset and the original salawat recording.
+- [ ] Select Doha adhan and verify Fajr uses the Doha Fajr recording, Dhuhr uses the Doha Dhuhr recording, and Maghrib uses the Doha Maghrib recording.
+- [ ] Verify Asr and Isha use the Doha Fajr recording as fallback.
+- [ ] Verify the Doha preview plays the Fajr recording.
+- [ ] Confirm the About screen links to the Doha Internet Archive collection and clearly states that ownership/redistribution rights have not been independently verified.
 
 ## WebView, permissions, and build
 - [ ] Test location and camera permissions from the trusted app page; confirm untrusted origins are denied.

@@ -35,6 +35,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             Intent service = new Intent(context, AdhanPlaybackService.class)
                     .setAction(AdhanPlaybackService.ACTION_PLAY)
                     .putExtra(PrayerAlarmScheduler.EXTRA_NAME, name)
+                    .putExtra(PrayerAlarmScheduler.EXTRA_KEY, key)
                     .putExtra(PrayerAlarmScheduler.EXTRA_SOUND,
                             prefs.getString("adhanSound", "classic"));
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);

@@ -26,15 +26,6 @@ the existing offline playback paths.
 The Quseir / Red Sea recording (`adhan-quseir.mp3`) was removed from the app
 assets and selectable sound list in this A11 working copy, as requested.
 
-## Doha recordings planned for A11 (not yet bundled)
-
-The selected Fajr, Dhuhr, and Maghrib MP3 files from the Internet Archive item
-“Adhan Recordings from Doha, Qatar” have not yet been downloaded or added to
-this source archive. The item page displays a Public Domain Mark 1.0 notice,
-but the uploader is listed as Unknown; this notice is source metadata, not
-independent verification of ownership. Do not describe these three files as
-included until the actual files and source metadata have been checked.
-Collection: https://archive.org/details/adhan.recordings.from.doha.qatar
 
 ## Subhan Allah, Alhamdulillah, Allahu Akbar
 
@@ -65,12 +56,13 @@ Collection: https://archive.org/details/adhan.recordings.from.doha.qatar
 - Alafasy and Al-Sudais recordings are streamed from Quran.com; Maher Al-Muaiqly
   and Mohamed AbdulKareem are streamed from EveryAyah.
 
-## Doha recordings planned for A11 (not yet bundled)
 
-The selected Fajr, Dhuhr, and Maghrib MP3 files from the Internet Archive item
-“Adhan Recordings from Doha, Qatar” have not been downloaded or added to this
-source archive yet. The item page displays a Public Domain Mark 1.0 notice,
-but the uploader is listed as Unknown; the notice is recorded as source metadata
-and is not independent verification of ownership. Do not describe these three
-files as included until the actual files and source metadata have been checked.
-Collection: https://archive.org/details/adhan.recordings.from.doha.qatar
+## Doha recordings included in A11
+
+The following three MP3 files are present in `App/src/main/assets/` and are selected by prayer:
+- `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3` — Fajr.
+- `Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3` — Dhuhr.
+- `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3` — Maghrib.
+
+Source collection: https://archive.org/details/adhan.recordings.from.doha.qatar
+The collection page displays a Public Domain Mark 1.0 notice, but its uploader is listed as Unknown. This is source-page metadata only; ownership and redistribution rights have not been independently verified. Do not represent the recordings as conclusively public domain or rights-cleared. Asr and Isha use the Doha Fajr recording as the fallback.

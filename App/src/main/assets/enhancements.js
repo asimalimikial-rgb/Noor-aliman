@@ -309,9 +309,11 @@
   if (adhanSelect) {
     ADHAN_FILES.azemmour = 'adhan-azemmour.mp3';
     ADHAN_FILES.makkah = 'adhan-makkah.mp3';
+    ADHAN_FILES.doha = 'Adhan_Doha_Qatar_01_Fajr_Adhan.mp3';
     for (const [value, label] of [
       ['azemmour', 'أذان أزمور، المغرب · ٢:٤٣'],
-      ['makkah', 'أذان مكة – تسجيل Seyfula Islam · ٣:١٧']
+      ['makkah', 'أذان مكة – تسجيل Seyfula Islam · ٣:١٧'] ,
+      ['doha', 'أذان الدوحة، قطر – تسجيلات مخصصة للفجر والظهر والمغرب'],
     ]) {
       if (adhanSelect.querySelector(`option[value="${value}"]`)) continue;
       const option = document.createElement('option');
@@ -326,7 +328,7 @@
     const card = document.createElement('article');
     card.className = 'card info-card';
     card.id = 'adhanSourceNote';
-    card.innerHTML = '<h3>مصادر تسجيلات الأذان</h3><p>أذان أزمور من المغرب (Gvido) بترخيص CC BY 3.0، وأذان مكة من تسجيل Seyfula Islam بترخيص CC BY 3.0. لا يتضمن هذا الإصدار تسجيل أذان القصير.</p><p><a href="https://freesound.org/people/Gvido/sounds/36997/" target="_blank" rel="noopener">Freesound · Gvido</a> · <a href="https://commons.wikimedia.org/wiki/File:Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm" target="_blank" rel="noopener">Wikimedia Commons · Seyfula Islam</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a></p>';
+      card.innerHTML = `<h3>مصادر تسجيلات الأذان</h3><p>أذان أزمور من المغرب (Gvido) وأذان مكة من تسجيل Seyfula Islam، وفق ترخيص CC BY 3.0.</p><p>تسجيلات الدوحة: تعرض صفحة المصدر علامة Public Domain Mark 1.0، لكن اسم الرافع مسجل Unknown. لم يتم التحقق بشكل مستقل من الملكية أو حقوق إعادة التوزيع؛ لذلك لا نؤكد أنها ملكية عامة أو مصرح بإعادة توزيعها بصورة قاطعة.</p><p><a href="https://freesound.org/people/Gvido/sounds/36997/" target="_blank" rel="noopener">Freesound · Gvido</a> · <a href="https://commons.wikimedia.org/wiki/File:Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm" target="_blank" rel="noopener">Wikimedia Commons · Seyfula Islam</a> · <a href="https://archive.org/details/adhan.recordings.from.doha.qatar" target="_blank" rel="noopener">Internet Archive · Doha recordings</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a></p>`;
     aboutGrid.append(card);
   }
 
