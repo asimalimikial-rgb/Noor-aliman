@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -68,6 +68,22 @@ jobs:
             App/build/outputs/apk/release/app-release.apk.sha256
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish v1.15 GitHub Release
+        if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.15 release')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="App/build/outputs/apk/release/app-release.apk"
+          if gh release view v1.15 >/dev/null 2>&1; then
+            gh release upload v1.15 "$APK" --clobber
+          else
+            gh release create v1.15 "$APK" \
+              --target "$GITHUB_SHA" \
+              --title "Noor Al-Iman v1.15" \
+              --notes "الإصدار 1.15 (A13): خمسة تسجيلات أذان مستقلة من الدوحة، قطر، للفجر والظهر والعصر والمغرب والعشاء. يتضمن تحسينات نافذة الأذان كاملة الشاشة وأزرار الإيقاف والتحكم. تم بناء APK والتحقق من توقيعه آلياً. الاختبار النهائي على الأجهزة الفعلية يظل مطلوباً."
+          fi
 
       - name: Remove temporary signing keystore
         if: always()
