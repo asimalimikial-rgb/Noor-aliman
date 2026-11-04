@@ -175,7 +175,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private void playAdhan(String sound, String prayerKey) {
         releasePlayer();
         if (!requestAudioFocus()) { stopSelf(); return; }
-        try (AssetFileDescriptor audio = getAssets().openFd(soundAsset(sound, prayerKey))) {
+        try (AssetFileDescriptor audio = openAdhanAsset(sound, prayerKey)) {
             MediaPlayer created = new MediaPlayer();
             player = created;
             created.setAudioAttributes(new AudioAttributes.Builder()
@@ -230,11 +230,28 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 || "azemmour".equals(sound) || "makkah".equals(sound) || "doha".equals(sound);
     }
 
+    private AssetFileDescriptor openAdhanAsset(String sound, String prayerKey) throws Exception {
+        String selectedAsset = soundAsset(sound, prayerKey);
+        try {
+            return getAssets().openFd(selectedAsset);
+        } catch (Exception missingSelectedRecording) {
+            // Until the manually supplied Doha Asr/Isha files are added, keep playback working
+            // by falling back to the existing Doha Fajr recording.
+            String fajrFallback = "Adhan_Doha_Qatar_01_Fajr_Adhan.mp3";
+            if (!"doha".equals(sound) || fajrFallback.equals(selectedAsset)) {
+                throw missingSelectedRecording;
+            }
+            return getAssets().openFd(fajrFallback);
+        }
+    }
+
     private String soundAsset(String sound, String prayerKey) {
         if ("doha".equals(sound)) {
             if ("fajr".equals(prayerKey)) return "Adhan_Doha_Qatar_01_Fajr_Adhan.mp3";
             if ("dhuhr".equals(prayerKey)) return "Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3";
+            if ("asr".equals(prayerKey)) return "Adhan_Doha_Qatar_03_Asr_Adhan.mp3";
             if ("maghrib".equals(prayerKey)) return "Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3";
+            if ("isha".equals(prayerKey)) return "Adhan_Doha_Qatar_05_Isha_Adhan.mp3";
             return "Adhan_Doha_Qatar_01_Fajr_Adhan.mp3";
         }
         if ("aqib".equals(sound)) return "adhan-aqib.mp3";
