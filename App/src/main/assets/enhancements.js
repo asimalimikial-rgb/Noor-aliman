@@ -313,7 +313,7 @@
     for (const [value, label] of [
       ['azemmour', 'أذان أزمور، المغرب · ٢:٤٣'],
       ['makkah', 'أذان مكة – تسجيل Seyfula Islam · ٣:١٧'] ,
-      ['doha', 'أذان الدوحة، قطر – تسجيلات مخصصة للفجر والظهر والمغرب'],
+      ['doha', 'أذان الدوحة، قطر – تسجيل مستقل لكل صلاة من الصلوات الخمس'],
     ]) {
       if (adhanSelect.querySelector(`option[value="${value}"]`)) continue;
       const option = document.createElement('option');
