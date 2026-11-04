@@ -133,7 +133,7 @@
     'Created by Asim Ali Mikial. لا يدّعي التطبيق ملكية النصوص القرآنية أو تسجيلات التلاوة.': 'Created by Asim Ali Mikial. The app does not claim ownership of Quran text or recitations.',
     'إعدادات الأذان ومواقيت الصلاة': 'Adhan and prayer time settings',
     'التحكم في إشعار الأذان': 'Adhan notification controls',
-    'إظهار إشعار الأذان': 'Show adhan notification',
+    'إظهار أدوات التحكم في الإشعار': 'Show notification controls',
     'هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.': 'This does not stop adhan audio. Android may show a required generic notification while playback is active.',
     'الضبط اليدوي لمواقيت الصلاة': 'Manual prayer time adjustments',
     'التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.': 'Minute offsets are added to the original calculation and saved automatically.',
@@ -716,7 +716,7 @@
   prayerEnhancements.className = 'prayer-enhancements';
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
-    <div class="setting"><div><strong>إظهار إشعار الأذان</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار إشعار الأذان"></div>
+    <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
     <div class="setting"><div><strong>إيقاف الأذان عند قلب الهاتف</strong><small>اقلب الهاتف على وجهه أثناء تشغيل الأذان لإيقاف الصوت تلقائيًا.</small></div><input class="toggle" id="stopAdhanFaceDownToggle" type="checkbox" aria-label="إيقاف الأذان عند قلب الهاتف"></div>
     <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
     <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
