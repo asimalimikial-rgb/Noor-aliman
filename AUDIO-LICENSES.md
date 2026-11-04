@@ -57,12 +57,18 @@ assets and selectable sound list in this A11 working copy, as requested.
   and Mohamed AbdulKareem are streamed from EveryAyah.
 
 
-## Doha recordings included in A11
+## Doha prayer-specific recordings
 
-The following three MP3 files are present in `App/src/main/assets/` and are selected by prayer:
+The three recordings already present in `App/src/main/assets/`:
 - `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3` — Fajr.
 - `Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3` — Dhuhr.
 - `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3` — Maghrib.
 
+Two additional recordings are expected to be supplied manually by the app owner in the same assets folder:
+- `Adhan_Doha_Qatar_03_Asr_Adhan.mp3` — Asr.
+- `Adhan_Doha_Qatar_05_Isha_Adhan.mp3` — Isha.
+
+The Android playback service selects the matching file for each prayer. If either manual file is not yet present, playback temporarily falls back to the existing Doha Fajr recording; adding the correctly named file automatically enables the prayer-specific recording on the next build.
+
 Source collection: https://archive.org/details/adhan.recordings.from.doha.qatar
-The collection page displays a Public Domain Mark 1.0 notice, but its uploader is listed as Unknown. This is source-page metadata only; ownership and redistribution rights have not been independently verified. Do not represent the recordings as conclusively public domain or rights-cleared. Asr and Isha use the Doha Fajr recording as the fallback.
+The collection page displays a Public Domain Mark 1.0 notice, but its uploader is listed as Unknown. This is source-page metadata only; ownership and redistribution rights have not been independently verified. Do not represent the recordings as conclusively public domain or rights-cleared.
