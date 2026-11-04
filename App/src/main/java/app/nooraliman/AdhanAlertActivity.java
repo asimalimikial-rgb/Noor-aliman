@@ -41,6 +41,7 @@ public class AdhanAlertActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(playbackFinishedReceiver, finishedFilter, Context.RECEIVER_NOT_EXPORTED);
         else registerReceiver(playbackFinishedReceiver, finishedFilter);
         receiverRegistered = true;
+        if (!AdhanPlaybackService.isPlaybackActive()) { finish(); return; }
         if (Build.VERSION.SDK_INT >= 27) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
