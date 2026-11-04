@@ -2,6 +2,9 @@ package app.nooraliman;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -21,6 +24,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class AdhanAlertActivity extends Activity {
+    private boolean receiverRegistered;
+    private final BroadcastReceiver playbackFinishedReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (AdhanPlaybackService.ACTION_FINISHED.equals(intent.getAction())) finish();
+        }
+    };
     private static final int GREEN = Color.rgb(16, 44, 38);
     private static final int GOLD = Color.rgb(202, 167, 102);
     private static final int CREAM = Color.rgb(247, 245, 239);
@@ -28,6 +37,10 @@ public class AdhanAlertActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        IntentFilter finishedFilter = new IntentFilter(AdhanPlaybackService.ACTION_FINISHED);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(playbackFinishedReceiver, finishedFilter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(playbackFinishedReceiver, finishedFilter);
+        receiverRegistered = true;
         if (Build.VERSION.SDK_INT >= 27) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -110,6 +123,16 @@ public class AdhanAlertActivity extends Activity {
         startService(new Intent(this, AdhanPlaybackService.class)
                 .setAction(AdhanPlaybackService.ACTION_STOP));
         finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (receiverRegistered) {
+            try { unregisterReceiver(playbackFinishedReceiver); } catch (IllegalArgumentException ignored) { }
+            receiverRegistered = false;
+        }
+        super.onDestroy();
     }
 
     @Override
