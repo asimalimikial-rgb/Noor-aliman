@@ -809,6 +809,11 @@ document.head.append(prayerEnhancementStyle);
 
 const settingsHubStyle = document.createElement('style');
 settingsHubStyle.textContent = `
+  .settings-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--green);font:600 12px "DM Sans",Amiri,sans-serif;box-shadow:0 3px 12px #17352e0a;transition:background .2s,border-color .2s}
+  .settings-shortcut span{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#f3eee1;color:#8b7040;font-size:17px}
+  .settings-shortcut:hover,.settings-shortcut.active{border-color:#caa766;background:#f8f4e9}
+  .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
+  @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
   .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
   .settings-group{min-width:0;padding:14px 17px;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow)}
   .settings-group--wide{grid-column:1/-1}
