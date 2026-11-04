@@ -25,6 +25,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     static final String ACTION_STOP = "app.nooraliman.action.STOP_ADHAN";
     static final String ACTION_STOP_PREVIEW = "app.nooraliman.action.STOP_PREVIEW";
     static final String ACTION_UPDATE_NOTIFICATION = "app.nooraliman.action.UPDATE_ADHAN_NOTIFICATION";
+    static final String ACTION_FINISHED = "app.nooraliman.action.ADHAN_FINISHED";
     private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final int NOTIFICATION_ID = 71;
     private static volatile boolean playing;
@@ -286,6 +287,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     @Override
     public void onDestroy() {
         releasePlayer();
+        sendBroadcast(new Intent(ACTION_FINISHED).setPackage(getPackageName()));
         if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE);
         else stopForeground(true);
         super.onDestroy();
