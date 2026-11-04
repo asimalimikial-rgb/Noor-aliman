@@ -239,8 +239,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         try {
             return getAssets().openFd(selectedAsset);
         } catch (Exception missingSelectedRecording) {
-            // Until the manually supplied Doha Asr/Isha files are added, keep playback working
-            // by falling back to the existing Doha Fajr recording.
+            // Keep playback compatible with older or incomplete packages that do not
+            // contain the selected prayer-specific Doha recording.
             String fajrFallback = "Adhan_Doha_Qatar_01_Fajr_Adhan.mp3";
             if (!"doha".equals(sound) || fajrFallback.equals(selectedAsset)) {
                 throw missingSelectedRecording;
