@@ -67,6 +67,9 @@ final class PrayerAlarmScheduler {
             date.add(Calendar.DAY_OF_MONTH, day);
             long[] prayerTimes = calculate(date, timezone, lat, lng, method, asr);
             for (int i = 0; i < PRAYERS.length; i++) {
+                // Do not schedule a fabricated time when the sun never reaches
+                // the required altitude at this latitude/date.
+                if (prayerTimes[i] == Long.MIN_VALUE) continue;
                 String key = PRAYERS[i][0];
                 String name = PRAYERS[i][1];
                 long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
@@ -197,7 +200,11 @@ final class PrayerAlarmScheduler {
         long[] times = new long[hours.length];
         long utcMidnight = utc.getTimeInMillis();
         for (int i = 0; i < hours.length; i++) {
-            times[i] = Math.round((utcMidnight + (hours[i] - offset) * 3_600_000.0) / MINUTE) * MINUTE;
+            if (Double.isNaN(hours[i]) || Double.isInfinite(hours[i])) {
+                times[i] = Long.MIN_VALUE;
+            } else {
+                times[i] = Math.round((utcMidnight + (hours[i] - offset) * 3_600_000.0) / MINUTE) * MINUTE;
+            }
         }
         return times;
     }
@@ -220,7 +227,9 @@ final class PrayerAlarmScheduler {
     private static double hourAngle(double angle, double declination, double latitude) {
         double value = (-sin(angle) - sin(declination) * sin(latitude))
                 / (cos(declination) * cos(latitude));
-        value = Math.max(-1.0, Math.min(1.0, value));
+        // Match the WebView calculation: an unreachable solar altitude is
+        // unavailable, not a clamped zero- or twelve-hour angle.
+        if (value < -1.0 || value > 1.0) return Double.NaN;
         return Math.acos(value) / R / 15.0;
     }
 
