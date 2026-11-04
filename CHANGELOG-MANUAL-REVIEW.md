@@ -1,4 +1,13 @@
-# Manual source update — 2026-11-03
+# Manual source update — 2026-11-04
+
+## A12 / v1.14 changes
+- Replace the plain adhan alert with an immersive fullscreen screen using a custom mosque illustration and the app palette (deep green, gold, and cream).
+- Keep a prominent stop button and add an optional volume-key stop setting while the fullscreen alert is visible.
+- Update the Android workflow to build signed v1.14 APKs on pushes to A11 and A12 branches; artifact name corrected.
+- Update the app version to `1.14` (`versionCode 16`) and expand the device test checklist.
+- Screen-off stop is not implemented in this update. Android's screen-off broadcast cannot distinguish a manual power-button press from the display timing out; no setting is exposed for this behavior.
+
+## Earlier A11 source update — 2026-11-03
 
 ## Included
 - Re-schedule prayer and dhikr alarms after boot, package replacement, and time/timezone changes.
@@ -24,4 +33,4 @@
 
 ## Validation status
 - Source-level checks and JavaScript syntax checks are to be run against this package.
-- A real Android Gradle build and device tests are not claimed by this source-only update.
+- A real Android Gradle build and device tests are not yet confirmed for A12 / v1.14.
