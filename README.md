@@ -8,7 +8,7 @@
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تحميل الإصدار 1.15](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.15/noor-aliman-v1.15.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تحميل الإصدار 1.15](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.15/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
