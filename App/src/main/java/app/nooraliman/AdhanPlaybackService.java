@@ -29,6 +29,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final int NOTIFICATION_ID = 71;
     private static volatile boolean playing;
+    private static volatile boolean playbackActive;
+    static boolean isPlaybackActive() { return playbackActive; }
     private MediaPlayer player;
     private boolean preview;
     private String prayerName = "";
@@ -86,6 +88,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             return START_NOT_STICKY;
         }
 
+        playbackActive = true;
         createChannel();
         prayerName = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
         currentPrayerKey = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
@@ -287,6 +290,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     @Override
     public void onDestroy() {
         releasePlayer();
+        playbackActive = false;
         sendBroadcast(new Intent(ACTION_FINISHED).setPackage(getPackageName()));
         if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE);
         else stopForeground(true);
