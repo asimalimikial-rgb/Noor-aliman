@@ -441,12 +441,6 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void configureScreenOffStop(boolean enabled) {
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
-                    .putBoolean("stopAdhanScreenOff", enabled).apply();
-        }
-
-        @JavascriptInterface
         public void configureVolumeKeyStop(boolean enabled) {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putBoolean("stopAdhanVolumeKeys", enabled).apply();
