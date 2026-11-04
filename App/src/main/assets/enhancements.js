@@ -881,6 +881,17 @@
   const refreshAdhanStopBar = () => {
     adhanStopBar.hidden = !(window.NativeAlarms?.isAdhanPlaying?.());
   };
-  setInterval(refreshAdhanStopBar, 700);
-  document.addEventListener('visibilitychange', refreshAdhanStopBar);
+  let adhanBarTimer = 0;
+  const stopAdhanBarPolling = () => { if (adhanBarTimer) clearTimeout(adhanBarTimer); adhanBarTimer = 0; };
+  const pollAdhanBar = () => {
+    stopAdhanBarPolling();
+    if (document.visibilityState !== 'visible') return;
+    refreshAdhanStopBar();
+    adhanBarTimer = setTimeout(pollAdhanBar, 700);
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pollAdhanBar();
+    else stopAdhanBarPolling();
+  });
+  pollAdhanBar();
 })();
