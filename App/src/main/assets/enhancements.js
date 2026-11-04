@@ -65,7 +65,7 @@
     'المذهب للعصر': 'Asr juristic method', 'طريقة حساب وقت صلاة العصر': 'Method for calculating Asr time',
     'الجمهور (ظل المثل)': 'Standard (single shadow)', 'حنفي (ظل المثلين)': 'Hanafi (double shadow)',
     'التسبيح الدوري': 'Timed dhikr', 'صوت ذكر يتكرر على فترات تختارها': 'Play a dhikr at an interval you choose',
-    'التكرار': 'Interval', 'متوقف': 'Off', 'كل دقيقة (تجربة)': 'Every minute (test)',
+    'التكرار': 'Interval', 'متوقف': 'Off',
     'كل ٥ دقائق': 'Every 5 minutes', 'كل ١٠ دقائق': 'Every 10 minutes', 'كل ربع ساعة': 'Every 15 minutes',
     'كل ثلث ساعة': 'Every 20 minutes', 'كل نصف ساعة': 'Every 30 minutes', 'كل ساعة': 'Every hour',
     'كل ساعتين': 'Every 2 hours', 'الذكر': 'Dhikr',
@@ -80,14 +80,11 @@
     'أذان كامل · ٣:٠٣': 'Full adhan · 3:03', 'أذان عقيب عزيز · ١:٢٧': 'Aaqib Aziz adhan · 1:27',
     'أذان مختصر · ٠:٤٢': 'Short adhan · 0:42',
     'أذان أزمور، المغرب · ٢:٤٣': 'Azemmour, Morocco adhan · 2:43',
-    'أذان القصير على البحر الأحمر · ٢:٠٦': 'Quseir, Red Sea adhan · 2:06',
     'متابعة التلاوة للصفحة التالية': 'Continue recitation to the next page',
     'وضع المصحف': 'Mushaf mode', 'قراءة فقط': 'Reading only', 'قراءة مع التلاوة': 'Reading with recitation',
     'الصفحة السابقة': 'Previous page', 'الصفحة التالية': 'Next page',
     'اسحب الصفحة أو استخدم زري التنقل بجانب المصحف.': 'Swipe the page or use the nearby page-turn buttons.',
     'مصادر تسجيلات الأذان': 'Adhan recording sources',
-    'تسجيل أزمور بالمغرب لـ Gvido بترخيص CC BY 3.0، وتسجيل القصير بمصر لـ AhmadAiuby بترخيص CC0 1.0.': 'Azemmour, Morocco recording by Gvido (CC BY 3.0) and Quseir, Egypt recording by AhmadAiuby (CC0 1.0).',
-    'أذان أزمور من المغرب (Gvido) بترخيص CC BY 3.0، وأذان القصير من مصر (AhmadAiuby) بترخيص CC0 1.0.': 'Azemmour, Morocco adhan by Gvido (CC BY 3.0), and Quseir, Egypt adhan by AhmadAiuby (CC0 1.0).',
     'الانتقال تلقائيًا دون توقف': 'Continue automatically without pausing', 'الوضع الليلي': 'Dark mode',
     'مظهر داكن مريح للعين': 'A dark theme that is easy on the eyes', 'اللغة': 'Language',
     'الواجهة عربية حاليًا': 'Choose the interface language', 'العربية': 'Arabic', 'English (قريبًا)': 'English',
@@ -311,10 +308,12 @@
   const adhanSelect = $('sAdhanSound');
   if (adhanSelect) {
     ADHAN_FILES.azemmour = 'adhan-azemmour.mp3';
-    ADHAN_FILES.quseir = 'adhan-quseir.mp3';
+    ADHAN_FILES.makkah = 'adhan-makkah.mp3';
+    ADHAN_FILES.doha = 'Adhan_Doha_Qatar_01_Fajr_Adhan.mp3';
     for (const [value, label] of [
       ['azemmour', 'أذان أزمور، المغرب · ٢:٤٣'],
-      ['quseir', 'أذان القصير على البحر الأحمر · ٢:٠٦']
+      ['makkah', 'أذان مكة – تسجيل Seyfula Islam · ٣:١٧'] ,
+      ['doha', 'أذان الدوحة، قطر – تسجيل مستقل لكل صلاة من الصلوات الخمس'],
     ]) {
       if (adhanSelect.querySelector(`option[value="${value}"]`)) continue;
       const option = document.createElement('option');
@@ -329,7 +328,7 @@
     const card = document.createElement('article');
     card.className = 'card info-card';
     card.id = 'adhanSourceNote';
-    card.innerHTML = '<h3>مصادر تسجيلات الأذان</h3><p>أذان أزمور من المغرب (Gvido) بترخيص CC BY 3.0، وأذان القصير من مصر (AhmadAiuby) بترخيص CC0 1.0.</p><p><a href="https://freesound.org/people/Gvido/sounds/36997/" target="_blank" rel="noopener">Freesound · Gvido</a> · <a href="https://freesound.org/people/AhmadAiuby/sounds/555065/" target="_blank" rel="noopener">Freesound · AhmadAiuby</a></p>';
+      card.innerHTML = `<h3>مصادر تسجيلات الأذان</h3><p>أذان أزمور من المغرب (Gvido) وأذان مكة من تسجيل Seyfula Islam، وفق ترخيص CC BY 3.0.</p><p>تسجيلات الدوحة: تعرض صفحة المصدر علامة Public Domain Mark 1.0، لكن اسم الرافع مسجل Unknown. لم يتم التحقق بشكل مستقل من الملكية أو حقوق إعادة التوزيع؛ لذلك لا نؤكد أنها ملكية عامة أو مصرح بإعادة توزيعها بصورة قاطعة.</p><p><a href="https://freesound.org/people/Gvido/sounds/36997/" target="_blank" rel="noopener">Freesound · Gvido</a> · <a href="https://commons.wikimedia.org/wiki/File:Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm" target="_blank" rel="noopener">Wikimedia Commons · Seyfula Islam</a> · <a href="https://archive.org/details/adhan.recordings.from.doha.qatar" target="_blank" rel="noopener">Internet Archive · Doha recordings</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a></p>`;
     aboutGrid.append(card);
   }
 
@@ -707,6 +706,9 @@
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
     <div class="setting"><div><strong>إظهار إشعار الأذان</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار إشعار الأذان"></div>
+    <div class="setting"><div><strong>إيقاف الأذان عند قلب الهاتف</strong><small>اقلب الهاتف على وجهه أثناء تشغيل الأذان لإيقاف الصوت تلقائيًا.</small></div><input class="toggle" id="stopAdhanFaceDownToggle" type="checkbox" aria-label="إيقاف الأذان عند قلب الهاتف"></div>
+    <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
+    <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
     <div class="adjustment-heading"><strong>الضبط اليدوي لمواقيت الصلاة</strong><small>التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.</small></div>
     <div class="prayer-adjustment-list" id="prayerAdjustmentList" aria-live="polite"></div>
     <div class="adjustment-actions"><button class="adjustment-reset-all" id="resetAllPrayerAdjustments" type="button">إعادة ضبط جميع التعديلات</button></div>
@@ -740,8 +742,16 @@
   document.head.append(prayerEnhancementStyle);
 
   const notificationToggle = $('adhanNotificationToggle');
+  const faceDownToggle = $('stopAdhanFaceDownToggle');
+  const volumeKeysToggle = $('stopAdhanVolumeKeysToggle');
+  const fullScreenAccessButton = $('fullScreenAccessButton');
+  const fullScreenAccessStatus = $('fullScreenAccessStatus');
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
+  const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
+  const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
   if (notificationToggle) notificationToggle.checked = showAdhanNotification;
+  if (faceDownToggle) faceDownToggle.checked = stopAdhanFaceDown;
+  if (volumeKeysToggle) volumeKeysToggle.checked = stopAdhanVolumeKeys;
   const adhanEnableRow = $('sNotify')?.closest('.setting');
   if (adhanEnableRow) {
     const title = adhanEnableRow.querySelector('strong');
@@ -749,9 +759,24 @@
     if (title) title.textContent = 'تشغيل الأذان في أوقاته';
     if (note) note.textContent = 'تشغيل صوت الأذان عند دخول وقت الصلاة، حتى عند إغلاق التطبيق';
   }
+  function syncFullScreenAccessStatus() {
+    const allowed = !window.NativeAlarms?.canUseFullScreenIntent
+      || NativeAlarms.canUseFullScreenIntent();
+    if (fullScreenAccessStatus) fullScreenAccessStatus.textContent = allowed
+      ? 'إذن شاشة الأذان متاح على هذا الجهاز.'
+      : 'فعّل إذن ملء الشاشة من إعدادات Android؛ سيبقى الإشعار العادي متاحًا إذا رفض النظام الإذن.';
+    if (fullScreenAccessButton) fullScreenAccessButton.textContent = allowed ? 'تم التفعيل' : 'ضبط الإذن';
+    if (fullScreenAccessButton) fullScreenAccessButton.disabled = allowed;
+  }
   function syncNativePlaybackOptions() {
     if (window.NativeAlarms?.configurePlaybackOptions) {
       NativeAlarms.configurePlaybackOptions(notificationToggle?.checked !== false);
+    }
+    if (window.NativeAlarms?.configureFaceDownStop) {
+      NativeAlarms.configureFaceDownStop(faceDownToggle?.checked === true);
+    }
+    if (window.NativeAlarms?.configureVolumeKeyStop) {
+      NativeAlarms.configureVolumeKeyStop(volumeKeysToggle?.checked === true);
     }
   }
   function persistPrayerAdjustments() {
@@ -809,6 +834,18 @@
     store.set('showAdhanNotification', notificationToggle.checked);
     syncNativePlaybackOptions();
   });
+  faceDownToggle?.addEventListener('change', () => {
+    store.set('stopAdhanFaceDown', faceDownToggle.checked);
+    syncNativePlaybackOptions();
+  });
+  volumeKeysToggle?.addEventListener('change', () => {
+    store.set('stopAdhanVolumeKeys', volumeKeysToggle.checked);
+    syncNativePlaybackOptions();
+  });
+  fullScreenAccessButton?.addEventListener('click', () => {
+    NativeAlarms?.requestFullScreenIntentAccess?.();
+    setTimeout(syncFullScreenAccessStatus, 900);
+  });
   $('resetAllPrayerAdjustments')?.addEventListener('click', () => {
     for (const [key] of prayerAdjustmentRows) prayerAdjustments[key] = 0;
     persistPrayerAdjustments();
@@ -818,6 +855,8 @@
     NativeAlarms.configurePrayerAdjustments(JSON.stringify(prayerAdjustments));
   }
   syncNativePlaybackOptions();
+  syncFullScreenAccessStatus();
+  document.addEventListener('visibilitychange', syncFullScreenAccessStatus);
 
   const adhanStopBar = document.createElement('div');
   adhanStopBar.className = 'adhan-stop-bar';

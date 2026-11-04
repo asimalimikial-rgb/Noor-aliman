@@ -65,7 +65,7 @@ final class DhikrAlarmScheduler {
     }
 
     private static long nextAt(long now, android.content.SharedPreferences prefs) {
-        int every = Math.max(1, Math.min(120, prefs.getInt("dhikrEvery", 15)));
+        int every = Math.max(5, Math.min(120, prefs.getInt("dhikrEvery", 15)));
         long candidate = now + every * MINUTE;
         int start = clockMinutes(prefs.getString("dhikrFrom", "06:00"));
         int end = clockMinutes(prefs.getString("dhikrTo", "22:00"));

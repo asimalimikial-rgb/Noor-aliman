@@ -4,15 +4,14 @@ plugins {
 
 android {
     namespace 'app.nooraliman'
-    compileSdk 35
-    buildToolsVersion '35.0.1'
+    compileSdk 36
 
     defaultConfig {
         applicationId 'app.nooraliman'
         minSdk 23
-        targetSdk 34
-        versionCode 14
-        versionName '1.12'
+        targetSdk 36
+        versionCode 17
+        versionName '1.15'
     }
 
     signingConfigs {
@@ -27,7 +26,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

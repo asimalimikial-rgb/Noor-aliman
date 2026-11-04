@@ -1,10 +1,9 @@
-
-name: Build Noor Al Iman Signed Release APK
+name: Build Noor Al Iman v1.15 Signed Release APK
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, a11-audio-upload, a12-fullscreen-adhan-controls, a13-doha-manual-audio]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -16,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,8 +26,8 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.1"
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Restore signing keystore
         env:
@@ -48,15 +47,27 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew --no-daemon assembleRelease
+          ./gradlew --no-daemon clean assembleRelease
+
+      - name: Verify APK signature
+        run: |
+          set -euo pipefail
+          APK="App/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK"
+          sha256sum "$APK" > "$APK.sha256"
 
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-aliman-release-apk
-          path: App/build/outputs/apk/release/app-release.apk
+          name: noor-aliman-v1.15-signed-release-apk
+          path: |
+            App/build/outputs/apk/release/app-release.apk
+            App/build/outputs/apk/release/app-release.apk.sha256
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
 
       - name: Remove temporary signing keystore
         if: always()

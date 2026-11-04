@@ -129,8 +129,12 @@ final class PrayerAlarmScheduler {
                 .putExtra(EXTRA_NAME, name);
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-        ids.put(uri);
+        try {
+            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            ids.put(uri);
+        } catch (SecurityException denied) {
+            pending.cancel();
+        }
     }
 
     private static void scheduleRefresh(Context context, AlarmManager manager, TimeZone timezone) {
@@ -146,7 +150,11 @@ final class PrayerAlarmScheduler {
                 .setData(Uri.parse("noor://alarm/refresh"));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pending);
+        try {
+            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pending);
+        } catch (SecurityException ignored) {
+            pending.cancel();
+        }
     }
 
     private static int adjustmentMinutes(android.content.SharedPreferences prefs, String key) {
