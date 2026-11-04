@@ -1,434 +1,318 @@
-<!doctype html>
+َ<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102C26">
-  <meta name="description" content="نور الإيمان: تطبيق إسلامي يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والقبلة والمسبحة في تجربة عربية واحدة.">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="نور الإيمان | رفيق يومك إلى الطمأنينة">
-  <meta property="og:description" content="مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تطبيق واحد.">
-  <meta property="og:url" content="https://asimalimikial-rgb.github.io/Noor-aliman/">
-  <meta name="twitter:card" content="summary">
-  <title>نور الإيمان | رفيق يومك إلى الطمأنينة</title>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "نور الإيمان",
-    "alternateName": "Noor Al-Iman",
-    "applicationCategory": "LifestyleApplication",
-    "operatingSystem": "Android 6.0 and later",
-    "inLanguage": "ar",
-    "description": "تطبيق إسلامي يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والقبلة والمسبحة.",
-    "downloadUrl": "https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk",
-    "author": {
-      "@type": "Person",
-      "name": "Asim Ali Mikial"
-    }
-  }
-  </script>
-
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Cpath fill='%23102C26' d='M0 0h108v108H0z'/%3E%3Cpath fill='%23CAA766' d='M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35'/%3E%3Cpath fill='%23F7F5EF' d='M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z'/%3E%3C/svg%3E">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --green: #123b32;
-      --green-light: #205b49;
-      --gold: #c9a86a;
-      --background: #f7f5ef;
-      --ink: #18372f;
-      --muted: #71847b;
-      --paper: #fffefa;
-      --line: #e8e5db;
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      background: var(--background);
-      color: var(--ink);
-      font-family: "IBM Plex Sans Arabic", sans-serif;
-      line-height: 1.8;
-    }
-    a { color: inherit; text-decoration: none; }
-    .wrap { width: min(1120px, calc(100% - 36px)); margin: auto; }
-
-    header {
-      min-height: 82px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .brand { display: flex; align-items: center; gap: 11px; }
-    .mark {
-      width: 46px; height: 46px; display: grid; place-items: center;
-      flex: none; overflow: hidden; border-radius: 15px;
-    }
-    .mark svg { width: 46px; height: 46px; display: block; }
-    .brand b { display: block; font: 700 24px Amiri, serif; }
-    .brand small { display: block; color: var(--muted); font-size: 10px; }
-    .nav { display: flex; gap: 24px; color: #65776f; font-size: 13px; }
-    .headbtn {
-      background: var(--green); color: white; padding: 10px 17px;
-      border-radius: 12px; font-size: 13px; font-weight: 700;
-    }
-
-    .hero {
-      position: relative; overflow: hidden;
-      background: linear-gradient(120deg, #102f28, #1e5a49);
-      border-radius: 27px; color: #fffdf5; padding: 62px 7%;
-      display: grid; grid-template-columns: 1.1fr .9fr;
-      align-items: center; gap: 35px; min-height: 450px;
-      box-shadow: 0 24px 60px #163c3020;
-    }
-    .hero:before {
-      content: ""; position: absolute; width: 420px; height: 420px;
-      border: 1px solid #d4b77528; border-radius: 50%;
-      left: -100px; top: -190px;
-      box-shadow: 0 0 0 30px #d4b77509, 0 0 0 60px #d4b77507;
-    }
-    .hero-copy, .phone-stage { position: relative; z-index: 1; }
-    .eyebrow { color: #d9bd80; font-size: 12px; font-weight: 700; }
-    .hero h1 { font: 700 clamp(40px, 6vw, 64px)/1.2 Amiri, serif; margin: 12px 0; }
-    .hero p { color: #d4e0d8; font-size: 15px; max-width: 520px; margin: 0 0 25px; }
-    .actions { display: flex; gap: 11px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 13px 21px; border-radius: 13px; font-weight: 700;
-      font-size: 14px; transition: transform .2s;
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .gold { background: var(--gold); color: #17392f; box-shadow: 0 8px 20px #0002; }
-    .glass { border: 1px solid #ffffff55; color: white; background: #ffffff0b; }
-    .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px; color: #bdcfc4; font-size: 11px; }
-    .meta span:before { content: "✓"; color: #d8bd83; margin-left: 6px; }
-
-    .phone-stage { display: flex; justify-content: center; align-items: center; }
-    .phone {
-      width: 238px; padding: 9px; border: 1px solid #d8c18b88;
-      border-radius: 34px; background: #0b2922;
-      box-shadow: 0 25px 60px #071d1870; transform: rotate(-4deg);
-    }
-    .screen {
-      border-radius: 26px; background: #f7f5ef; color: #173a30;
-      min-height: 350px; padding: 17px 13px; overflow: hidden;
-    }
-    .screen-top { display: flex; justify-content: space-between; font-size: 10px; color: #7d8d84; }
-    .screen h3 { font: 700 23px Amiri, serif; margin: 17px 0 3px; }
-    .screen .welcome { font-size: 10px; color: #7b8c83; }
-    .prayer {
-      margin: 14px 0; background: linear-gradient(120deg, #153d32, #28604c);
-      border-radius: 14px; padding: 15px; color: white;
-    }
-    .prayer small { color: #d9c18c; font-size: 9px; }
-    .prayer strong { display: block; font-size: 20px; margin: 5px 0; }
-    .times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .times span {
-      background: white; border: 1px solid #e9e5da; border-radius: 9px;
-      padding: 7px 2px; text-align: center; font-size: 9px;
-    }
-    .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
-    .tiles span { background: #eaf0e9; border-radius: 9px; padding: 10px 2px; text-align: center; font-size: 9px; }
-
-    section { padding: 72px 0; }
-    .stitle { text-align: center; max-width: 690px; margin: 0 auto 34px; }
-    .stitle .eyebrow { color: #9a7b43; }
-    .stitle h2, .highlight h2 { font: 700 37px/1.35 Amiri, serif; margin: 7px 0; }
-    .stitle p { color: var(--muted); font-size: 14px; margin: 0; }
-    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .feature {
-      background: var(--paper); border: 1px solid var(--line);
-      border-radius: 18px; padding: 21px; box-shadow: 0 10px 30px #1c3c3008;
-    }
-    .ico {
-      width: 46px; height: 46px; border-radius: 14px; background: #edf2e9;
-      display: grid; place-items: center; font-size: 23px; margin-bottom: 12px;
-    }
-    .feature h3 { font: 700 20px Amiri, serif; margin: 0 0 4px; }
-    .feature p { color: var(--muted); font-size: 12px; margin: 0; line-height: 1.9; }
-
-    .highlight { background: #eef1e9; border-block: 1px solid #e3e7dc; }
-    .hgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 35px; align-items: center; }
-    .highlight p { color: #63766c; font-size: 14px; }
-    .checks { display: grid; gap: 11px; margin-top: 18px; }
-    .checks div { display: flex; gap: 9px; font-size: 13px; }
-    .check {
-      flex: none; width: 22px; height: 22px; border-radius: 50%;
-      background: #dce9dc; color: #28614d; display: grid; place-items: center; font-size: 12px;
-    }
-    .verse { background: var(--green); color: white; border-radius: 22px; padding: 29px; }
-    .verse b { font: 700 27px/1.8 Amiri, serif; color: #f1dfb8; }
-    .verse p { color: #d4e0d8; font-size: 13px; }
-
-    .waqf {
-      background: linear-gradient(120deg, #12382f, #1d5949);
-      color: white; text-align: center; padding: 65px 20px;
-    }
-    .orn { color: var(--gold); font-size: 29px; }
-    .waqf h2 { font: 700 38px Amiri, serif; margin: 8px 0; }
-    .waqf p { max-width: 730px; margin: 0 auto 17px; color: #d3e0d8; font-size: 14px; }
-    .waqf .name { font: 700 25px Amiri, serif; color: #e3c88f; }
-
-    .download { background: var(--background); }
-    .panel {
-      background: var(--paper); border: 1px solid var(--line); border-radius: 23px;
-      padding: 30px; display: flex; align-items: center; justify-content: space-between;
-      gap: 22px; box-shadow: 0 18px 45px #193d300b;
-    }
-    .panel h3 { font: 700 28px Amiri, serif; margin: 0 0 3px; }
-    .panel p { color: var(--muted); font-size: 13px; margin: 0; }
-    .note { font-size: 11px; color: #89978f; margin-top: 8px; }
-    .release-link {
-      display: inline-block; color: var(--green-light); font-size: 13px;
-      font-weight: 700; text-decoration: underline; text-underline-offset: 4px; margin-right: 12px;
-    }
-
-    footer { background: #102b25; color: #d7e1d9; padding: 30px 0; }
-    .foot { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
-    .foot b { font: 700 22px Amiri, serif; }
-    .foot p { color: #9eb0a6; font-size: 11px; margin: 2px 0; }
-    .links { display: flex; gap: 17px; font-size: 12px; color: #c1d0c7; }
-
-    @media (max-width: 800px) {
-      .nav { display: none; }
-      .hero { grid-template-columns: 1fr; text-align: center; padding: 42px 7%; }
-      .hero p { margin-inline: auto; }
-      .actions, .meta { justify-content: center; }
-      .phone-stage { min-height: 300px; }
-      .phone { transform: none; width: 220px; }
-      .features { grid-template-columns: repeat(2, 1fr); }
-      .hgrid { grid-template-columns: 1fr; }
-      .verse { order: -1; }
-      .panel { align-items: flex-start; flex-direction: column; }
-    }
-    @media (max-width: 520px) {
-      header { min-height: 70px; }
-      .brand b { font-size: 21px; }
-      .headbtn { font-size: 11px; padding: 9px 11px; }
-      .hero { padding: 35px 18px; border-radius: 20px; }
-      .hero h1 { font-size: 43px; }
-      .hero p { font-size: 13px; }
-      .btn { width: 100%; }
-      .meta { gap: 9px; font-size: 10px; }
-      .features { grid-template-columns: 1fr; }
-      section { padding: 55px 0; }
-      .stitle h2, .highlight h2, .waqf h2 { font-size: 31px; }
-      .stitle p { font-size: 12px; }
-      .verse { padding: 23px; }
-      .verse b { font-size: 23px; }
-      .panel { padding: 22px; }
-      .panel h3 { font-size: 25px; }
-      .foot { justify-content: center; text-align: center; }
-      .links { justify-content: center; flex-wrap: wrap; }
-      .release-link { margin: 12px 0 0; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f3b31">
+<title>نور الإيمان | رفيق يومك إلى الطمأنينة</title>
+<meta name="description" content="نور الإيمان: تطبيق أندرويد يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والمسبحة والقبلة في تجربة عربية واحدة.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="نور الإيمان | رفيق يومك إلى الطمأنينة">
+<meta property="og:description" content="مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تطبيق واحد.">
+<meta property="og:url" content="https://asimalimikial-rgb.github.io/Noor-aliman/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"نور الإيمان","alternateName":"Noor Al-Iman","applicationCategory":"LifestyleApplication","operatingSystem":"Android 6.0 and later","softwareVersion":"1.13","inLanguage":"ar","description":"تطبيق إسلامي يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والقبلة والمسبحة.","downloadUrl":"https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk","author":{"@type":"Person","name":"Asim Ali Mikial"}}
+</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Cpath fill='%230f3b31' d='M0 0h108v108H0z'/%3E%3Cpath fill='%23CAA766' d='M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35'/%3E%3Cpath fill='%23F7F5EF' d='M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--em:#0f3b31;--em2:#17503f;--gold:#d8bd80;--goldd:#8a6d2f;--ivory:#f7f4ec;--paper:#fffdf8;--ink:#1e2a26;--mut:#5b6862;--line:#e2ded1;--mist:#ecefe6}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--ivory);color:var(--ink);font:400 16px/1.9 Cairo,Tajawal,"Segoe UI",Tahoma,sans-serif}
+a{color:inherit}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.wrap{width:min(1080px,calc(100% - 32px));margin-inline:auto}
+:focus-visible{outline:3px solid var(--goldd);outline-offset:3px;border-radius:6px}
+.skip{position:absolute;inset-inline-start:8px;top:-60px;background:var(--em);color:#fff;padding:8px 14px;border-radius:8px;z-index:20}
+.skip:focus{top:8px}
+header{position:sticky;top:0;z-index:10;background:#f7f4ece8;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand svg{width:38px;height:38px;border-radius:11px;flex:none}
+.brand b{font:700 22px Amiri,serif}
+nav{display:flex;gap:20px;font-size:14px;color:var(--mut)}
+nav a{text-decoration:none}
+nav a:hover{color:var(--em)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn-gold{background:var(--gold);color:#17302a}
+.btn-ghost{border:1px solid #ffffff66;color:#fff}
+.btn-em{background:var(--em);color:#fff}
+.sm{padding:8px 14px;font-size:13px}
+.hero{background:var(--em);color:#fffdf5;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;width:480px;height:480px;left:-140px;top:-220px;border:1px solid #d8bd8035;border-radius:50%;box-shadow:0 0 0 36px #d8bd8010,0 0 0 72px #d8bd8008}
+.hg{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:32px;padding:56px 0}
+.pill{display:inline-block;border:1px solid #d8bd8077;color:var(--gold);border-radius:999px;padding:2px 14px;font-size:13px}
+h1{font:700 clamp(44px,8vw,72px)/1.2 Amiri,serif;margin:10px 0 0}
+.en{font-size:15px;color:#b9cdc3;letter-spacing:.04em;direction:ltr;text-align:right}
+.tag{font:700 24px Amiri,serif;color:var(--gold);margin:8px 0 4px}
+.hero p{color:#d3e0d8;max-width:520px;margin:0 0 22px}
+.acts{display:flex;gap:10px;flex-wrap:wrap}
+.mark{width:150px;height:150px;border-radius:34px;box-shadow:0 20px 50px #04140f66}
+section{padding:64px 0}
+h2{font:700 36px/1.4 Amiri,serif;margin:0 0 8px}
+.lead{color:var(--mut);max-width:640px;margin:0 0 32px}
+.about{background:var(--paper);border-bottom:1px solid var(--line)}
+.about p{font-size:19px;max-width:700px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px}
+.ic{width:42px;height:42px;display:grid;place-items:center;background:var(--mist);border-radius:12px;font-size:21px;margin-bottom:10px}
+.card h3{font:700 20px Amiri,serif;margin:0 0 4px}
+.card p{margin:0;font-size:14px;color:var(--mut);line-height:1.8}
+.a11{background:var(--em);color:#fffdf5}
+.a11 .lead{color:#c3d4ca}
+.a11g{display:grid;grid-template-columns:.8fr 1.2fr;gap:36px;align-items:start}
+.big{border:1px solid #d8bd8055;border-radius:22px;padding:30px;text-align:center}
+.big b{display:block;font:700 92px/1.1 Amiri,serif;color:var(--gold)}
+.big span{color:#d3e0d8;font-size:15px}
+.cols{display:grid;gap:18px}
+.cols h3{font-size:17px;margin:0 0 4px;color:var(--gold)}
+.cols ul{margin:0;padding-inline-start:20px;color:#e3ece6;font-size:15px}
+.note{font-size:13px;color:#a9bfb3;margin-top:16px}
+.rows{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.row{background:var(--paper);border:1px solid var(--line);border-inline-start:4px solid var(--goldd);border-radius:12px;padding:14px 18px}
+.row b{display:block;font-size:17px}
+.row span{font-size:13.5px;color:var(--mut);line-height:1.7;display:block}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chips i{font-style:normal;background:var(--mist);border-radius:999px;padding:0 12px;font-size:13px;color:var(--em)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.two h3{font:700 22px Amiri,serif;margin:0 0 6px}
+.two ul{margin:0;padding-inline-start:20px;color:var(--mut)}
+.alt{background:var(--mist);border-block:1px solid var(--line)}
+.off-no{border-top:4px solid var(--em2)}
+.off-net{border-top:4px solid var(--goldd)}
+.dl{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.dl .id{display:flex;align-items:center;gap:16px}
+.dl .id svg{width:64px;height:64px;border-radius:16px;flex:none}
+.dl h3{font:700 26px Amiri,serif;margin:0}
+.dl p{margin:0;color:var(--mut);font-size:14px}
+.dl .go{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.dl .go a.t{color:var(--em2);font-weight:600;font-size:14px}
+dl.spec{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0}
+dl.spec div{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+dl.spec dt{font-size:13px;color:var(--mut)}
+dl.spec dd{margin:0;font-weight:700}
+.waqf{background:var(--em2);color:#fffdf5;text-align:center}
+.waqf p{max-width:680px;margin:0 auto 10px;color:#d3e0d8}
+.waqf .nm{font:700 26px Amiri,serif;color:var(--gold)}
+footer{background:#0b2a23;color:#d7e1d9;padding:30px 0;font-size:14px}
+.ft{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.ft b{font:700 22px Amiri,serif}
+.ft p{margin:2px 0;color:#9fb3a8;font-size:13px}
+.fl{display:flex;gap:18px;flex-wrap:wrap}
+.fl a{color:#d7e1d9}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.rows{grid-template-columns:1fr 1fr}dl.spec{grid-template-columns:1fr 1fr}.a11g{grid-template-columns:1fr}}
+@media(max-width:640px){
+nav{display:none}
+.hg{grid-template-columns:1fr;padding:32px 0;text-align:center}
+.mark{width:96px;height:96px;border-radius:24px;margin:0 auto;order:-1}
+.en{text-align:center}
+.hero p{margin-inline:auto}
+.acts{justify-content:center}
+.btn{width:100%}
+.btn.sm{width:auto}
+section{padding:44px 0}
+h2{font-size:30px}
+.grid,.rows,.two{grid-template-columns:1fr}
+.big b{font-size:72px}
+.dl{padding:22px}
+.dl .go{width:100%}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+</style>
 </head>
-
 <body>
-  <div class="wrap">
-    <header>
-      <a class="brand" href="#" aria-label="نور الإيمان - الصفحة الرئيسية">
-        <span class="mark" aria-hidden="true">
-          <svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#102C26" d="M0 0h108v108H0z"/>
-            <path fill="#CAA766" d="M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35"/>
-            <path fill="#F7F5EF" d="M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z"/>
-          </svg>
-        </span>
-        <span>
-          <b>نور الإيمان</b>
-          <small>رفيق يومك إلى الطمأنينة</small>
-        </span>
-      </a>
+<a class="skip" href="#features">تخطَّ إلى المحتوى</a>
+<header>
+<div class="wrap bar">
+<a class="brand" href="#" aria-label="نور الإيمان - أعلى الصفحة">
+<svg viewBox="0 0 108 108" aria-hidden="true"><path fill="#0f3b31" d="M0 0h108v108H0z"/><path fill="#CAA766" d="M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35"/><path fill="#F7F5EF" d="M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z"/></svg>
+<b>نور الإيمان</b>
+</a>
+<nav aria-label="القائمة الرئيسية">
+<a href="#features">المزايا</a>
+<a href="#a11">الجديد في 1.13</a>
+<a href="#adhan">الأذان</a>
+<a href="#experience">دون إنترنت</a>
+<a href="#waqf">الصدقة الجارية</a>
+</nav>
+<a class="btn btn-em sm" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">تحميل APK</a>
+</div>
+</header>
 
-      <nav class="nav" aria-label="القائمة الرئيسية">
-        <a href="#features">المميزات</a>
-        <a href="#experience">التجربة</a>
-        <a href="#waqf">الصدقة الجارية</a>
-      </nav>
+<main>
+<div class="hero">
+<div class="wrap hg">
+<div>
+<span class="pill">الإصدار <bdi class="ltr">1.13</bdi> · أندرويد</span>
+<h1>نور الإيمان</h1>
+<div class="en">Noor Al-Iman</div>
+<div class="tag">رفيق يومك إلى الطمأنينة</div>
+<p>مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تطبيق عربي واحد.</p>
+<div class="acts">
+<a class="btn btn-gold" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">تحميل التطبيق (APK)</a>
+<a class="btn btn-ghost" href="https://github.com/asimalimikial-rgb/Noor-aliman">المستودع على GitHub</a>
+</div>
+</div>
+<svg class="mark" viewBox="0 0 108 108" role="img" aria-label="شعار تطبيق نور الإيمان"><path fill="#0b2a23" d="M0 0h108v108H0z"/><path fill="#CAA766" d="M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35"/><path fill="#F7F5EF" d="M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z"/></svg>
+</div>
+</div>
 
-      <a class="headbtn" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">تحميل التطبيق ↓</a>
-    </header>
+<section class="about" id="about">
+<div class="wrap">
+<h2>تطبيق واحد لعبادتك اليومية</h2>
+<p>يجمع «نور الإيمان» مواقيت الصلاة والأذان ومصحف المدينة والتفسير وأذكار الصباح والمساء والمسبحة وبوصلة القبلة، ويعمل جزء كبير منها على جهازك دون إنترنت.</p>
+</div>
+</section>
 
-    <main>
-      <div class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow">تطبيق إسلامي لحياتك اليومية · الإصدار 1.13</div>
-          <h1>قلبٌ يذكر،<br>ويومٌ أكثر طمأنينة</h1>
-          <p>كل ما يعينك على الصلاة والقرآن والذكر في مكان واحد. تجربة عربية هادئة، وأدوات عملية ترافقك أينما كنت.</p>
+<section id="features">
+<div class="wrap">
+<h2>المزايا الرئيسية</h2>
+<p class="lead">أدوات صُمّمت لتكمل بعضها داخل التطبيق نفسه.</p>
+<div class="grid">
+<article class="card"><div class="ic" aria-hidden="true">🕌</div><h3>مواقيت الصلاة</h3><p>مواقيت يومية بحسب موقعك، مع تنبيهات الصلاة وضبط مستقل لوقت كل صلاة.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">🔔</div><h3>الأذان</h3><p>ستة خيارات صوتية، وإيقاف الأذان من التطبيق أو من الإشعار.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">📖</div><h3>القرآن الكريم</h3><p>مصحف المدينة بـ <bdi class="ltr">604</bdi> صفحات، مع اختيار القارئ والتكرار وسرعة التلاوة.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">📚</div><h3>التفسير</h3><p>السعدي، والتفسير المختصر، والسراج في غريب القرآن.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">☀️</div><h3>أذكار الصباح والمساء</h3><p>أذكار منظمة مع عدّاد للتقدم تساعدك على المحافظة على وردك.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">📿</div><h3>المسبحة الإلكترونية</h3><p>عدّاد مع إعادة ضبط، وتنبيه عند اكتمال <bdi class="ltr">33</bdi> تسبيحة.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">🧭</div><h3>القبلة</h3><p>اتجاه القبلة بالبوصلة؛ تتأثر دقتها بحساسات الهاتف ومعايرتها.</p></article>
+<article class="card"><div class="ic" aria-hidden="true">🎧</div><h3>الذكر الصوتي</h3><p>تشغيل تسبيح وتحميد وتكبير وصلاة على النبي ﷺ على فترات تختارها.</p></article>
+</div>
+</div>
+</section>
 
-          <div class="actions">
-            <a class="btn gold" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">⬇ تحميل تطبيق أندرويد</a>
-            <a class="btn glass" href="App/src/main/assets/noor-aliman.html">استكشف واجهة التطبيق ↗</a>
-          </div>
+<section class="a11" id="a11">
+<div class="wrap">
+<h2>الجديد في الإصدار <bdi class="ltr">1.13</bdi> (A11)</h2>
+<p class="lead">تحكّم أدق في وقت كل صلاة، وأصوات أذان أوسع، وتحسينات في سلوك الأذان والنظام.</p>
+<div class="a11g">
+<div class="big"><b>±<bdi class="ltr">180</bdi></b><span>دقيقة: مدى التعديل المستقل لكل صلاة، بخطوة دقيقة واحدة</span></div>
+<div class="cols">
+<div><h3>ضبط المواقيت</h3><ul><li>تعديل مستقل لكل صلاة.</li><li>أزرار زيادة ونقصان بمقدار دقيقة.</li><li>حفظ تلقائي.</li><li>إعادة ضبط صلاة واحدة أو جميع التعديلات.</li></ul></div>
+<div><h3>الأذان</h3><ul><li>تسجيلات جديدة من الدوحة، قطر.</li><li>خيارات صوتية موسّعة.</li><li>إيقاف الأذان من الإشعار.</li><li>إيقاف اختياري بقلب الهاتف على وجهه.</li></ul></div>
+<div><h3>النظام</h3><ul><li>تحسين إدارة التركيز الصوتي (Audio Focus).</li><li>تحسين الإشعارات وشاشة القفل.</li><li>تحسينات أمان وأذونات WebView.</li></ul></div>
+</div>
+</div>
+<p class="note">ظهور الأذان على شاشة القفل يعتمد على إصدار أندرويد وأذونات الجهاز ودعمه.</p>
+</div>
+</section>
 
-          <div class="meta">
-            <span>مجاني</span>
-            <span>لا يحتاج إلى حساب</span>
-            <span>Android 6.0 فأحدث</span>
-          </div>
-        </div>
+<section id="adhan">
+<div class="wrap">
+<h2>تجربة الأذان</h2>
+<p class="lead">أصوات مضمّنة في التطبيق تعمل دون إنترنت.</p>
+<div class="rows">
+<div class="row"><b>الكلاسيكي</b><span>الصوت التقليدي للتطبيق.</span></div>
+<div class="row"><b>Aqib</b><span>صوت مضمّن للاختيار.</span></div>
+<div class="row"><b>القصير</b><span>نسخة مختصرة من الأذان.</span></div>
+<div class="row"><b>أزمور</b><span>تسجيل من أزمور بالمغرب.</span></div>
+<div class="row"><b>مكة</b><span>تسجيل مرخّص باسم مكة، وليس بثاً رسمياً من داخل المسجد الحرام.</span></div>
+<div class="row"><b>الدوحة، قطر</b><span>تسجيل لكل صلاة، ويُستخدم الفجر للعصر والعشاء.</span><div class="chips"><i>الفجر</i><i>الظهر</i><i>المغرب</i></div></div>
+</div>
+</div>
+</section>
 
-        <div class="phone-stage" aria-label="معاينة تصميم التطبيق">
-          <div class="phone">
-            <div class="screen">
-              <div class="screen-top"><span>نور الإيمان</span><span>☼ يوم مبارك</span></div>
-              <h3>السلام عليكم،<br>أهلًا بك</h3>
-              <div class="welcome">اجعل من يومك مساحةً للذكر والسكينة</div>
-              <div class="prayer">
-                <small>رفيقك إلى الطاعة في كل يوم</small>
-                <strong>مواقيت الصلاة</strong>
-                <span style="font-size:10px;color:#d9e4dc">الصلاة صلة وطمأنينة</span>
-              </div>
-              <div class="times">
-                <span>الفجر<br><b>—</b></span>
-                <span>الظهر<br><b>—</b></span>
-                <span>العصر<br><b>—</b></span>
-                <span>المغرب<br><b>—</b></span>
-                <span>العشاء<br><b>—</b></span>
-                <span>الشروق<br><b>—</b></span>
-              </div>
-              <div class="tiles">
-                <span>🧭 القبلة</span>
-                <span>📖 المصحف</span>
-                <span>☀ الأذكار</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+<section class="alt" id="quran">
+<div class="wrap">
+<h2>القرآن والتفسير</h2>
+<p class="lead">مصحف للقراءة والاستماع، وتفسير مضمّن في التطبيق.</p>
+<div class="two">
+<div class="card"><h3>مصحف المدينة</h3><ul><li><bdi class="ltr">604</bdi> صفحات وتصفح للسور والآيات.</li><li>اختيار القارئ، والتكرار، وسرعة التلاوة.</li></ul></div>
+<div class="card"><h3>ثلاثة مصادر للتفسير</h3><ul><li>تفسير السعدي.</li><li>التفسير المختصر.</li><li>السراج في غريب القرآن.</li></ul></div>
+</div>
+</div>
+</section>
 
-      <section id="features">
-        <div class="stitle">
-          <div class="eyebrow">كل ما تحتاجه في رفيق واحد</div>
-          <h2>عبادتك أقرب… بخطوات بسيطة</h2>
-          <p>مميزات عملية صُممت لترافق يومك، مع خيارات تخصيص تجعل التجربة أقرب إلى احتياجك.</p>
-        </div>
+<section id="adhkar">
+<div class="wrap">
+<h2>الأذكار والتسبيح</h2>
+<p class="lead">ورد يومي بسيط يرافقك في الصباح والمساء وبينهما.</p>
+<div class="two">
+<div class="card"><h3>أذكار وعدّاد</h3><ul><li>أذكار الصباح والمساء مع عدّاد للتقدم.</li><li>مسبحة إلكترونية وتنبيه عند <bdi class="ltr">33</bdi> تسبيحة.</li></ul></div>
+<div class="card"><h3>ذكر صوتي دوري</h3><ul><li>التسبيح والتحميد والتكبير.</li><li>الصلاة على رسول الله ﷺ.</li><li>فترات التشغيل ووقته ومستوى الصوت بحسب اختيارك.</li></ul></div>
+</div>
+</div>
+</section>
 
-        <div class="features">
-          <article class="feature">
-            <div class="ico">🕌</div>
-            <h3>مواقيت الصلاة</h3>
-            <p>حساب مواقيت الصلوات والشروق، مع العد التنازلي للصلاة القادمة، واختيار المدينة أو تحديد الموقع وطرق حساب متعددة.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">🔔</div>
-            <h3>الأذان والتنبيهات</h3>
-            <p>أصوات أذان متعددة محفوظة داخل التطبيق، وتذكير قبل الصلاة، وتحكم في الإشعارات وإعدادات الأذان.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">🧭</div>
-            <h3>اتجاه القبلة</h3>
-            <p>حساب اتجاه القبلة والمسافة إلى الكعبة، مع بوصلة الهاتف وخيار عرض الاتجاه بالكاميرا بعد منح الإذن.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">📖</div>
-            <h3>المصحف المرتل</h3>
-            <p>مصحف المدينة بترقيم 604 صفحات، وتصفح السور والآيات، واختيار القارئ، والتكرار وسرعة التلاوة والتنقل بين الصفحات.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">📚</div>
-            <h3>التفسير ومعاني الكلمات</h3>
-            <p>تفسير السعدي والتفسير المختصر والسراج في غريب القرآن؛ محتوى التفسير المدمج يعمل دون اتصال.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">☀️</div>
-            <h3>أذكار الصباح والمساء</h3>
-            <p>أذكار منظمة مع عدّاد للتقدم، ومصادر موضحة داخل التطبيق لتيسير المحافظة على الورد اليومي.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">📿</div>
-            <h3>المسبحة الإلكترونية</h3>
-            <p>عدّاد تسبيح بسيط مع إعادة الضبط، وإشعار عند إكمال 33 تسبيحة.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">🎧</div>
-            <h3>الذكر الدوري</h3>
-            <p>تشغيل أذكار صوتية على فترات تختارها، مع تحديد وقت التشغيل ومستوى الصوت وتجربة الصوت.</p>
-          </article>
-          <article class="feature">
-            <div class="ico">🌙</div>
-            <h3>تجربة قابلة للتخصيص</h3>
-            <p>الوضع الليلي، واختيار المدينة وطريقة الحساب، وإعدادات التلاوة والأذان والتنبيهات، وحفظ تفضيلاتك على جهازك.</p>
-          </article>
-        </div>
-      </section>
+<section class="alt" id="experience">
+<div class="wrap">
+<h2>ما يعمل دون إنترنت</h2>
+<p class="lead">لا يعمل التطبيق كله دون اتصال؛ هذا ما هو محلي وما يحتاج شبكة.</p>
+<div class="two">
+<div class="card off-no"><h3>محلي على جهازك</h3><ul><li>أصوات الأذان المضمّنة.</li><li>الأذكار الصوتية المضمّنة.</li><li>بيانات التفسير.</li><li>إعداداتك المحفوظة على الجهاز.</li></ul></div>
+<div class="card off-net"><h3>قد يحتاج إلى إنترنت</h3><ul><li>بث التلاوات من خوادم خارجية.</li><li>تنزيل السور؛ وبعد تنزيلها يمكن الاستماع دون اتصال.</li></ul></div>
+</div>
+</div>
+</section>
 
-      <section class="highlight" id="experience">
-        <div class="wrap hgrid">
-          <div>
-            <div class="eyebrow" style="color:#9a7b43">مصمم ليكون قريباً منك</div>
-            <h2>بساطة في الاستخدام، وطمأنينة في التفاصيل</h2>
-            <p>واجهة عربية واضحة تجمع الأدوات الأساسية دون ازدحام، وتساعدك على متابعة عبادتك في البيت والعمل والسفر.</p>
-            <div class="checks">
-              <div><span class="check">✓</span><span>لا يتطلب إنشاء حساب أو تسجيل الدخول.</span></div>
-              <div><span class="check">✓</span><span>حساب مواقيت الصلاة واتجاه القبلة على الجهاز دون إنترنت.</span></div>
-              <div><span class="check">✓</span><span>التفسير والأذكار والتسجيلات المضمّنة متاحة محلياً.</span></div>
-              <div><span class="check">✓</span><span>يمكن تنزيل السور والتلاوات للاستماع والقراءة دون اتصال بعد تنزيلها.</span></div>
-              <div><span class="check">✓</span><span>إعداداتك وموقعك والتنزيلات تحفظ على جهازك.</span></div>
-            </div>
-          </div>
-          <div class="verse">
-            <div class="eyebrow">رفيق يومك</div>
-            <b>﴿ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ ﴾</b>
-            <p>اجعل للقرآن والذكر والصلاة مساحة ثابتة في يومك، واستعن بالأدوات التي تقرّبك من الطاعة.</p>
-          </div>
-        </div>
-      </section>
+<section id="download">
+<div class="wrap">
+<h2>حمّل نور الإيمان</h2>
+<p class="lead">ملف APK مباشر من GitHub. التطبيق غير منشور على متجر Google Play.</p>
+<div class="dl">
+<div class="id">
+<svg viewBox="0 0 108 108" aria-hidden="true"><path fill="#0f3b31" d="M0 0h108v108H0z"/><path fill="#CAA766" d="M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35"/><path fill="#F7F5EF" d="M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z"/></svg>
+<div><h3>نور الإيمان — Android</h3><p>الإصدار <bdi class="ltr">1.13</bdi> · يتطلب Android <bdi class="ltr">6.0</bdi> أو أحدث</p></div>
+</div>
+<div class="go">
+<a class="btn btn-em" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">تحميل APK</a>
+<a class="t" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">جميع الإصدارات</a>
+</div>
+</div>
+</div>
+</section>
 
-      <section class="waqf" id="waqf">
-        <div class="orn">۞</div>
-        <div class="eyebrow">عملٌ يُرجى ثوابه وأثره</div>
-        <h2>صدقة جارية بإذن الله</h2>
-        <p>هذا التطبيق وقفٌ لروح المرحومة، نسأل الله أن يتغمدها بواسع رحمته، وأن يجعل ما فيه من قرآن وذكر ونفع في ميزان حسناتها، وأن يكتب الأجر لكل من انتفع به وأسهم في نشر الخير.</p>
-        <div class="name">المرحومة عزيزة القنديل علي</div>
-        <p style="margin-top:12px">نرجو الدعاء لها بالرحمة والمغفرة.</p>
-      </section>
+<section class="alt" id="tech">
+<div class="wrap">
+<h2>المعلومات التقنية</h2>
+<dl class="spec">
+<div><dt>المنصة</dt><dd>Android</dd></div>
+<div><dt>Minimum SDK</dt><dd class="ltr">23</dd></div>
+<div><dt>Target SDK</dt><dd class="ltr">36</dd></div>
+<div><dt>Version Code</dt><dd class="ltr">15</dd></div>
+<div><dt>الإصدار</dt><dd class="ltr">1.13</dd></div>
+<div><dt>Package</dt><dd class="ltr">app.nooraliman</dd></div>
+</dl>
+</div>
+</section>
 
-      <section class="download" id="download">
-        <div class="stitle">
-          <div class="eyebrow">ابدأ رحلتك</div>
-          <h2>اجعل نور الإيمان رفيق يومك</h2>
-          <p>حمّل نسخة أندرويد وثبّتها على جهازك مجاناً.</p>
-        </div>
+<section id="licenses">
+<div class="wrap">
+<h2>تراخيص الصوتيات</h2>
+<p class="lead">مصادر التسجيلات الصوتية وتراخيصها موثّقة في ملف مستقل في المستودع. ليست كل الصوتيات في الملكية العامة، وبعضها يتطلب نسبة الفضل لأصحابه.</p>
+<a class="btn btn-em sm" href="https://github.com/asimalimikial-rgb/Noor-aliman/blob/main/AUDIO-LICENSES.md">عرض AUDIO-LICENSES.md</a>
+</div>
+</section>
 
-        <div class="panel">
-          <div>
-            <h3>نور الإيمان — Android</h3>
-            <p>الإصدار 1.13 · Android 6.0 فأحدث · مجاني</p>
-            <div class="note">ملف APK · رابط الإصدار المباشر على GitHub</div>
-          </div>
-          <div>
-            <a class="btn gold" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">⬇ تحميل ملف APK</a>
-            <a class="release-link" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">كل الإصدارات</a>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+<section class="waqf" id="waqf">
+<div class="wrap">
+<h2>صدقة جارية</h2>
+<p>هذا العمل صدقة جارية عن روح المرحومة، نسأل الله أن يتغمدها بواسع رحمته وأن يجعله في ميزان حسناتها.</p>
+<div class="nm">عزيزة القنديل علي</div>
+<p>نرجو لها الدعاء بالرحمة والمغفرة.</p>
+</div>
+</section>
+</main>
 
-  <footer>
-    <div class="wrap foot">
-      <div>
-        <b>نور الإيمان</b>
-        <p>Created by Asim Ali Mikial · الإصدار 1.13</p>
-        <p>لا يدّعي التطبيق ملكية النصوص القرآنية أو تسجيلات التلاوة.</p>
-      </div>
-      <div class="links">
-        <a href="https://github.com/asimalimikial-rgb/Noor-aliman">المصدر على GitHub</a>
-        <a href="#features">المميزات</a>
-        <a href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.13/oor-aliman.v1.13-release.apk">تحميل التطبيق</a>
-      </div>
-    </div>
-  </footer>
+<footer>
+<div class="wrap ft">
+<div>
+<b>نور الإيمان · Noor Al-Iman</b>
+<p>Created by Asim Ali Mikial</p>
+<p>لا يدّعي التطبيق ملكية النصوص القرآنية أو تسجيلات التلاوة.</p>
+</div>
+<div class="fl">
+<a href="https://github.com/asimalimikial-rgb/Noor-aliman">GitHub</a>
+<a href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">الإصدارات</a>
+<a href="https://github.com/asimalimikial-rgb/Noor-aliman/blob/main/AUDIO-LICENSES.md">تراخيص الصوتيات</a>
+<a href="App/src/main/assets/noor-aliman.html">واجهة الويب</a>
+</div>
+</div>
+</footer>
 </body>
 </html>
