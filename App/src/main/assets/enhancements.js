@@ -750,7 +750,87 @@
     @media(min-width:651px){.adhan-stop-bar{bottom:20px}}
     @media(max-width:650px){.prayer-adjustment{grid-template-columns:1fr auto;gap:7px}.prayer-adjustment-name{grid-column:1}.prayer-adjustment-times{grid-column:1;grid-row:2}.prayer-adjustment-controls{grid-column:2;grid-row:1/3}.prayer-adjustment-controls button{min-width:35px}.prayer-adjustment-controls .adjustment-reset{min-width:37px}}
   `;
-  document.head.append(prayerEnhancementStyle);
+  
+document.head.append(prayerEnhancementStyle);
+
+  // Group existing controls into a responsive settings hub without replacing
+  // their IDs, values, handlers, or local persistence.
+  if (settingsList && !settingsList.dataset.organized) {
+    settingsList.dataset.organized = 'true';
+    settingsList.classList.add('settings-hub');
+    const groups = [
+      {title:'الموقع ومواقيت الصلاة', icon:'⌖', ids:['settingCity','sMethod','sAsr']},
+      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','fullScreenAccessButton']},
+      {title:'الأذكار والتسبيح', icon:'☀', ids:['tsOn','tsEvery','tsType','tsFrom','tsTo','tsVol']},
+      {title:'المصحف والقبلة', icon:'۞', ids:['sCont','quranAudioToggle','compassToggle']},
+      {title:'المظهر واللغة', icon:'◐', ids:['darkToggle','sLang']}
+    ];
+    const rowFor = id => [...settingsList.children].find(node =>
+      node.classList?.contains('setting') && node.querySelector('#' + id));
+    for (const group of groups) {
+      const card = document.createElement('section');
+      card.className = 'settings-group';
+      const heading = document.createElement('h2');
+      heading.className = 'settings-group-title';
+      const mark = document.createElement('span');
+      mark.className = 'settings-group-icon';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = group.icon;
+      const title = document.createElement('span');
+      title.textContent = group.title;
+      heading.append(mark, title);
+      card.append(heading);
+      for (const id of group.ids) {
+        const row = rowFor(id);
+        if (row) card.append(row);
+      }
+      if (card.querySelector('.setting')) settingsList.append(card);
+    }
+    const adjustmentCard = document.createElement('section');
+    adjustmentCard.className = 'settings-group settings-group--wide';
+    const adjustmentHeading = document.createElement('h2');
+    adjustmentHeading.className = 'settings-group-title';
+    adjustmentHeading.innerHTML = '<span class="settings-group-icon" aria-hidden="true">◷</span><span>تخصيص مواقيت الصلاة</span>';
+    adjustmentCard.append(adjustmentHeading);
+    if (prayerEnhancements) adjustmentCard.append(prayerEnhancements);
+    if (adjustmentCard.children.length > 1) settingsList.append(adjustmentCard);
+    for (const node of [...settingsList.children]) {
+      if (node.classList?.contains('setting')) {
+        const fallback = document.createElement('section');
+        fallback.className = 'settings-group';
+        const heading = document.createElement('h2');
+        heading.className = 'settings-group-title';
+        heading.textContent = 'إعدادات إضافية';
+        fallback.append(heading, node);
+        settingsList.append(fallback);
+      }
+    }
+  }
+
+const settingsHubStyle = document.createElement('style');
+settingsHubStyle.textContent = `
+  .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
+  .settings-group{min-width:0;padding:14px 17px;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow)}
+  .settings-group--wide{grid-column:1/-1}
+  .settings-group-title{display:flex;align-items:center;gap:10px;margin:0 0 7px;padding:0 0 11px;border-bottom:1px solid var(--line);color:var(--ink);font:700 17px Amiri,serif}
+  .settings-group-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:#f3eee1;color:#8b7040;font:20px system-ui,sans-serif}
+  .dark .settings-group-icon{background:#26372f;color:#e0c37e}
+  .settings-group .setting{gap:12px;padding:13px 0}
+  .settings-group .setting>div:first-child{min-width:0}
+  .settings-group .setting strong{font-size:15px}
+  .settings-group .setting small{display:block;max-width:480px;line-height:1.6}
+  .settings-group .setting .select{max-width:52%;min-width:110px}
+  .settings-group .prayer-enhancements{border:0;margin:0;padding:0}
+  .settings-group .prayer-enhancements>.setting-head{margin:0 -17px;padding:12px 17px}
+  .settings-group .adjustment-heading{padding-inline:0}
+  .settings-group .prayer-adjustment-list{padding-inline:0}
+  .settings-group .adjustment-actions{padding-inline:0}
+  .settings-group .audio-rights-note{margin-inline:0}
+  @media(max-width:760px){.settings-list.settings-hub{grid-template-columns:1fr;gap:11px}.settings-group--wide{grid-column:auto}}
+  @media(max-width:650px){.settings-group{padding:12px 14px;border-radius:15px}.settings-group .setting{padding:12px 0}.settings-group .setting strong{font-size:14px}.settings-group .setting small{font-size:10px}.settings-group .setting .select{min-width:100px;max-width:55%}}
+`;
+document.head.append(settingsHubStyle);
+
 
   const notificationToggle = $('adhanNotificationToggle');
   const faceDownToggle = $('stopAdhanFaceDownToggle');
