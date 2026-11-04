@@ -10,6 +10,13 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Rotate the screen; confirm WebView state and current page are retained.
 - [ ] Use Android Back from Settings/About/Quran; confirm page history behaves correctly.
 
+## Settings navigation and presentation
+- [ ] Open Settings from the persistent top-bar gear shortcut on both small and large screens.
+- [ ] Confirm Settings opens inside the app page flow, not as a separate dialog/window.
+- [ ] Verify all settings remain present in their grouped cards: location/calculation, adhan/alerts, adhkar/tasbeeh, Quran/Qibla, appearance/language, and prayer adjustments.
+- [ ] Change each representative control, leave Settings, return, and confirm values persist and existing behavior still works.
+- [ ] Verify the shortcut has an accessible label, visible focus state, and adequate touch target; confirm removing Settings from the crowded mobile bottom bar does not hide access.
+
 ## Prayer times and adjustments
 - [ ] Compare displayed prayer times with a trusted local timetable for several dates and locations.
 - [ ] Test every calculation method and both Standard/Hanafi Asr settings.
