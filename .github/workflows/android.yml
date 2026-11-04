@@ -2,7 +2,7 @@ name: Build Noor Al Iman v1.15 Signed Release APK
 
 on:
   push:
-    branches: [a11-audio-upload, a12-fullscreen-adhan-controls, a13-doha-manual-audio]
+    branches: [main, a11-audio-upload, a12-fullscreen-adhan-controls, a13-doha-manual-audio]
   workflow_dispatch: {}
 
 permissions:
