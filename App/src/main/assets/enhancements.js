@@ -681,7 +681,18 @@
   });
   languageObserver.observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
   applyLanguage();
-  setTimeout(() => { memorial.hidden = false; memorial.setAttribute('aria-hidden', 'false'); $('memorialClose')?.focus(); }, 500);
+  // Keep the memorial permanently visible in the footer, but avoid interrupting
+  // the user with the same dedication dialog on every app launch.
+  let memorialAlreadyShown = false;
+  try { memorialAlreadyShown = localStorage.getItem('noorAlImanMemorialDialogSeen') === '1'; } catch (_) {}
+  if (!memorialAlreadyShown) {
+    setTimeout(() => {
+      memorial.hidden = false;
+      memorial.setAttribute('aria-hidden', 'false');
+      $('memorialClose')?.focus();
+      try { localStorage.setItem('noorAlImanMemorialDialogSeen', '1'); } catch (_) {}
+    }, 500);
+  }
 
   const prayerAdjustmentRows = [
     ['fajr', 'الفجر'], ['sunrise', 'الشروق'], ['dhuhr', 'الظهر'],
