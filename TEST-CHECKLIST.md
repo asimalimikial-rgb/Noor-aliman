@@ -13,7 +13,7 @@ This checklist describes the current five-recording source state and the v1.16 r
 ## Prayer times and adjustments
 - [ ] Compare displayed prayer times with a trusted local timetable for several dates and locations.
 - [ ] Test every calculation method and both Standard/Hanafi Asr settings.
-- [ ] Test locations at high latitudes and document the supported adjustment behavior.
+- [ ] Test locations at high latitudes: when a solar altitude is unreachable, confirm the UI shows no calculated time and Android does not schedule a fabricated noon/midnight alarm; document the limitation and any supported adjustment behavior.
 - [ ] Change each prayer offset by +1 and -1 minute; verify display and native alarms use the same adjusted time.
 - [ ] Reset one prayer and all prayer offsets; verify both UI and scheduled alarms update.
 - [ ] Verify Ramadan/Isha boundary dates against the selected calculation method and a trusted calendar.
