@@ -1,4 +1,4 @@
-name: Build Noor Al Iman 1.16.1 test candidate APK
+name: Build and Release Noor Al Iman Android APK
 
 on:
   push:
@@ -74,3 +74,41 @@ jobs:
       - name: Remove temporary signing keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/noor-aliman-release.jks"
+
+  publish-v1-16-1:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.16.1 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-aliman-v1.16.1-test-candidate-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.16.1 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.16.1
+          name: Noor Al-Iman v1.16.1
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.16.1 من نور الإيمان.
+
+            - صفحة إعدادات مستقلة بأقسام منظمة وإعدادات فرعية قابلة للفتح والإغلاق.
+            - حفظ اختيارات المستخدم واستعادتها عند إعادة فتح التطبيق.
+            - تذكير قبل الصلاة بعشر دقائق بصوت إشعار Android عادي، دون تشغيل الأذان الكامل.
+            - أذان الدوحة افتراضي عند التثبيت الجديد، مع احترام اختيار المستخدم لاحقاً.
+            - تحسين وضوح عدّاد التسبيح في الوضع الليلي.
+            - تحسين الواجهة مع الحفاظ على الهوية الخضراء والذهبية.
+            - تحسينات لدورة حياة WebView والتعامل مع إعادة فتح التطبيق.
+
+            تم بناء APK والتحقق من توقيعه آلياً عبر GitHub Actions. يظل الاختبار على الأجهزة الفعلية ضرورياً للتحقق من جميع السلوكيات.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
