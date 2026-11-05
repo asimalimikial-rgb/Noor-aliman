@@ -2,7 +2,7 @@ name: Build and Release Noor Al Iman Android APK
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul]
   workflow_dispatch: {}
 
 permissions:
@@ -64,7 +64,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-aliman-v1.16.1-test-candidate-signed-apk
+          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
