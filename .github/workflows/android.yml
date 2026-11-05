@@ -1,3 +1,4 @@
+# v1.17 candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 on:
