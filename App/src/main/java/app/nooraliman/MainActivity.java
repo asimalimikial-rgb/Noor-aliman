@@ -322,9 +322,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (alertsEnabled() && hasExactAlarmPermission()) {
+        if (alertsEnabled()) {
+            // Prayer scheduler selects exact or inexact delivery based on existing system access.
             PrayerAlarmScheduler.schedule(this);
-            DhikrAlarmScheduler.schedule(this);
+            if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
         }
         if (webView != null) {
             webView.post(() -> webView.evaluateJavascript(
