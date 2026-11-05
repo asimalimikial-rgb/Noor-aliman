@@ -133,7 +133,7 @@
     'Created by Asim Ali Mikial. لا يدّعي التطبيق ملكية النصوص القرآنية أو تسجيلات التلاوة.': 'Created by Asim Ali Mikial. The app does not claim ownership of Quran text or recitations.',
     'إعدادات الأذان ومواقيت الصلاة': 'Adhan and prayer time settings',
     'التحكم في إشعار الأذان': 'Adhan notification controls',
-    'إظهار إشعار الأذان': 'Show adhan notification',
+    'إظهار أدوات التحكم في الإشعار': 'Show notification controls',
     'هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.': 'This does not stop adhan audio. Android may show a required generic notification while playback is active.',
     'الضبط اليدوي لمواقيت الصلاة': 'Manual prayer time adjustments',
     'التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.': 'Minute offsets are added to the original calculation and saved automatically.',
@@ -681,7 +681,18 @@
   });
   languageObserver.observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
   applyLanguage();
-  setTimeout(() => { memorial.hidden = false; memorial.setAttribute('aria-hidden', 'false'); $('memorialClose')?.focus(); }, 500);
+  // Keep the memorial permanently visible in the footer, but avoid interrupting
+  // the user with the same dedication dialog on every app launch.
+  let memorialAlreadyShown = false;
+  try { memorialAlreadyShown = localStorage.getItem('noorAlImanMemorialDialogSeen') === '1'; } catch (_) {}
+  if (!memorialAlreadyShown) {
+    setTimeout(() => {
+      memorial.hidden = false;
+      memorial.setAttribute('aria-hidden', 'false');
+      $('memorialClose')?.focus();
+      try { localStorage.setItem('noorAlImanMemorialDialogSeen', '1'); } catch (_) {}
+    }, 500);
+  }
 
   const prayerAdjustmentRows = [
     ['fajr', 'الفجر'], ['sunrise', 'الشروق'], ['dhuhr', 'الظهر'],
@@ -705,9 +716,10 @@
   prayerEnhancements.className = 'prayer-enhancements';
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
-    <div class="setting"><div><strong>إظهار إشعار الأذان</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار إشعار الأذان"></div>
+    <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
     <div class="setting"><div><strong>إيقاف الأذان عند قلب الهاتف</strong><small>اقلب الهاتف على وجهه أثناء تشغيل الأذان لإيقاف الصوت تلقائيًا.</small></div><input class="toggle" id="stopAdhanFaceDownToggle" type="checkbox" aria-label="إيقاف الأذان عند قلب الهاتف"></div>
     <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
+    <div class="setting"><div><strong>إيقاف الأذان عند إطفاء الشاشة</strong><small>يوقف الأذان عند ضغط زر التشغيل أو عند انطفاء الشاشة تلقائيًا أثناء التشغيل.</small></div><input class="toggle" id="stopAdhanScreenOffToggle" type="checkbox" aria-label="إيقاف الأذان عند إطفاء الشاشة"></div>
     <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
     <div class="adjustment-heading"><strong>الضبط اليدوي لمواقيت الصلاة</strong><small>التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.</small></div>
     <div class="prayer-adjustment-list" id="prayerAdjustmentList" aria-live="polite"></div>
@@ -739,19 +751,148 @@
     @media(min-width:651px){.adhan-stop-bar{bottom:20px}}
     @media(max-width:650px){.prayer-adjustment{grid-template-columns:1fr auto;gap:7px}.prayer-adjustment-name{grid-column:1}.prayer-adjustment-times{grid-column:1;grid-row:2}.prayer-adjustment-controls{grid-column:2;grid-row:1/3}.prayer-adjustment-controls button{min-width:35px}.prayer-adjustment-controls .adjustment-reset{min-width:37px}}
   `;
-  document.head.append(prayerEnhancementStyle);
+  
+document.head.append(prayerEnhancementStyle);
+
+  // Present settings as a dedicated page with six expandable categories.
+  if (settingsList && !settingsList.dataset.organized) {
+    settingsList.dataset.organized = 'true';
+    settingsList.classList.add('settings-hub');
+    const groups = [
+      {title:'الموقع ومواقيت الصلاة', icon:'⌖', ids:['settingCity','sMethod','sAsr']},
+      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','stopAdhanScreenOffToggle','fullScreenAccessButton']},
+      {title:'الأذكار والتسبيح', icon:'☀', ids:['tsOn','tsEvery','tsType','tsFrom','tsTo','tsVol']},
+      {title:'المصحف والقبلة', icon:'۞', ids:['sCont','quranAudioToggle','compassToggle']},
+      {title:'المظهر واللغة', icon:'◐', ids:['darkToggle','sLang']}
+    ];
+    const rowFor = id => [...settingsList.children].find(node =>
+      node.classList?.contains('setting') && node.querySelector('#' + id));
+    let accordionIndex = 0;
+    const makeAccordion = (title, icon, wide = false) => {
+      const details = document.createElement('details');
+      const stateKey = 'settingsAccordion' + (++accordionIndex);
+      details.open = store.get(stateKey, false) === true;
+      details.addEventListener('toggle', () => store.set(stateKey, details.open));
+      details.className = 'settings-group settings-accordion' + (wide ? ' settings-accordion--wide' : '');
+      const summary = document.createElement('summary');
+      summary.className = 'settings-group-title settings-accordion-summary';
+      const mark = document.createElement('span');
+      mark.className = 'settings-group-icon';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = icon;
+      const label = document.createElement('span');
+      label.textContent = title;
+      summary.append(mark, label);
+      const panel = document.createElement('div');
+      panel.className = 'settings-accordion-panel';
+      details.append(summary, panel);
+      return {details, panel};
+    };
+    for (const group of groups) {
+      const {details, panel} = makeAccordion(group.title, group.icon);
+      for (const id of group.ids) {
+        const row = rowFor(id);
+        if (row) panel.append(row);
+      }
+      if (panel.querySelector('.setting')) settingsList.append(details);
+    }
+    const {details: adjustmentCard, panel: adjustmentPanel} = makeAccordion('تخصيص مواقيت الصلاة', '◷', true);
+    if (prayerEnhancements) adjustmentPanel.append(prayerEnhancements);
+    if (adjustmentPanel.children.length) settingsList.append(adjustmentCard);
+    for (const node of [...settingsList.children]) {
+      if (node.classList?.contains('setting')) {
+        const {details, panel} = makeAccordion('إعدادات إضافية', '⚙');
+        panel.append(node);
+        settingsList.append(details);
+      }
+    }
+  }
+
+const settingsHubStyle = document.createElement('style');
+settingsHubStyle.textContent = `
+  .hero{background:radial-gradient(circle at 14% 18%,#d2b16a2b 0 2%,transparent 28%),radial-gradient(circle at 88% 90%,#9bc1a51a 0 3%,transparent 34%),linear-gradient(115deg,#143c32,#1f5848)}
+  .card{background:linear-gradient(145deg,var(--paper),#ffffff00 72%),var(--paper);border-color:color-mix(in srgb,var(--line) 82%,var(--gold) 18%)}
+  .prayer{position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s}
+  .prayer:after{content:'۞';position:absolute;left:-4px;bottom:-13px;color:#caa76616;font:38px Amiri,serif;pointer-events:none}
+  .prayer.next{background:linear-gradient(145deg,#f8f0dd,#e8f0e9);border-color:#caa766;box-shadow:0 7px 18px #b4934a18}
+  .prayer:hover{transform:translateY(-2px);border-color:#caa76688}
+  .mini-icon{background:linear-gradient(145deg,#f8f0dc,#e7eee8);box-shadow:inset 0 0 0 1px #caa76622}
+  .daily-verse{background:linear-gradient(135deg,var(--paper),#f4efdf66)}
+  .tasbeeh{background:linear-gradient(145deg,var(--paper),#edf3ee)}
+  .bead{background:radial-gradient(circle at 30% 24%,#6b9b7c,#245543 52%,#102c26 100%);border:1px solid #caa76688}
+  .dark .card{background:linear-gradient(145deg,#23372f,#1c2e28 78%);border-color:#405448}
+  .dark .prayer.next{background:linear-gradient(145deg,#3b3a2d,#263c32);border-color:#b99a5c;box-shadow:0 7px 18px #0003}
+  .dark .daily-verse{background:linear-gradient(135deg,#24382f,#1d3029)}
+  .dark .tasbeeh{background:linear-gradient(145deg,#263c32,#1b3029)}
+
+  .settings-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--green);font:600 12px "DM Sans",Amiri,sans-serif;box-shadow:0 3px 12px #17352e0a;transition:background .2s,border-color .2s}
+  .settings-shortcut span{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#f3eee1;color:#8b7040;font-size:17px}
+  .settings-shortcut:hover,.settings-shortcut.active{border-color:#caa766;background:#f8f4e9}
+  .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
+  @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
+  .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
+
+  .dark .counter{color:#f1d58f;text-shadow:0 2px 18px #e6c87924}
+  .dark .tasbeeh{background:#1b3029;border-color:#40584b}
+  .dark .counter-label{color:#f0e8d5}
+  .settings-page-heading{align-items:center;gap:14px}
+  .settings-close{display:inline-flex;align-items:center;gap:10px;min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:13px;background:var(--paper);color:var(--ink);font-size:13px;font-weight:700}
+  .settings-close span{display:grid;place-items:center;width:23px;height:23px;border-radius:8px;background:#f3eee1;color:#8b7040;font-size:20px;line-height:1}
+  .dark .settings-close{background:#20332c;border-color:#40584b;color:#f0eadc}
+  .dark .settings-close span{background:#34473d;color:#e6c77f}
+  .settings-list.settings-hub{gap:13px}
+  .settings-accordion{overflow:hidden;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
+  .settings-accordion[open]{border-color:#caa76699;box-shadow:0 12px 32px #17352e12}
+  .settings-accordion-summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:76px;padding:13px 16px;cursor:pointer;color:var(--ink);font:700 17px Amiri,serif}
+  .settings-accordion-summary::-webkit-details-marker{display:none}
+  .settings-accordion-summary:after{content:'⌄';margin-inline-start:auto;color:#9b8352;font:22px system-ui;transition:transform .2s}
+  .settings-accordion[open]>.settings-accordion-summary:after{transform:rotate(180deg)}
+  .settings-accordion-summary .settings-group-icon{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#f7f0df,#e8eee7);color:#806b40;font-size:21px}
+  .settings-accordion-panel{padding:0 16px 12px;border-top:1px solid var(--line)}
+  .settings-accordion--wide{grid-column:1/-1}
+  .dark .settings-accordion{background:#1d3029;border-color:#405448}
+  .dark .settings-accordion-summary{color:#f0eadc}
+  .dark .settings-accordion-summary .settings-group-icon{background:linear-gradient(145deg,#34473b,#283b33);color:#e5c77e}
+  .dark .settings-accordion-panel{border-color:#405448}
+  @media(max-width:760px){.settings-accordion--wide{grid-column:auto}}
+  @media(max-width:650px){.settings-page-heading{align-items:flex-start}.settings-close{min-height:38px;padding:0 10px;font-size:11px}.settings-accordion-summary{min-height:68px;padding:11px 13px;font-size:16px}.settings-accordion-panel{padding:0 13px 10px}}
+
+  .settings-group{min-width:0}
+  .settings-group--wide{grid-column:1/-1}
+  .settings-group-title{display:flex;align-items:center;gap:10px;color:var(--ink);font:700 17px Amiri,serif}
+  .settings-group-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:#f3eee1;color:#8b7040;font:20px system-ui,sans-serif}
+  .dark .settings-group-icon{background:#26372f;color:#e0c37e}
+  .settings-group .setting{gap:12px;padding:13px 0}
+  .settings-group .setting>div:first-child{min-width:0}
+  .settings-group .setting strong{font-size:15px}
+  .settings-group .setting small{display:block;max-width:480px;line-height:1.6}
+  .settings-group .setting .select{max-width:52%;min-width:110px}
+  .settings-group .prayer-enhancements{border:0;margin:0;padding:0}
+  .settings-group .prayer-enhancements>.setting-head{margin:0 -17px;padding:12px 17px}
+  .settings-group .adjustment-heading{padding-inline:0}
+  .settings-group .prayer-adjustment-list{padding-inline:0}
+  .settings-group .adjustment-actions{padding-inline:0}
+  .settings-group .audio-rights-note{margin-inline:0}
+  @media(max-width:760px){.settings-list.settings-hub{grid-template-columns:1fr;gap:11px}.settings-group--wide{grid-column:auto}}
+  @media(max-width:650px){.settings-group{padding:12px 14px;border-radius:15px}.settings-group .setting{padding:12px 0}.settings-group .setting strong{font-size:14px}.settings-group .setting small{font-size:10px}.settings-group .setting .select{min-width:100px;max-width:55%}}
+`;
+document.head.append(settingsHubStyle);
+
 
   const notificationToggle = $('adhanNotificationToggle');
   const faceDownToggle = $('stopAdhanFaceDownToggle');
   const volumeKeysToggle = $('stopAdhanVolumeKeysToggle');
+  const screenOffToggle = $('stopAdhanScreenOffToggle');
   const fullScreenAccessButton = $('fullScreenAccessButton');
   const fullScreenAccessStatus = $('fullScreenAccessStatus');
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
   const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
   const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
+  const stopAdhanScreenOff = store.get('stopAdhanScreenOff', false) === true;
   if (notificationToggle) notificationToggle.checked = showAdhanNotification;
   if (faceDownToggle) faceDownToggle.checked = stopAdhanFaceDown;
   if (volumeKeysToggle) volumeKeysToggle.checked = stopAdhanVolumeKeys;
+  if (screenOffToggle) screenOffToggle.checked = stopAdhanScreenOff;
   const adhanEnableRow = $('sNotify')?.closest('.setting');
   if (adhanEnableRow) {
     const title = adhanEnableRow.querySelector('strong');
@@ -777,6 +918,9 @@
     }
     if (window.NativeAlarms?.configureVolumeKeyStop) {
       NativeAlarms.configureVolumeKeyStop(volumeKeysToggle?.checked === true);
+    }
+    if (window.NativeAlarms?.configureScreenOffStop) {
+      NativeAlarms.configureScreenOffStop(screenOffToggle?.checked === true);
     }
   }
   function persistPrayerAdjustments() {
@@ -842,6 +986,10 @@
     store.set('stopAdhanVolumeKeys', volumeKeysToggle.checked);
     syncNativePlaybackOptions();
   });
+  screenOffToggle?.addEventListener('change', () => {
+    store.set('stopAdhanScreenOff', screenOffToggle.checked);
+    syncNativePlaybackOptions();
+  });
   fullScreenAccessButton?.addEventListener('click', () => {
     NativeAlarms?.requestFullScreenIntentAccess?.();
     setTimeout(syncFullScreenAccessStatus, 900);
@@ -870,6 +1018,28 @@
   const refreshAdhanStopBar = () => {
     adhanStopBar.hidden = !(window.NativeAlarms?.isAdhanPlaying?.());
   };
-  setInterval(refreshAdhanStopBar, 700);
-  document.addEventListener('visibilitychange', refreshAdhanStopBar);
+  let adhanBarTimer = 0;
+  const stopAdhanBarPolling = () => { if (adhanBarTimer) clearTimeout(adhanBarTimer); adhanBarTimer = 0; };
+  const pollAdhanBar = () => {
+    stopAdhanBarPolling();
+    if (document.visibilityState !== 'visible') return;
+    refreshAdhanStopBar();
+    adhanBarTimer = setTimeout(pollAdhanBar, 700);
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pollAdhanBar();
+    else stopAdhanBarPolling();
+  });
+  pollAdhanBar();
+})();
+
+
+// Record runtime failures for diagnostics; never clear cache, storage, or user preferences.
+(() => {
+  const report = (kind, message) => {
+    try { window.NativeAlarms?.reportWebError?.(String(kind).slice(0,40), String(message).slice(0,700)); }
+    catch (_) { /* Diagnostics must never interrupt the app. */ }
+  };
+  window.addEventListener('error', event => report('javascript-error', event.message || 'unknown error'));
+  window.addEventListener('unhandledrejection', event => report('unhandled-rejection', event.reason?.message || event.reason || 'unknown rejection'));
 })();

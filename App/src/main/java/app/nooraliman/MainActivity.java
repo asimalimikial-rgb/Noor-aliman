@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.graphics.Insets;
+import android.util.Log;
 import android.view.WindowInsets;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
@@ -17,6 +18,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.GeolocationPermissions;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -102,6 +104,15 @@ public class MainActivity extends Activity {
         });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
+            public boolean onConsoleMessage(ConsoleMessage message) {
+                if (message != null && message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                    Log.e("NoorAlImanWeb", message.message() + " (" + message.sourceId()
+                            + ":" + message.lineNumber() + ")");
+                }
+                return true;
+            }
+
+            @Override
             public void onGeolocationPermissionsShowPrompt(
                     String origin, GeolocationPermissions.Callback callback) {
                 Uri requestedOrigin = Uri.parse(origin == null ? "" : origin);
@@ -156,8 +167,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        boolean restored = state != null && webView.restoreState(state) != null;
-        if (!restored) loadApplicationAssets();
+        loadApplicationAssets();
     }
 
     private static boolean isTrustedAppOrigin(Uri uri) {
@@ -356,6 +366,36 @@ public class MainActivity extends Activity {
 
     public final class AlarmBridge {
         @JavascriptInterface
+        public void reportWebError(String kind, String message) {
+            if (kind == null || message == null) return;
+            Log.e("NoorAlImanWeb", kind.substring(0, Math.min(kind.length(), 40))
+                    + ": " + message.substring(0, Math.min(message.length(), 700)));
+        }
+
+        @JavascriptInterface
+        public String loadWebSettings() {
+            try {
+                return new org.json.JSONObject(getSharedPreferences(
+                        "noor_web_settings", MODE_PRIVATE).getAll()).toString();
+            } catch (Exception ignored) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public void saveWebSetting(String key, String jsonValue) {
+            if (key == null || !key.matches("[A-Za-z0-9_-]{1,80}")
+                    || jsonValue == null || jsonValue.length() > 16_384) return;
+            try {
+                new org.json.JSONTokener(jsonValue).nextValue();
+                getSharedPreferences("noor_web_settings", MODE_PRIVATE)
+                        .edit().putString(key, jsonValue).apply();
+            } catch (Exception ignored) {
+                // Ignore malformed preference values; never clear existing settings.
+            }
+        }
+
+        @JavascriptInterface
         public void configure(double lat, double lng, String timezone, String method,
                               String asr, boolean adhan, boolean reminder, String adhanSound) {
             if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
@@ -444,6 +484,17 @@ public class MainActivity extends Activity {
         public void configureVolumeKeyStop(boolean enabled) {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putBoolean("stopAdhanVolumeKeys", enabled).apply();
+        }
+
+        @JavascriptInterface
+        public void configureScreenOffStop(boolean enabled) {
+            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("stopAdhanScreenOff", enabled).apply();
+            if (AdhanPlaybackService.isPlaybackActive()) {
+                runOnUiThread(() -> startService(new Intent(MainActivity.this,
+                        AdhanPlaybackService.class)
+                        .setAction(AdhanPlaybackService.ACTION_UPDATE_NOTIFICATION)));
+            }
         }
 
         @JavascriptInterface

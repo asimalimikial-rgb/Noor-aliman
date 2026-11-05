@@ -1,44 +1,71 @@
-# Noor Al-Iman v1.14 — Device Test Checklist
+# Noor Al-Iman v1.16 candidate — device test checklist
 
-Run these checks after building and installing the APK. A source-only review does not replace device testing.
+This checklist describes the current five-recording source state and the v1.16 reliability changes. Source checks and CI builds do not replace testing on a physical Android device.
 
-## Install and lifecycle
-- [ ] Install v1.13 over the installed v1.12 build using the same signing key; confirm Android accepts the upgrade and saved preferences remain.
+## Install, upgrade, and lifecycle
+- [ ] Install the candidate over v1.15 using the same signing key; confirm Android accepts the upgrade and saved preferences remain.
 - [ ] Reboot the phone; confirm enabled prayer alarms and timed dhikr are scheduled again.
 - [ ] Change device time and timezone; confirm schedules refresh.
-- [ ] Update/reinstall the package with data preserved; confirm `MY_PACKAGE_REPLACED` rebuilds schedules.
-- [ ] Rotate the screen and trigger a configuration change; confirm the current WebView page/state is retained.
-- [ ] Use Android Back from Settings/About/Quran; confirm page history returns to the previous page, then Home, then exits.
+- [ ] Update/reinstall with app data preserved; confirm package-replaced handling rebuilds schedules.
+- [ ] Rotate the screen; confirm WebView state and current page are retained.
+- [ ] Use Android Back from Settings/About/Quran; confirm page history behaves correctly.
 
-## Prayer alerts and sound
+## Settings navigation and presentation
+- [ ] Open Settings from the persistent top-bar gear shortcut on both small and large screens.
+- [ ] Confirm Settings opens inside the app page flow, not as a separate dialog/window.
+- [ ] Verify all settings remain present in their grouped cards: location/calculation, adhan/alerts, adhkar/tasbeeh, Quran/Qibla, appearance/language, and prayer adjustments.
+- [ ] Change each representative control, leave Settings, return, and confirm values persist and existing behavior still works.
+- [ ] Verify the shortcut has an accessible label, visible focus state, and adequate touch target; confirm removing Settings from the crowded mobile bottom bar does not hide access.
+
+## Prayer times and adjustments
+- [ ] Compare displayed prayer times with a trusted local timetable for several dates and locations.
+- [ ] Test every calculation method and both Standard/Hanafi Asr settings.
+- [ ] Test locations at high latitudes: when a solar altitude is unreachable, confirm the UI shows no calculated time and Android does not schedule a fabricated noon/midnight alarm; document the limitation and any supported adjustment behavior.
+- [ ] Change each prayer offset by +1 and -1 minute; verify display and native alarms use the same adjusted time.
+- [ ] Reset one prayer and all prayer offsets; verify both UI and scheduled alarms update.
+- [ ] Verify Ramadan/Isha boundary dates against the selected calculation method and a trusted calendar.
+
+## Prayer alerts and adhan
 - [ ] With exact-alarm permission granted, verify each enabled prayer alarm at a test time.
 - [ ] Revoke exact-alarm access; confirm the app does not crash and schedules resume after access is restored.
 - [ ] Verify notification permission granted and denied paths.
 - [ ] With full-screen-intent access granted, lock the phone and verify the adhan alert activity appears.
 - [ ] With full-screen-intent access denied, verify the ordinary notification still appears and opens the app.
-- [ ] Verify the stop action works from the notification, the in-app stop bar, and the full-screen alert.
-- [ ] Verify the adhan alert hides status/navigation bars and fills the display on supported Android versions.
-- [ ] Enable volume-key stop; verify either volume key stops playback while the fullscreen adhan alert is visible.
-- [ ] Disable volume-key stop; verify volume keys retain their normal volume behavior.
-- [ ] Confirm volume-key stop is not promised when Android suppresses the fullscreen activity.
-- [ ] Enable face-down stop; place the phone screen-down during playback and verify it stops after the debounce interval.
-- [ ] Disable face-down stop; verify the accelerometer no longer stops playback.
+- [ ] Stop playback from the notification, in-app stop bar, and full-screen alert.
+- [ ] Let the full adhan finish naturally; verify the full-screen alert closes and the display no longer stays awake.
+- [ ] Verify the stop action closes the alert even when playback is stopped from the notification.
+- [ ] Verify status/navigation bar hiding and portrait/landscape layout on supported Android versions.
+- [ ] Enable/disable volume-key stop and verify expected behavior.
+- [ ] Enable/disable face-down stop and verify sensor behavior.
+- [ ] Enable/disable screen-off stop; while adhan is playing, turn the screen off and confirm playback stops only when the option is enabled.
 - [ ] Start another audio source, then trigger adhan/dhikr; verify audio focus is acquired and released correctly.
-- [ ] Test each bundled adhan asset and the original salawat recording.
-- [ ] Select Doha adhan and verify Fajr uses the Doha Fajr recording, Dhuhr uses the Doha Dhuhr recording, and Maghrib uses the Doha Maghrib recording.
-- [ ] Verify Asr and Isha use the Doha Fajr recording as fallback; do not label this as prayer-specific audio.
-- [ ] Verify the Doha preview plays the Fajr recording.
-- [ ] Confirm the About screen links to the Doha Internet Archive collection and clearly states that ownership/redistribution rights have not been independently verified.
 
-## Fullscreen adhan alert
-- [ ] Verify the mosque illustration, deep-green/gold/cream palette, prayer name, and large stop button in portrait and landscape.
-- [ ] Verify tapping stop ends playback and closes the alert.
-- [ ] Verify the alert does not keep the display awake after playback ends.
+## Bundled audio and licensing
+- [ ] Test each bundled sound: classic, Aqib, short, Azemmour, Makkah, and Doha.
+- [ ] Select Doha and verify each prayer uses its matching Fajr, Dhuhr, Asr, Maghrib, or Isha recording.
+- [ ] Verify the preview ends on the actual media completion event, not a fixed estimated duration.
+- [ ] Confirm audio assets decode without errors.
+- [ ] Review attribution and redistribution rights for every third-party recording before public redistribution. Doha collection uploader is Unknown; its Public Domain Mark notice is not independent proof of ownership or rights.
 
-## WebView, permissions, and build
-- [ ] Test location and camera permissions from the trusted app page; confirm untrusted origins are denied.
-- [ ] Verify links open only HTTP/HTTPS URLs externally; file/content/javascript/unknown schemes are blocked.
-- [ ] Verify Qibla, Quran downloads/streaming, tafsir, and offline content still work under the Content Security Policy.
-- [ ] Test layout and navigation on Android 6, Android 13, Android 14, Android 15, and Android 16 where available.
-- [ ] Build both Debug and minified Release variants; inspect R8 output and confirm all WebView bridge methods still work.
-- [ ] Confirm the release APK is signed with the same private keystore as v1.12. Never commit the keystore or passwords.
+## Offline, Quran, and data
+- [ ] First-launch offline behavior: verify the Quran page explains that its page data may need an initial network fetch.
+- [ ] Download a surah while online, then test playback offline.
+- [ ] Verify local tafsir, adhkar, prayer sounds, and saved settings offline.
+- [ ] Test download cancellation, retry, low-storage behavior, and app backgrounding.
+- [ ] Test persistence and recovery of bookmarks, downloads, and settings after process death.
+
+## WebView, accessibility, and performance
+- [ ] Verify local app fonts and Quran page layout with network disabled; compare Arabic glyph shaping and line breaks.
+- [ ] Test camera/location permission flows and confirm untrusted origins are denied.
+- [ ] Verify only HTTP/HTTPS external links open; unsupported schemes remain blocked.
+- [ ] Test navigation and touch targets on small-screen devices and larger font/display scaling.
+- [ ] Confirm timers, compass polling, and animation loops pause when their feature/page is inactive.
+- [ ] Test Android 6, 13, 14, 15, and 16 where available.
+
+## Build and release integrity
+- [ ] Confirm GitHub Actions runs unit-test task and signed release build on the candidate branch.
+- [ ] Confirm APK signature verifies and matches the established release signing identity.
+- [ ] Verify APK checksum against the uploaded checksum file.
+- [ ] Confirm README and website download links resolve to the exact release asset filename.
+- [ ] Do not publish a new GitHub Release or merge to main until review and physical-device checks are complete.
+- [ ] Never commit keystore files, signing passwords, or tokens.

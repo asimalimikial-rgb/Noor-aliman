@@ -5,7 +5,10 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -25,9 +28,12 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     static final String ACTION_STOP = "app.nooraliman.action.STOP_ADHAN";
     static final String ACTION_STOP_PREVIEW = "app.nooraliman.action.STOP_PREVIEW";
     static final String ACTION_UPDATE_NOTIFICATION = "app.nooraliman.action.UPDATE_ADHAN_NOTIFICATION";
+    static final String ACTION_FINISHED = "app.nooraliman.action.ADHAN_FINISHED";
     private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final int NOTIFICATION_ID = 71;
     private static volatile boolean playing;
+    private static volatile boolean playbackActive;
+    static boolean isPlaybackActive() { return playbackActive; }
     private MediaPlayer player;
     private boolean preview;
     private String prayerName = "";
@@ -40,6 +46,12 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private Sensor accelerometer;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean faceDownStopPending;
+    private boolean screenOffReceiverRegistered;
+    private final BroadcastReceiver screenOffReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) stopSelf();
+        }
+    };
     private final Runnable stopIfStillFaceDown = () -> {
         faceDownStopPending = false;
         stopSelf();
@@ -80,11 +92,14 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             return START_NOT_STICKY;
         }
         if (intent != null && ACTION_UPDATE_NOTIFICATION.equals(intent.getAction())) {
-            if (player != null) startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
-            else stopSelf(startId);
+            if (player != null) {
+                configureScreenOffStopReceiver();
+                startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
+            } else stopSelf(startId);
             return START_NOT_STICKY;
         }
 
+        playbackActive = true;
         createChannel();
         prayerName = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
         currentPrayerKey = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
@@ -94,8 +109,26 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if (preview && (currentPrayerKey == null || currentPrayerKey.isEmpty())) currentPrayerKey = "fajr";
         if (!isAllowedSound(currentSound)) currentSound = "classic";
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
+        configureScreenOffStopReceiver();
         playAdhan(currentSound, currentPrayerKey);
         return START_NOT_STICKY;
+    }
+
+    private void configureScreenOffStopReceiver() {
+        boolean enabled = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+                .getBoolean("stopAdhanScreenOff", false);
+        if (enabled && !screenOffReceiverRegistered) {
+            IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+            if (Build.VERSION.SDK_INT >= 33) {
+                registerReceiver(screenOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(screenOffReceiver, filter);
+            }
+            screenOffReceiverRegistered = true;
+        } else if (!enabled && screenOffReceiverRegistered) {
+            try { unregisterReceiver(screenOffReceiver); } catch (IllegalArgumentException ignored) { }
+            screenOffReceiverRegistered = false;
+        }
     }
 
     private void createChannel() {
@@ -235,8 +268,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         try {
             return getAssets().openFd(selectedAsset);
         } catch (Exception missingSelectedRecording) {
-            // Until the manually supplied Doha Asr/Isha files are added, keep playback working
-            // by falling back to the existing Doha Fajr recording.
+            // Keep playback compatible with older or incomplete packages that do not
+            // contain the selected prayer-specific Doha recording.
             String fajrFallback = "Adhan_Doha_Qatar_01_Fajr_Adhan.mp3";
             if (!"doha".equals(sound) || fajrFallback.equals(selectedAsset)) {
                 throw missingSelectedRecording;
@@ -285,7 +318,13 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
 
     @Override
     public void onDestroy() {
+        if (screenOffReceiverRegistered) {
+            try { unregisterReceiver(screenOffReceiver); } catch (IllegalArgumentException ignored) { }
+            screenOffReceiverRegistered = false;
+        }
         releasePlayer();
+        playbackActive = false;
+        sendBroadcast(new Intent(ACTION_FINISHED).setPackage(getPackageName()));
         if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE);
         else stopForeground(true);
         super.onDestroy();

@@ -23,8 +23,7 @@ the existing offline playback paths.
   does not identify a specific muezzin; no claim is made that this is a verified
   official live broadcast from inside Masjid al-Haram.
 
-The Quseir / Red Sea recording (`adhan-quseir.mp3`) was removed from the app
-assets and selectable sound list in this A11 working copy, as requested.
+The Quseir / Red Sea recording (`adhan-quseir.mp3`) remains in repository assets for compatibility, although it is not listed as a selectable sound in the current app. Do not remove it until legacy references and compatibility have been checked.
 
 
 ## Subhan Allah, Alhamdulillah, Allahu Akbar
@@ -59,16 +58,14 @@ assets and selectable sound list in this A11 working copy, as requested.
 
 ## Doha prayer-specific recordings
 
-The three recordings already present in `App/src/main/assets/`:
+All five prayer-specific recordings are present in `App/src/main/assets/`:
 - `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3` — Fajr.
 - `Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3` — Dhuhr.
-- `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3` — Maghrib.
-
-Two additional recordings are expected to be supplied manually by the app owner in the same assets folder:
 - `Adhan_Doha_Qatar_03_Asr_Adhan.mp3` — Asr.
+- `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3` — Maghrib.
 - `Adhan_Doha_Qatar_05_Isha_Adhan.mp3` — Isha.
 
-The Android playback service selects the matching file for each prayer. If either manual file is not yet present, playback temporarily falls back to the existing Doha Fajr recording; adding the correctly named file automatically enables the prayer-specific recording on the next build.
+The Android playback service selects the matching file for each prayer. All five files are included in the current source tree. The collection page displays a Public Domain Mark 1.0 notice, but the uploader is unknown and ownership/redistribution rights have not been independently verified. Treat the legal status as unresolved until verified.
 
 Source collection: https://archive.org/details/adhan.recordings.from.doha.qatar
 The collection page displays a Public Domain Mark 1.0 notice, but its uploader is listed as Unknown. This is source-page metadata only; ownership and redistribution rights have not been independently verified. Do not represent the recordings as conclusively public domain or rights-cleared.

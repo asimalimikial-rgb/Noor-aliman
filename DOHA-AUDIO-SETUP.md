@@ -1,38 +1,29 @@
-# Adding the missing Doha adhan recordings
+# Doha adhan recordings — current source state
 
-The app already includes the Doha Fajr, Dhuhr, and Maghrib recordings. The app owner supplies the Asr and Isha MP3 files manually.
-
-## Exact destination
-
-Copy both files into:
+All five prayer-specific Doha recordings are already present in:
 
 `App/src/main/assets/`
 
-This is the same folder that already contains `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3`.
-
-## Required filenames
-
 | Prayer | Exact filename |
-| --- | --- |
+|---|---|
+| Fajr | `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3` |
+| Dhuhr | `Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3` |
 | Asr | `Adhan_Doha_Qatar_03_Asr_Adhan.mp3` |
+| Maghrib | `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3` |
 | Isha | `Adhan_Doha_Qatar_05_Isha_Adhan.mp3` |
 
-Keep the spelling, capitalization, underscores, and `.mp3` extension exactly as shown. If your source files have different names, rename copies of them to these names before adding them.
+The playback service maps each prayer to its matching file. No manual addition is currently required for these five recordings.
 
-## Important
+## Rights and attribution
 
-- Put the files directly in `App/src/main/assets/`, not in `res/raw/`, a nested folder, or the repository root.
-- Do not remove or replace the existing Fajr, Dhuhr, or Maghrib files.
-- Until the new files are present in a build, Asr and Isha temporarily use the existing Doha Fajr recording as a fallback.
-- After adding the files, build a new APK. Adding files to the source folder does not update an APK that was already built.
-- The source collection's rights metadata has not been independently verified; check that you have permission to use and redistribute the files in the app.
+The source collection is:
+https://archive.org/details/adhan.recordings.from.doha.qatar
 
-## Quick folder check
+The collection page displays a Public Domain Mark 1.0 notice, but the uploader is listed as Unknown. This metadata does not independently establish ownership or redistribution rights. Keep the attribution and rights caveat in `AUDIO-LICENSES.md`; do not claim that the recordings are conclusively rights-cleared without verification.
 
-The folder should contain all five files:
+## Validation after a new build
 
-- `Adhan_Doha_Qatar_01_Fajr_Adhan.mp3`
-- `Adhan_Doha_Qatar_02_Dhuhr_Adhan.mp3`
-- `Adhan_Doha_Qatar_03_Asr_Adhan.mp3`
-- `Adhan_Doha_Qatar_04_Maghrib_Adhan.mp3`
-- `Adhan_Doha_Qatar_05_Isha_Adhan.mp3`
+- Confirm the five files are packaged in the APK.
+- Play each prayer-specific recording from the sound preview.
+- Confirm that each prayer uses its own file, not the Fajr fallback.
+- Confirm the APK audio remains decodable.
