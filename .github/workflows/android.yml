@@ -1,8 +1,8 @@
-name: Build Noor Al Iman candidate APK
+name: Build Noor Al Iman 1.16.1 test candidate APK
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback]
   workflow_dispatch: {}
 
 permissions:
@@ -10,12 +10,25 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !contains(github.event.head_commit.message || '', '[feedback-applied]') }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply feedback patch and commit source updates
+        if: ${{ !contains(github.event.head_commit.message || '', '[feedback-applied]') }}
+        run: |
+          set -euo pipefail
+          python scripts/apply-v1.16.1-feedback.py
+          rm scripts/apply-v1.16.1-feedback.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply v1.16.1 test feedback [feedback-applied]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -64,7 +77,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-aliman-v1.16-candidate-signed-apk
+          name: noor-aliman-v1.16.1-test-candidate-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
