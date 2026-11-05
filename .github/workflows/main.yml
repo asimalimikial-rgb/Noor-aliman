@@ -1,1 +1,14 @@
+name: Manual Repository Maintenance
 
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain workflow ownership
+        run: echo "Android builds and releases are managed by android.yml; production website deployment is managed by pages.yml."
