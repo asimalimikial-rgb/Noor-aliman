@@ -1043,3 +1043,135 @@ document.head.append(settingsHubStyle);
   window.addEventListener('error', event => report('javascript-error', event.message || 'unknown error'));
   window.addEventListener('unhandledrejection', event => report('unhandled-rejection', event.reason?.message || event.reason || 'unknown rejection'));
 })();
+
+
+// v1.17 visual system: progressive, CSS-only refinement of the existing screens.
+// Keeps the current DOM, feature logic, audio assets, and persisted settings intact.
+(() => {
+  if (document.getElementById('noor-v117-visual-system')) return;
+  const style = document.createElement('style');
+  style.id = 'noor-v117-visual-system';
+  style.textContent = `
+    :root {
+      --noor-forest: #123c32;
+      --noor-forest-deep: #0b2d26;
+      --noor-gold: #b99555;
+      --noor-gold-soft: #f2e8d3;
+      --noor-paper: #fbfaf6;
+      --noor-surface: #ffffff;
+      --noor-ink: #20332c;
+      --noor-muted: #718078;
+      --noor-line: #e8e9e1;
+      --noor-radius-lg: 22px;
+      --noor-radius-md: 16px;
+      --noor-shadow: 0 12px 34px rgba(22, 48, 38, .075);
+      color-scheme: light;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--noor-paper);
+      color: var(--noor-ink);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button, input, select, textarea { font: inherit; }
+    button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
+    button {
+      transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+    }
+    button:active { transform: translateY(1px) scale(.985); }
+    :focus-visible {
+      outline: 3px solid rgba(185,149,85,.72) !important;
+      outline-offset: 3px !important;
+    }
+    .main { width: min(100% - 28px, 1080px); margin-inline: auto; }
+    .main > section, .main > .page, .main .page-section { min-width: 0; }
+    .card, .info-card, .quran-panel, .qibla-info, .settings-group {
+      border: 1px solid var(--noor-line);
+      border-radius: var(--noor-radius-lg);
+      box-shadow: var(--noor-shadow);
+    }
+    .info-card, .settings-group { background: var(--noor-surface); }
+    .settings-page-heading { gap: 14px; margin-bottom: 18px; }
+    .settings-list.settings-hub { align-items: start; gap: 14px; }
+    .settings-group {
+      padding: 17px 19px;
+      overflow: clip;
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .settings-group:focus-within { border-color: rgba(185,149,85,.65); }
+    .settings-group-title { letter-spacing: -.15px; }
+    .settings-group-icon {
+      width: 40px; height: 40px; border-radius: 13px;
+      background: linear-gradient(145deg, #f7f1e5, #eee5d2);
+      color: #806638;
+    }
+    .settings-group .setting { border-bottom: 1px solid rgba(115,130,120,.12); }
+    .settings-group .setting:last-child { border-bottom: 0; }
+    .settings-group .setting strong { line-height: 1.55; }
+    .settings-group .setting small { color: var(--noor-muted); }
+    .settings-group .select, .settings-group select {
+      border: 1px solid #dfe4dc;
+      border-radius: 12px;
+      min-height: 42px;
+      background-color: #fff;
+    }
+    .settings-close, .settings-group button, .adjustment-actions button {
+      border-radius: 12px;
+    }
+    .prayer-adjustment {
+      border: 1px solid var(--noor-line);
+      border-radius: 15px;
+      padding: 12px;
+      background: #fffefa;
+    }
+    .prayer-adjustment-controls button {
+      min-width: 38px; min-height: 38px;
+      border: 1px solid #e3e5dc;
+      background: #fff;
+    }
+    .adjustment-value { min-width: 84px; text-align: center; font-weight: 700; }
+    .adhan-stop-bar {
+      position: fixed; z-index: 1000; inset-inline: 14px; bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(520px, calc(100% - 28px)); margin-inline: auto;
+      padding: 10px; border: 1px solid rgba(255,255,255,.16);
+      border-radius: 18px; background: var(--noor-forest-deep);
+      box-shadow: 0 16px 44px rgba(0,0,0,.25);
+    }
+    .adhan-stop-bar button {
+      width: 100%; min-height: 48px; border: 0; border-radius: 12px;
+      background: #f5e8ce; color: #2e281c; font-weight: 800;
+    }
+    .dark {
+      --noor-paper: #101b17;
+      --noor-surface: #192720;
+      --noor-ink: #f0eee5;
+      --noor-muted: #b2beb5;
+      --noor-line: #34453b;
+      --noor-shadow: 0 12px 34px rgba(0,0,0,.16);
+      color-scheme: dark;
+    }
+    .dark body { background: var(--noor-paper); color: var(--noor-ink); }
+    .dark .settings-group, .dark .info-card, .dark .prayer-adjustment {
+      background: var(--noor-surface); border-color: var(--noor-line);
+    }
+    .dark .settings-group .setting { border-color: rgba(210,220,210,.1); }
+    .dark .settings-group .setting small { color: var(--noor-muted); }
+    .dark .settings-group .select, .dark .settings-group select,
+    .dark .prayer-adjustment-controls button {
+      background: #202f27; color: var(--noor-ink); border-color: #43574a;
+    }
+    @media (max-width: 650px) {
+      .main { width: min(100% - 20px, 1080px); }
+      .settings-group { padding: 14px; border-radius: 18px; }
+      .settings-list.settings-hub { gap: 10px; }
+      .prayer-adjustment { padding: 10px; }
+      .prayer-adjustment-controls { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  `;
+  document.head.append(style);
+})();
