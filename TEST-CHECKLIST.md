@@ -37,6 +37,7 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Verify status/navigation bar hiding and portrait/landscape layout on supported Android versions.
 - [ ] Enable/disable volume-key stop and verify expected behavior.
 - [ ] Enable/disable face-down stop and verify sensor behavior.
+- [ ] Enable/disable screen-off stop; while adhan is playing, turn the screen off and confirm playback stops only when the option is enabled.
 - [ ] Start another audio source, then trigger adhan/dhikr; verify audio focus is acquired and released correctly.
 
 ## Bundled audio and licensing
