@@ -518,6 +518,7 @@ public class MainActivity extends Activity {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putString("prayerAdjustments", safeOffsets)
                     .apply();
+            runOnUiThread(() -> syncAlarmSchedule());
         }
 
         @JavascriptInterface
