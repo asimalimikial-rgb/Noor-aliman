@@ -119,3 +119,40 @@ jobs:
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
+
+  publish-v1-17-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.17.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.17.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.17.0
+          name: Noor Al-Iman v1.17.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.17.0 من نور الإيمان.
+
+            - تحسين حساب مواقيت الصلاة ومنع جدولة أوقات غير صالحة.
+            - جدولة احتياطية للتنبيهات عند عدم توفر Exact Alarm، وإعادة الجدولة عند عودة التطبيق.
+            - تحديث بصري متجاوب لصفحة الإعدادات والبطاقات والوضع الليلي.
+            - تحسين الوصول إلى إعدادات التطبيق والتحكم في الأذان.
+            - إضافة اختبارات Regression لحساب زاوية العصر وتصنيف وضع الهاتف.
+            - لم تتغير ملفات الصوت أو أذونات Android.
+
+            نجح بناء APK الموقّع والتحقق من توقيعه آلياً. تظل تجربة الجهاز الفعلي مطلوبة للتحقق من سلوك الحساسات والإشعارات وشاشة القفل.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
