@@ -73,3 +73,17 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Confirm README and website download links resolve to the exact release asset filename.
 - [ ] Do not publish a new GitHub Release or merge to main until review and physical-device checks are complete.
 - [ ] Never commit keystore files, signing passwords, or tokens.
+
+## v1.17 visual-system regression checks
+- [ ] Verify the new responsive visual layer loads in the Android WebView after the existing enhancement script.
+- [ ] Check home, Quran, Qibla, adhkar, tasbeeh, About, and every Settings group on narrow and wide screens.
+- [ ] Check light and dark themes; confirm text, select controls, cards, and adjustment rows retain readable contrast.
+- [ ] Navigate all controls by keyboard/accessibility focus and verify visible focus indicators and touch targets.
+- [ ] Enable Android's reduced-motion preference where supported; confirm transitions do not interfere with navigation.
+- [ ] Confirm the persistent adhan stop bar remains reachable above Android system navigation insets.
+- [ ] Verify all prior saved settings, prayer adjustments, downloads, bookmarks, and audio selections survive upgrade from v1.16.1.
+
+## v1.17 automated checks
+- [ ] Run Node syntax validation on `App/src/main/assets/enhancements.js`.
+- [ ] Verify the public website starts with an HTML doctype and the Android Release APK builds and passes signature verification.
+- [ ] Note: no `src/test` or `src/androidTest` source sets currently exist; a successful Gradle test task alone does not demonstrate feature-level unit or device coverage.
