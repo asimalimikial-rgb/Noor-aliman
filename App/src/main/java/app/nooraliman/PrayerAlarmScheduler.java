@@ -194,8 +194,7 @@ final class PrayerAlarmScheduler {
         Sun sun = sunPosition(jd + 0.5);
         double noon = 12 + offset - lng / 15.0 - sun.eqt;
         double fajrAngle = method.equals("egypt") ? 19.5 : method.equals("umm") ? 18.5 : 18.0;
-        double asrAngle = -Math.atan(1.0 / ((asr.equals("hanafi") ? 2 : 1)
-                + Math.tan(Math.abs(lat - sun.dec) * R))) / R;
+        double asrAngle = asrAngle(lat, sun.dec, asr.equals("hanafi"));
         double maghrib = noon + hourAngle(0.833, sun.dec, lat);
         double[] hours = new double[5];
         hours[0] = noon - hourAngle(fajrAngle, sun.dec, lat);
@@ -219,6 +218,11 @@ final class PrayerAlarmScheduler {
             }
         }
         return times;
+    }
+
+    static double asrAngle(double latitude, double declination, boolean hanafi) {
+        return -Math.atan(1.0 / ((hanafi ? 2 : 1)
+                + Math.tan(Math.abs(latitude - declination) * R))) / R;
     }
 
     private static boolean isRamadan(Calendar date) {
