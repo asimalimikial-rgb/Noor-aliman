@@ -479,6 +479,11 @@ public class MainActivity extends Activity {
         public void configureFaceDownStop(boolean enabled) {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putBoolean("stopAdhanFaceDown", enabled).apply();
+            if (AdhanPlaybackService.isPlaybackActive()) {
+                runOnUiThread(() -> startService(new Intent(MainActivity.this,
+                        AdhanPlaybackService.class)
+                        .setAction(AdhanPlaybackService.ACTION_UPDATE_SENSOR_SETTINGS)));
+            }
         }
 
         @JavascriptInterface
