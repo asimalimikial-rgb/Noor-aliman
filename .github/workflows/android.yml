@@ -18,6 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate web assets
+        run: |
+          set -euo pipefail
+          node --check App/src/main/assets/enhancements.js
+          python3 -c "from pathlib import Path; p=Path('index.html').read_bytes(); assert p.lstrip().lower().startswith(b'<!doctype html>'), 'index.html must begin with an HTML doctype'"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
