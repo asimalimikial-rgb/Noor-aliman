@@ -719,6 +719,7 @@
     <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
     <div class="setting"><div><strong>إيقاف الأذان عند قلب الهاتف</strong><small>اقلب الهاتف على وجهه أثناء تشغيل الأذان لإيقاف الصوت تلقائيًا.</small></div><input class="toggle" id="stopAdhanFaceDownToggle" type="checkbox" aria-label="إيقاف الأذان عند قلب الهاتف"></div>
     <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
+    <div class="setting"><div><strong>إيقاف الأذان عند إطفاء الشاشة</strong><small>يوقف الأذان عند ضغط زر التشغيل أو عند انطفاء الشاشة تلقائيًا أثناء التشغيل.</small></div><input class="toggle" id="stopAdhanScreenOffToggle" type="checkbox" aria-label="إيقاف الأذان عند إطفاء الشاشة"></div>
     <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
     <div class="adjustment-heading"><strong>الضبط اليدوي لمواقيت الصلاة</strong><small>التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.</small></div>
     <div class="prayer-adjustment-list" id="prayerAdjustmentList" aria-live="polite"></div>
@@ -760,7 +761,7 @@ document.head.append(prayerEnhancementStyle);
     settingsList.classList.add('settings-hub');
     const groups = [
       {title:'الموقع ومواقيت الصلاة', icon:'⌖', ids:['settingCity','sMethod','sAsr']},
-      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','fullScreenAccessButton']},
+      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','stopAdhanScreenOffToggle','fullScreenAccessButton']},
       {title:'الأذكار والتسبيح', icon:'☀', ids:['tsOn','tsEvery','tsType','tsFrom','tsTo','tsVol']},
       {title:'المصحف والقبلة', icon:'۞', ids:['sCont','quranAudioToggle','compassToggle']},
       {title:'المظهر واللغة', icon:'◐', ids:['darkToggle','sLang']}
@@ -840,14 +841,17 @@ document.head.append(settingsHubStyle);
   const notificationToggle = $('adhanNotificationToggle');
   const faceDownToggle = $('stopAdhanFaceDownToggle');
   const volumeKeysToggle = $('stopAdhanVolumeKeysToggle');
+  const screenOffToggle = $('stopAdhanScreenOffToggle');
   const fullScreenAccessButton = $('fullScreenAccessButton');
   const fullScreenAccessStatus = $('fullScreenAccessStatus');
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
   const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
   const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
+  const stopAdhanScreenOff = store.get('stopAdhanScreenOff', false) === true;
   if (notificationToggle) notificationToggle.checked = showAdhanNotification;
   if (faceDownToggle) faceDownToggle.checked = stopAdhanFaceDown;
   if (volumeKeysToggle) volumeKeysToggle.checked = stopAdhanVolumeKeys;
+  if (screenOffToggle) screenOffToggle.checked = stopAdhanScreenOff;
   const adhanEnableRow = $('sNotify')?.closest('.setting');
   if (adhanEnableRow) {
     const title = adhanEnableRow.querySelector('strong');
@@ -873,6 +877,9 @@ document.head.append(settingsHubStyle);
     }
     if (window.NativeAlarms?.configureVolumeKeyStop) {
       NativeAlarms.configureVolumeKeyStop(volumeKeysToggle?.checked === true);
+    }
+    if (window.NativeAlarms?.configureScreenOffStop) {
+      NativeAlarms.configureScreenOffStop(screenOffToggle?.checked === true);
     }
   }
   function persistPrayerAdjustments() {
@@ -936,6 +943,10 @@ document.head.append(settingsHubStyle);
   });
   volumeKeysToggle?.addEventListener('change', () => {
     store.set('stopAdhanVolumeKeys', volumeKeysToggle.checked);
+    syncNativePlaybackOptions();
+  });
+  screenOffToggle?.addEventListener('change', () => {
+    store.set('stopAdhanScreenOff', screenOffToggle.checked);
     syncNativePlaybackOptions();
   });
   fullScreenAccessButton?.addEventListener('click', () => {
