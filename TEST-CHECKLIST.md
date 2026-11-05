@@ -27,7 +27,10 @@ This checklist describes the current five-recording source state and the v1.16 r
 
 ## Prayer alerts and adhan
 - [ ] With exact-alarm permission granted, verify each enabled prayer alarm at a test time.
-- [ ] Revoke exact-alarm access; confirm the app does not crash and schedules resume after access is restored.
+- [ ] On Android 12+, deny/revoke exact-alarm access while prayer alerts are enabled; confirm prayer alarms are still scheduled through the inexact fallback (allow for Android delivery delay).
+- [ ] Reopen/resume the app while exact-alarm access remains denied; confirm prayer fallback alarms are re-created rather than skipped.
+- [ ] Restore exact-alarm access; confirm the next schedule uses exact alarms again.
+- [ ] Verify the app does not request or change any permission as part of the fallback path.
 - [ ] Verify notification permission granted and denied paths.
 - [ ] With full-screen-intent access granted, lock the phone and verify the adhan alert activity appears.
 - [ ] With full-screen-intent access denied, verify the ordinary notification still appears and opens the app.
@@ -55,6 +58,7 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Test persistence and recovery of bookmarks, downloads, and settings after process death.
 
 ## WebView, accessibility, and performance
+- [ ] Verify the published website HTML begins with `<!doctype html>` as the first non-whitespace content and renders in standards mode.
 - [ ] Verify local app fonts and Quran page layout with network disabled; compare Arabic glyph shaping and line breaks.
 - [ ] Test camera/location permission flows and confirm untrusted origins are denied.
 - [ ] Verify only HTTP/HTTPS external links open; unsupported schemes remain blocked.
