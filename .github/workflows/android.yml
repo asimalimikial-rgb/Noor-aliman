@@ -2,7 +2,7 @@ name: Build and Release Noor Al Iman Android APK
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability]
   workflow_dispatch: {}
 
 permissions:
