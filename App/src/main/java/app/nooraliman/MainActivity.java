@@ -447,6 +447,17 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void configureScreenOffStop(boolean enabled) {
+            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("stopAdhanScreenOff", enabled).apply();
+            if (AdhanPlaybackService.isPlaybackActive()) {
+                runOnUiThread(() -> startService(new Intent(MainActivity.this,
+                        AdhanPlaybackService.class)
+                        .setAction(AdhanPlaybackService.ACTION_UPDATE_NOTIFICATION)));
+            }
+        }
+
+        @JavascriptInterface
         public void configurePrayerAdjustments(String offsets) {
             if (offsets == null || offsets.length() > 2048) return;
             String safeOffsets = "{}";
