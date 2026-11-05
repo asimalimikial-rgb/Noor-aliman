@@ -28,6 +28,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     static final String ACTION_STOP = "app.nooraliman.action.STOP_ADHAN";
     static final String ACTION_STOP_PREVIEW = "app.nooraliman.action.STOP_PREVIEW";
     static final String ACTION_UPDATE_NOTIFICATION = "app.nooraliman.action.UPDATE_ADHAN_NOTIFICATION";
+    static final String ACTION_UPDATE_SENSOR_SETTINGS = "app.nooraliman.action.UPDATE_SENSOR_SETTINGS";
     static final String ACTION_FINISHED = "app.nooraliman.action.ADHAN_FINISHED";
     private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final int NOTIFICATION_ID = 71;
@@ -43,7 +44,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private AudioFocusRequest focusRequest;
     private boolean hasAudioFocus;
     private SensorManager sensorManager;
-    private Sensor accelerometer;
+    private Sensor faceDownSensor;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean faceDownStopPending;
     private boolean screenOffReceiverRegistered;
@@ -76,8 +77,11 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         super.onCreate();
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = sensorManager == null ? null
-                : sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        faceDownSensor = sensorManager == null ? null
+                : sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        if (faceDownSensor == null && sensorManager != null) {
+            faceDownSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
     }
 
     @Override
@@ -89,6 +93,11 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if (intent != null && ACTION_STOP_PREVIEW.equals(intent.getAction())) {
             if (preview) stopSelf();
             else if (player == null) stopSelf(startId);
+            return START_NOT_STICKY;
+        }
+        if (intent != null && ACTION_UPDATE_SENSOR_SETTINGS.equals(intent.getAction())) {
+            if (player != null) startFaceDownSensorIfEnabled();
+            else stopSelf(startId);
             return START_NOT_STICKY;
         }
         if (intent != null && ACTION_UPDATE_NOTIFICATION.equals(intent.getAction())) {
@@ -233,21 +242,29 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private void startFaceDownSensorIfEnabled() {
+        if (sensorManager == null) return;
+        sensorManager.unregisterListener(this);
+        handler.removeCallbacks(stopIfStillFaceDown);
+        faceDownStopPending = false;
         boolean enabled = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
                 .getBoolean("stopAdhanFaceDown", false);
-        if (enabled && accelerometer != null && sensorManager != null) {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        if (enabled && faceDownSensor != null) {
+            sensorManager.registerListener(this, faceDownSensor, SensorManager.SENSOR_DELAY_GAME);
         }
+    }
+
+    static boolean isFaceDown(float x, float y, float z) {
+        double magnitude = Math.sqrt(x * x + y * y + z * z);
+        return magnitude >= 6.5 && magnitude <= 12.5 && z <= -6.0f;
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER || event.values.length < 3) return;
-        // A phone lying screen-down has gravity directed toward the back of the device.
-        if (event.values[2] < -7.5f) {
+        if (event.values.length < 3) return;
+        if (isFaceDown(event.values[0], event.values[1], event.values[2])) {
             if (!faceDownStopPending) {
                 faceDownStopPending = true;
-                handler.postDelayed(stopIfStillFaceDown, 650L);
+                handler.postDelayed(stopIfStillFaceDown, 800L);
             }
         } else {
             handler.removeCallbacks(stopIfStillFaceDown);

@@ -10,8 +10,8 @@ android {
         applicationId 'app.nooraliman'
         minSdk 23
         targetSdk 36
-        versionCode 19
-        versionName '1.16.1'
+        versionCode 20
+        versionName '1.17.0'
     }
 
     signingConfigs {
@@ -31,4 +31,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
 }

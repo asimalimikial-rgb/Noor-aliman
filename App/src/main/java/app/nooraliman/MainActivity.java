@@ -322,9 +322,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (alertsEnabled() && hasExactAlarmPermission()) {
+        if (alertsEnabled()) {
+            // Prayer scheduler selects exact or inexact delivery based on existing system access.
             PrayerAlarmScheduler.schedule(this);
-            DhikrAlarmScheduler.schedule(this);
+            if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
         }
         if (webView != null) {
             webView.post(() -> webView.evaluateJavascript(
@@ -478,6 +479,11 @@ public class MainActivity extends Activity {
         public void configureFaceDownStop(boolean enabled) {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putBoolean("stopAdhanFaceDown", enabled).apply();
+            if (AdhanPlaybackService.isPlaybackActive()) {
+                runOnUiThread(() -> startService(new Intent(MainActivity.this,
+                        AdhanPlaybackService.class)
+                        .setAction(AdhanPlaybackService.ACTION_UPDATE_SENSOR_SETTINGS)));
+            }
         }
 
         @JavascriptInterface
@@ -512,6 +518,7 @@ public class MainActivity extends Activity {
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putString("prayerAdjustments", safeOffsets)
                     .apply();
+            runOnUiThread(() -> syncAlarmSchedule());
         }
 
         @JavascriptInterface

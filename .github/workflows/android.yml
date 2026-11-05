@@ -1,8 +1,9 @@
+# v1.17 candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul]
   workflow_dispatch: {}
 
 permissions:
@@ -16,6 +17,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate web assets
+        run: |
+          set -euo pipefail
+          node --check App/src/main/assets/enhancements.js
+          python3 -c "from pathlib import Path; p=Path('index.html').read_bytes(); assert p.lstrip().lower().startswith(b'<!doctype html>'), 'index.html must begin with an HTML doctype'"
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -64,7 +71,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-aliman-v1.16.1-test-candidate-signed-apk
+          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -106,6 +113,43 @@ jobs:
             - تحسينات لدورة حياة WebView والتعامل مع إعادة فتح التطبيق.
 
             تم بناء APK والتحقق من توقيعه آلياً عبر GitHub Actions. يظل الاختبار على الأجهزة الفعلية ضرورياً للتحقق من جميع السلوكيات.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-17-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.17.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.17.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.17.0
+          name: Noor Al-Iman v1.17.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.17.0 من نور الإيمان.
+
+            - تحسين حساب مواقيت الصلاة ومنع جدولة أوقات غير صالحة.
+            - جدولة احتياطية للتنبيهات عند عدم توفر Exact Alarm، وإعادة الجدولة عند عودة التطبيق.
+            - تحديث بصري متجاوب لصفحة الإعدادات والبطاقات والوضع الليلي.
+            - تحسين الوصول إلى إعدادات التطبيق والتحكم في الأذان.
+            - إضافة اختبارات Regression لحساب زاوية العصر وتصنيف وضع الهاتف.
+            - لم تتغير ملفات الصوت أو أذونات Android.
+
+            نجح بناء APK الموقّع والتحقق من توقيعه آلياً. تظل تجربة الجهاز الفعلي مطلوبة للتحقق من سلوك الحساسات والإشعارات وشاشة القفل.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256

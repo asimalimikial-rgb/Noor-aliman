@@ -43,7 +43,7 @@ final class PrayerAlarmScheduler {
             return;
         }
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (Build.VERSION.SDK_INT >= 31 && !manager.canScheduleExactAlarms()) return;
+        boolean exactAlarmsAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
         cancelScheduled(context, manager, prefs);
 
         double lat = prefs.getFloat("latitude", 15.5007f);
@@ -74,11 +74,11 @@ final class PrayerAlarmScheduler {
                 String name = PRAYERS[i][1];
                 long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
                 if (prefs.getBoolean("adhan", false) && prayerAt > now + 3_000L) {
-                    scheduleOne(context, manager, ids, prayerAt, "adhan", key, name);
+                    scheduleOne(context, manager, ids, prayerAt, "adhan", key, name, exactAlarmsAllowed);
                 }
                 long reminderAt = prayerAt - 10 * MINUTE;
                 if (prefs.getBoolean("reminder", false) && reminderAt > now + 3_000L) {
-                    scheduleOne(context, manager, ids, reminderAt, "reminder", key, name);
+                    scheduleOne(context, manager, ids, reminderAt, "reminder", key, name, exactAlarmsAllowed);
                 }
             }
         }
@@ -122,7 +122,8 @@ final class PrayerAlarmScheduler {
     }
 
     private static void scheduleOne(Context context, AlarmManager manager, JSONArray ids,
-                                    long at, String type, String key, String name) {
+                                    long at, String type, String key, String name,
+                                    boolean exactAlarmsAllowed) {
         String uri = String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE)
@@ -133,10 +134,21 @@ final class PrayerAlarmScheduler {
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            if (exactAlarmsAllowed) {
+                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            } else {
+                // Keep prayer alerts functional without changing or requesting
+                // any permission; Android may deliver these inexact alarms late.
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            }
             ids.put(uri);
         } catch (SecurityException denied) {
-            pending.cancel();
+            try {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+                ids.put(uri);
+            } catch (SecurityException unavailable) {
+                pending.cancel();
+            }
         }
     }
 
@@ -182,8 +194,7 @@ final class PrayerAlarmScheduler {
         Sun sun = sunPosition(jd + 0.5);
         double noon = 12 + offset - lng / 15.0 - sun.eqt;
         double fajrAngle = method.equals("egypt") ? 19.5 : method.equals("umm") ? 18.5 : 18.0;
-        double asrAngle = -Math.atan(1.0 / ((asr.equals("hanafi") ? 2 : 1)
-                + Math.tan(Math.abs(lat - sun.dec)))) / R;
+        double asrAngle = asrAngle(lat, sun.dec, asr.equals("hanafi"));
         double maghrib = noon + hourAngle(0.833, sun.dec, lat);
         double[] hours = new double[5];
         hours[0] = noon - hourAngle(fajrAngle, sun.dec, lat);
@@ -207,6 +218,11 @@ final class PrayerAlarmScheduler {
             }
         }
         return times;
+    }
+
+    static double asrAngle(double latitude, double declination, boolean hanafi) {
+        return -Math.atan(1.0 / ((hanafi ? 2 : 1)
+                + Math.tan(Math.abs(latitude - declination) * R))) / R;
     }
 
     private static boolean isRamadan(Calendar date) {
