@@ -754,8 +754,7 @@
   
 document.head.append(prayerEnhancementStyle);
 
-  // Group existing controls into a responsive settings hub without replacing
-  // their IDs, values, handlers, or local persistence.
+  // Present settings as a dedicated page with six expandable categories.
   if (settingsList && !settingsList.dataset.organized) {
     settingsList.dataset.organized = 'true';
     settingsList.classList.add('settings-hub');
@@ -768,57 +767,99 @@ document.head.append(prayerEnhancementStyle);
     ];
     const rowFor = id => [...settingsList.children].find(node =>
       node.classList?.contains('setting') && node.querySelector('#' + id));
-    for (const group of groups) {
-      const card = document.createElement('section');
-      card.className = 'settings-group';
-      const heading = document.createElement('h2');
-      heading.className = 'settings-group-title';
+    let accordionIndex = 0;
+    const makeAccordion = (title, icon, wide = false) => {
+      const details = document.createElement('details');
+      const stateKey = 'settingsAccordion' + (++accordionIndex);
+      details.open = store.get(stateKey, false) === true;
+      details.addEventListener('toggle', () => store.set(stateKey, details.open));
+      details.className = 'settings-group settings-accordion' + (wide ? ' settings-accordion--wide' : '');
+      const summary = document.createElement('summary');
+      summary.className = 'settings-group-title settings-accordion-summary';
       const mark = document.createElement('span');
       mark.className = 'settings-group-icon';
       mark.setAttribute('aria-hidden', 'true');
-      mark.textContent = group.icon;
-      const title = document.createElement('span');
-      title.textContent = group.title;
-      heading.append(mark, title);
-      card.append(heading);
+      mark.textContent = icon;
+      const label = document.createElement('span');
+      label.textContent = title;
+      summary.append(mark, label);
+      const panel = document.createElement('div');
+      panel.className = 'settings-accordion-panel';
+      details.append(summary, panel);
+      return {details, panel};
+    };
+    for (const group of groups) {
+      const {details, panel} = makeAccordion(group.title, group.icon);
       for (const id of group.ids) {
         const row = rowFor(id);
-        if (row) card.append(row);
+        if (row) panel.append(row);
       }
-      if (card.querySelector('.setting')) settingsList.append(card);
+      if (panel.querySelector('.setting')) settingsList.append(details);
     }
-    const adjustmentCard = document.createElement('section');
-    adjustmentCard.className = 'settings-group settings-group--wide';
-    const adjustmentHeading = document.createElement('h2');
-    adjustmentHeading.className = 'settings-group-title';
-    adjustmentHeading.innerHTML = '<span class="settings-group-icon" aria-hidden="true">◷</span><span>تخصيص مواقيت الصلاة</span>';
-    adjustmentCard.append(adjustmentHeading);
-    if (prayerEnhancements) adjustmentCard.append(prayerEnhancements);
-    if (adjustmentCard.children.length > 1) settingsList.append(adjustmentCard);
+    const {details: adjustmentCard, panel: adjustmentPanel} = makeAccordion('تخصيص مواقيت الصلاة', '◷', true);
+    if (prayerEnhancements) adjustmentPanel.append(prayerEnhancements);
+    if (adjustmentPanel.children.length) settingsList.append(adjustmentCard);
     for (const node of [...settingsList.children]) {
       if (node.classList?.contains('setting')) {
-        const fallback = document.createElement('section');
-        fallback.className = 'settings-group';
-        const heading = document.createElement('h2');
-        heading.className = 'settings-group-title';
-        heading.textContent = 'إعدادات إضافية';
-        fallback.append(heading, node);
-        settingsList.append(fallback);
+        const {details, panel} = makeAccordion('إعدادات إضافية', '⚙');
+        panel.append(node);
+        settingsList.append(details);
       }
     }
   }
 
 const settingsHubStyle = document.createElement('style');
 settingsHubStyle.textContent = `
+  .hero{background:radial-gradient(circle at 14% 18%,#d2b16a2b 0 2%,transparent 28%),radial-gradient(circle at 88% 90%,#9bc1a51a 0 3%,transparent 34%),linear-gradient(115deg,#143c32,#1f5848)}
+  .card{background:linear-gradient(145deg,var(--paper),#ffffff00 72%),var(--paper);border-color:color-mix(in srgb,var(--line) 82%,var(--gold) 18%)}
+  .prayer{position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s}
+  .prayer:after{content:'۞';position:absolute;left:-4px;bottom:-13px;color:#caa76616;font:38px Amiri,serif;pointer-events:none}
+  .prayer.next{background:linear-gradient(145deg,#f8f0dd,#e8f0e9);border-color:#caa766;box-shadow:0 7px 18px #b4934a18}
+  .prayer:hover{transform:translateY(-2px);border-color:#caa76688}
+  .mini-icon{background:linear-gradient(145deg,#f8f0dc,#e7eee8);box-shadow:inset 0 0 0 1px #caa76622}
+  .daily-verse{background:linear-gradient(135deg,var(--paper),#f4efdf66)}
+  .tasbeeh{background:linear-gradient(145deg,var(--paper),#edf3ee)}
+  .bead{background:radial-gradient(circle at 30% 24%,#6b9b7c,#245543 52%,#102c26 100%);border:1px solid #caa76688}
+  .dark .card{background:linear-gradient(145deg,#23372f,#1c2e28 78%);border-color:#405448}
+  .dark .prayer.next{background:linear-gradient(145deg,#3b3a2d,#263c32);border-color:#b99a5c;box-shadow:0 7px 18px #0003}
+  .dark .daily-verse{background:linear-gradient(135deg,#24382f,#1d3029)}
+  .dark .tasbeeh{background:linear-gradient(145deg,#263c32,#1b3029)}
+
   .settings-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--green);font:600 12px "DM Sans",Amiri,sans-serif;box-shadow:0 3px 12px #17352e0a;transition:background .2s,border-color .2s}
   .settings-shortcut span{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#f3eee1;color:#8b7040;font-size:17px}
   .settings-shortcut:hover,.settings-shortcut.active{border-color:#caa766;background:#f8f4e9}
   .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
   @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
   .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
-  .settings-group{min-width:0;padding:14px 17px;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow)}
+
+  .dark .counter{color:#f1d58f;text-shadow:0 2px 18px #e6c87924}
+  .dark .tasbeeh{background:#1b3029;border-color:#40584b}
+  .dark .counter-label{color:#f0e8d5}
+  .settings-page-heading{align-items:center;gap:14px}
+  .settings-close{display:inline-flex;align-items:center;gap:10px;min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:13px;background:var(--paper);color:var(--ink);font-size:13px;font-weight:700}
+  .settings-close span{display:grid;place-items:center;width:23px;height:23px;border-radius:8px;background:#f3eee1;color:#8b7040;font-size:20px;line-height:1}
+  .dark .settings-close{background:#20332c;border-color:#40584b;color:#f0eadc}
+  .dark .settings-close span{background:#34473d;color:#e6c77f}
+  .settings-list.settings-hub{gap:13px}
+  .settings-accordion{overflow:hidden;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
+  .settings-accordion[open]{border-color:#caa76699;box-shadow:0 12px 32px #17352e12}
+  .settings-accordion-summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:76px;padding:13px 16px;cursor:pointer;color:var(--ink);font:700 17px Amiri,serif}
+  .settings-accordion-summary::-webkit-details-marker{display:none}
+  .settings-accordion-summary:after{content:'⌄';margin-inline-start:auto;color:#9b8352;font:22px system-ui;transition:transform .2s}
+  .settings-accordion[open]>.settings-accordion-summary:after{transform:rotate(180deg)}
+  .settings-accordion-summary .settings-group-icon{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#f7f0df,#e8eee7);color:#806b40;font-size:21px}
+  .settings-accordion-panel{padding:0 16px 12px;border-top:1px solid var(--line)}
+  .settings-accordion--wide{grid-column:1/-1}
+  .dark .settings-accordion{background:#1d3029;border-color:#405448}
+  .dark .settings-accordion-summary{color:#f0eadc}
+  .dark .settings-accordion-summary .settings-group-icon{background:linear-gradient(145deg,#34473b,#283b33);color:#e5c77e}
+  .dark .settings-accordion-panel{border-color:#405448}
+  @media(max-width:760px){.settings-accordion--wide{grid-column:auto}}
+  @media(max-width:650px){.settings-page-heading{align-items:flex-start}.settings-close{min-height:38px;padding:0 10px;font-size:11px}.settings-accordion-summary{min-height:68px;padding:11px 13px;font-size:16px}.settings-accordion-panel{padding:0 13px 10px}}
+
+  .settings-group{min-width:0}
   .settings-group--wide{grid-column:1/-1}
-  .settings-group-title{display:flex;align-items:center;gap:10px;margin:0 0 7px;padding:0 0 11px;border-bottom:1px solid var(--line);color:var(--ink);font:700 17px Amiri,serif}
+  .settings-group-title{display:flex;align-items:center;gap:10px;color:var(--ink);font:700 17px Amiri,serif}
   .settings-group-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:#f3eee1;color:#8b7040;font:20px system-ui,sans-serif}
   .dark .settings-group-icon{background:#26372f;color:#e0c37e}
   .settings-group .setting{gap:12px;padding:13px 0}
@@ -990,4 +1031,15 @@ document.head.append(settingsHubStyle);
     else stopAdhanBarPolling();
   });
   pollAdhanBar();
+})();
+
+
+// Record runtime failures for diagnostics; never clear cache, storage, or user preferences.
+(() => {
+  const report = (kind, message) => {
+    try { window.NativeAlarms?.reportWebError?.(String(kind).slice(0,40), String(message).slice(0,700)); }
+    catch (_) { /* Diagnostics must never interrupt the app. */ }
+  };
+  window.addEventListener('error', event => report('javascript-error', event.message || 'unknown error'));
+  window.addEventListener('unhandledrejection', event => report('unhandled-rejection', event.reason?.message || event.reason || 'unknown rejection'));
 })();

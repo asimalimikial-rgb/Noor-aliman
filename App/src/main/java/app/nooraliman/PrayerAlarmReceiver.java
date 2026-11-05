@@ -10,9 +10,11 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 
 public class PrayerAlarmReceiver extends BroadcastReceiver {
-    private static final String REMINDER_CHANNEL = "prayer_reminders";
+    private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -53,9 +55,14 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel channel = new NotificationChannel(REMINDER_CHANNEL,
-                    "تذكير الصلاة", NotificationManager.IMPORTANCE_HIGH);
+                    "تذكير الصلاة", NotificationManager.IMPORTANCE_DEFAULT);
             channel.setDescription("تذكير قبل دخول وقت الصلاة بعشر دقائق");
             channel.enableVibration(true);
+            channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build());
             manager.createNotificationChannel(channel);
         }
 
@@ -70,7 +77,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentTitle("تذكير الصلاة")
                 .setContentText("بقيت عشر دقائق على صلاة " + (name == null ? "" : name))
-                .setCategory(Notification.CATEGORY_ALARM)
+                .setCategory(Notification.CATEGORY_REMINDER)
                 .setAutoCancel(true)
                 .setContentIntent(content)
                 .build();
