@@ -256,7 +256,7 @@ final class PrayerAlarmScheduler {
         }
     }
 
-    private static long[] calculate(Calendar date, TimeZone timezone, double lat, double lng,
+    static long[] calculate(Calendar date, TimeZone timezone, double lat, double lng,
                                     String method, String asr) {
         int year = date.get(Calendar.YEAR);
         int month = date.get(Calendar.MONTH);

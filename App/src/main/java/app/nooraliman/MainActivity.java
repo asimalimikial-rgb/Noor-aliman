@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
     private boolean rendererRecoveryRequested;
 
     @Override
-    protected void onCreate(Bundle state) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(state);
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
