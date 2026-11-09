@@ -15,6 +15,15 @@ public class PrayerAlarmSchedulerTest {
         assertTrue(hanafi > standard);
     }
 
+    @Test public void alarmOneMillisecondInFutureIsScheduled() {
+        assertTrue(PrayerAlarmScheduler.isFutureAlarm(1_001L, 1_000L));
+    }
+
+    @Test public void alarmAtOrBeforeNowIsNotScheduled() {
+        assertFalse(PrayerAlarmScheduler.isFutureAlarm(1_000L, 1_000L));
+        assertFalse(PrayerAlarmScheduler.isFutureAlarm(999L, 1_000L));
+    }
+
     @Test public void exactAlarmAccessIsRequiredForPrayerAlerts() {
         assertTrue(PrayerAlarmScheduler.shouldScheduleAlerts(true));
         assertFalse(PrayerAlarmScheduler.shouldScheduleAlerts(false));
