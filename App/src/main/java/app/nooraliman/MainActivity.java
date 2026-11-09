@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
     private CompassBridge compassBridge;
     private PermissionRequest cameraPermissionRequest;
     private OnBackInvokedCallback backInvokedCallback;
-    private boolean initialPrayerScheduleChecked;
+    private static boolean prayerScheduleInitializedForProcess;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -345,14 +345,14 @@ public class MainActivity extends Activity {
             // Rebuild once when the Activity is first opened, or when the user
             // returns after granting/revoking exact-alarm access. Do not cancel
             // pending prayer alarms on every ordinary Activity resume.
-            if (!initialPrayerScheduleChecked || !known || previous != exactAllowed) {
+            if (!prayerScheduleInitializedForProcess || !known || previous != exactAllowed) {
                 PrayerAlarmScheduler.schedule(this, true);
             }
-            initialPrayerScheduleChecked = true;
+            prayerScheduleInitializedForProcess = true;
             if (exactAllowed) DhikrAlarmScheduler.schedule(this);
             else DhikrAlarmScheduler.cancel(this);
         } else {
-            initialPrayerScheduleChecked = true;
+            prayerScheduleInitializedForProcess = true;
         }
         if (webView != null) {
             webView.post(() -> webView.evaluateJavascript(
