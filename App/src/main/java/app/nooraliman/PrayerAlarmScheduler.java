@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +27,9 @@ final class PrayerAlarmScheduler {
     static final String EXTRA_SOUND = "sound";
     static final String EXTRA_PREVIEW = "preview";
     private static final String IDS = "scheduled_alarm_ids";
+    private static final String SCHEDULE_SIGNATURE = "prayer_schedule_signature";
+    private static final String NEXT_REFRESH_AT = "prayer_schedule_refresh_at";
+    private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
     private static final double R = Math.PI / 180.0;
     private static final int DAYS_AHEAD = 15;
@@ -37,24 +41,40 @@ final class PrayerAlarmScheduler {
     private PrayerAlarmScheduler() {}
 
     static void schedule(Context context) {
+        schedule(context, false);
+    }
+
+    static void schedule(Context context, boolean force) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        if (!prefs.getBoolean("adhan", false) && !prefs.getBoolean("reminder", false)) {
+        boolean adhanEnabled = prefs.getBoolean("adhan", false);
+        boolean reminderEnabled = prefs.getBoolean("reminder", false);
+        if (!adhanEnabled && !reminderEnabled) {
             cancel(context);
             return;
         }
-        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        boolean exactAlarmsAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
-        cancelScheduled(context, manager, prefs);
 
+        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        boolean exactAlarmsAllowed = Build.VERSION.SDK_INT < 31
+                || (manager != null && manager.canScheduleExactAlarms());
         double lat = prefs.getFloat("latitude", 15.5007f);
         double lng = prefs.getFloat("longitude", 32.5599f);
         String timezoneId = prefs.getString("timezone", "Africa/Khartoum");
         String method = prefs.getString("method", "umm");
         String asr = prefs.getString("asr", "std");
+        String sound = prefs.getString("adhanSound", "classic");
+        String adjustments = prefs.getString("prayerAdjustments", "{}");
         TimeZone timezone = TimeZone.getTimeZone(timezoneId);
         long now = System.currentTimeMillis();
-        JSONArray ids = new JSONArray();
+        String signature = scheduleSignature(lat, lng, timezoneId, method, asr,
+                adhanEnabled, reminderEnabled, sound, adjustments, exactAlarmsAllowed);
+        long refreshAt = nextRefreshAt(timezone, now);
 
+        // Avoid cancelling a pending alarm when renderTimes() repeats at a prayer boundary.
+        if (!force && signature.equals(prefs.getString(SCHEDULE_SIGNATURE, ""))
+                && prefs.getLong(NEXT_REFRESH_AT, 0L) > now) return;
+
+        cancelScheduled(context, manager, prefs);
+        JSONArray ids = new JSONArray();
         Calendar localDay = Calendar.getInstance(timezone);
         localDay.setTimeInMillis(now);
         localDay.set(Calendar.HOUR_OF_DAY, 12);
@@ -62,28 +82,60 @@ final class PrayerAlarmScheduler {
         localDay.set(Calendar.SECOND, 0);
         localDay.set(Calendar.MILLISECOND, 0);
 
-        for (int day = 0; day < DAYS_AHEAD; day++) {
-            Calendar date = (Calendar) localDay.clone();
-            date.add(Calendar.DAY_OF_MONTH, day);
-            long[] prayerTimes = calculate(date, timezone, lat, lng, method, asr);
-            for (int i = 0; i < PRAYERS.length; i++) {
-                // Do not schedule a fabricated time when the sun never reaches
-                // the required altitude at this latitude/date.
-                if (prayerTimes[i] == Long.MIN_VALUE) continue;
-                String key = PRAYERS[i][0];
-                String name = PRAYERS[i][1];
-                long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
-                if (prefs.getBoolean("adhan", false) && prayerAt > now + 3_000L) {
-                    scheduleOne(context, manager, ids, prayerAt, "adhan", key, name, exactAlarmsAllowed);
-                }
-                long reminderAt = prayerAt - 10 * MINUTE;
-                if (prefs.getBoolean("reminder", false) && reminderAt > now + 3_000L) {
-                    scheduleOne(context, manager, ids, reminderAt, "reminder", key, name, exactAlarmsAllowed);
+        if (!exactAlarmsAllowed) {
+            Log.w(TAG, "Prayer alerts not scheduled: exact-alarm access is missing");
+        } else {
+            for (int day = 0; day < DAYS_AHEAD; day++) {
+                Calendar date = (Calendar) localDay.clone();
+                date.add(Calendar.DAY_OF_MONTH, day);
+                long[] prayerTimes = calculate(date, timezone, lat, lng, method, asr);
+                for (int i = 0; i < PRAYERS.length; i++) {
+                    if (prayerTimes[i] == Long.MIN_VALUE) continue;
+                    String key = PRAYERS[i][0];
+                    String name = PRAYERS[i][1];
+                    long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
+                    if (adhanEnabled && prayerAt > now + 3_000L) {
+                        scheduleOne(context, manager, ids, prayerAt, "adhan", key, name);
+                    }
+                    long reminderAt = prayerAt - 10 * MINUTE;
+                    if (reminderEnabled && reminderAt > now + 3_000L) {
+                        scheduleOne(context, manager, ids, reminderAt, "reminder", key, name);
+                    }
                 }
             }
         }
-        prefs.edit().putString(IDS, ids.toString()).apply();
-        scheduleRefresh(context, manager, timezone);
+        prefs.edit().putString(IDS, ids.toString())
+                .putString(SCHEDULE_SIGNATURE, signature)
+                .putLong(NEXT_REFRESH_AT, refreshAt)
+                .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed)
+                .apply();
+        scheduleRefresh(context, manager, refreshAt);
+        Log.i(TAG, "Schedule refreshed; exact=" + exactAlarmsAllowed
+                + ", alarms=" + ids.length());
+    }
+
+    static boolean shouldScheduleAlerts(boolean exactAlarmsAllowed) {
+        return exactAlarmsAllowed;
+    }
+
+    private static String scheduleSignature(double lat, double lng, String timezone,
+                                            String method, String asr, boolean adhan,
+                                            boolean reminder, String sound, String adjustments,
+                                            boolean exactAllowed) {
+        return String.format(Locale.US, "%.6f|%.6f|%s|%s|%s|%s|%s|%s|%s|%s",
+                lat, lng, timezone, method, asr, adhan, reminder, sound,
+                adjustments, exactAllowed);
+    }
+
+    private static long nextRefreshAt(TimeZone timezone, long now) {
+        Calendar next = Calendar.getInstance(timezone);
+        next.setTimeInMillis(now);
+        next.set(Calendar.HOUR_OF_DAY, 0);
+        next.set(Calendar.MINUTE, 0);
+        next.set(Calendar.SECOND, 0);
+        next.set(Calendar.MILLISECOND, 0);
+        next.add(Calendar.DAY_OF_MONTH, 1);
+        return next.getTimeInMillis();
     }
 
     static void cancel(Context context) {
@@ -118,12 +170,11 @@ final class PrayerAlarmScheduler {
             manager.cancel(pendingRefresh);
             pendingRefresh.cancel();
         }
-        prefs.edit().remove(IDS).apply();
+        prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT).apply();
     }
 
     private static void scheduleOne(Context context, AlarmManager manager, JSONArray ids,
-                                    long at, String type, String key, String name,
-                                    boolean exactAlarmsAllowed) {
+                                    long at, String type, String key, String name) {
         String uri = String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE)
@@ -134,41 +185,25 @@ final class PrayerAlarmScheduler {
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            if (exactAlarmsAllowed) {
-                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-            } else {
-                // Keep prayer alerts functional without changing or requesting
-                // any permission; Android may deliver these inexact alarms late.
-                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-            }
+            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
             ids.put(uri);
         } catch (SecurityException denied) {
-            try {
-                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-                ids.put(uri);
-            } catch (SecurityException unavailable) {
-                pending.cancel();
-            }
+            pending.cancel();
+            Log.e(TAG, "Exact prayer alarm rejected: " + uri, denied);
         }
     }
 
-    private static void scheduleRefresh(Context context, AlarmManager manager, TimeZone timezone) {
-        Calendar next = Calendar.getInstance(timezone);
-        next.setTimeInMillis(System.currentTimeMillis());
-        next.set(Calendar.HOUR_OF_DAY, 0);
-        next.set(Calendar.MINUTE, 0);
-        next.set(Calendar.SECOND, 0);
-        next.set(Calendar.MILLISECOND, 0);
-        next.add(Calendar.DAY_OF_MONTH, 1);
+    private static void scheduleRefresh(Context context, AlarmManager manager, long refreshAt) {
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_REFRESH)
                 .setData(Uri.parse("noor://alarm/refresh"));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pending);
-        } catch (SecurityException ignored) {
+            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, refreshAt, pending);
+        } catch (SecurityException denied) {
             pending.cancel();
+            Log.e(TAG, "Could not schedule daily prayer refresh", denied);
         }
     }
 
@@ -226,6 +261,24 @@ final class PrayerAlarmScheduler {
     }
 
     private static boolean isRamadan(Calendar date) {
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                android.icu.util.IslamicCalendar hijri = new android.icu.util.IslamicCalendar(
+                        android.icu.util.TimeZone.getTimeZone(date.getTimeZone().getID()),
+                        new android.icu.util.ULocale("en@calendar=islamic-umalqura"));
+                hijri.setCalculationType(
+                        android.icu.util.IslamicCalendar.CalculationType.ISLAMIC_UMALQURA);
+                hijri.setTimeInMillis(date.getTimeInMillis());
+                return hijri.get(android.icu.util.Calendar.MONTH) == 8;
+            } catch (RuntimeException unavailableIcuCalendar) {
+                Log.w(TAG, "Umm al-Qura ICU unavailable; using legacy fallback",
+                        unavailableIcuCalendar);
+            }
+        }
+        return isRamadanArithmeticFallback(date);
+    }
+
+    private static boolean isRamadanArithmeticFallback(Calendar date) {
         Calendar utc = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         utc.clear();
         utc.set(date.get(Calendar.YEAR), date.get(Calendar.MONTH),
