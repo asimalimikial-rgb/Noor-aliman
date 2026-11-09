@@ -207,27 +207,43 @@ public class MainActivity extends Activity {
     private void loadApplicationAssets() {
         try {
             String html = readAsset("noor-aliman.html");
-            // Inject the local city before the main HTML script runs, so a saved
-            // "dubeiba" selection is valid on the very first render after restart.
+            String enhancements = readAsset("enhancements.js");
+            // Build the injected page in one pass. The source HTML is about 3.3 MB;
+            // chained replace/substring/lowercase operations create several full
+            // copies and can amplify memory pressure on low-RAM devices.
             String cityMarker = "const CITIES={";
             String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
                     + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
-            if (html.contains(cityMarker) && !html.contains("dubeiba:")) {
-                html = html.replace(cityMarker, localCity);
-            }
-            String enhancements = readAsset("enhancements.js");
-            int bodyEnd = html.toLowerCase(java.util.Locale.ROOT).lastIndexOf("</body>");
+            boolean injectCity = !html.contains("dubeiba:");
+            int cityAt = injectCity ? html.indexOf(cityMarker) : -1;
+            int bodyEnd = html.lastIndexOf("</body>");
+            if (bodyEnd < 0) bodyEnd = lastIndexOfIgnoreCase(html, "</body>");
             if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
-            html = html.substring(0, bodyEnd)
-                    + "\n<script>\n" + enhancements + "\n</script>\n"
-                    + html.substring(bodyEnd);
-            webView.loadDataWithBaseURL("https://appassets.androidplatform.net/", html,
-                    "text/html", "UTF-8", null);
+
+            StringBuilder page = new StringBuilder(
+                    html.length() + enhancements.length() + localCity.length() + 24);
+            if (cityAt >= 0 && cityAt < bodyEnd) {
+                page.append(html, 0, cityAt).append(localCity)
+                        .append(html, cityAt + cityMarker.length(), bodyEnd);
+            } else {
+                page.append(html, 0, bodyEnd);
+            }
+            page.append("\n<script>\n").append(enhancements).append("\n</script>\n")
+                    .append(html, bodyEnd, html.length());
+            webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
+                    page.toString(), "text/html", "UTF-8", null);
         } catch (Exception error) {
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
                     "<meta charset='utf-8'><p dir='rtl'>تعذّر فتح التطبيق.</p>",
                     "text/html", "UTF-8", null);
         }
+    }
+
+    private static int lastIndexOfIgnoreCase(String source, String target) {
+        for (int i = source.length() - target.length(); i >= 0; i--) {
+            if (source.regionMatches(true, i, target, 0, target.length())) return i;
+        }
+        return -1;
     }
 
     @Override
