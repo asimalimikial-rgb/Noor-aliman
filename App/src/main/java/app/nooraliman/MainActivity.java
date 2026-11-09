@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(state);
+        super.onCreate(savedInstanceState);
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
         if (Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
