@@ -22,20 +22,30 @@ final class DhikrAlarmScheduler {
         cancel(context);
         android.content.SharedPreferences prefs = prefs(context);
         if (!prefs.getBoolean("dhikrOn", false)) return;
-        if (Build.VERSION.SDK_INT >= 33
-                && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
-
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (Build.VERSION.SDK_INT >= 31 && !manager.canScheduleExactAlarms()) return;
+        if (manager == null) return;
+        boolean exactAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE).setData(Uri.parse(DATA));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        long at = nextAt(System.currentTimeMillis(), prefs);
         try {
-            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-                    nextAt(System.currentTimeMillis(), prefs), pending);
-        } catch (SecurityException ignored) {
+            if (exactAllowed) {
+                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            } else {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            }
+        } catch (SecurityException denied) {
+            if (exactAllowed) {
+                try {
+                    manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+                } catch (SecurityException fallbackDenied) {
+                    pending.cancel();
+                }
+            } else {
+                pending.cancel();
+            }
         }
     }
 
