@@ -348,6 +348,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private void recordPlaybackState(String state, String detail) {
+        if (preview) return;
         getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                 .putLong("lastAdhanPlaybackEventAt", System.currentTimeMillis())
                 .putString("lastAdhanPlaybackState", state == null ? "" : state)
