@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private CompassBridge compassBridge;
     private PermissionRequest cameraPermissionRequest;
     private OnBackInvokedCallback backInvokedCallback;
+    private static boolean prayerScheduleInitializedForProcess;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -179,6 +180,14 @@ public class MainActivity extends Activity {
     private void loadApplicationAssets() {
         try {
             String html = readAsset("noor-aliman.html");
+            // Inject the local city before the main HTML script runs, so a saved
+            // "dubeiba" selection is valid on the very first render after restart.
+            String cityMarker = "const CITIES={";
+            String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
+                    + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
+            if (html.contains(cityMarker) && !html.contains("dubeiba:")) {
+                html = html.replace(cityMarker, localCity);
+            }
             String enhancements = readAsset("enhancements.js");
             int bodyEnd = html.toLowerCase(java.util.Locale.ROOT).lastIndexOf("</body>");
             if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
@@ -283,18 +292,15 @@ public class MainActivity extends Activity {
                 || ((AlarmManager) getSystemService(ALARM_SERVICE)).canScheduleExactAlarms();
     }
 
-    private void requestExactAlarmPermission() {
-        if (Build.VERSION.SDK_INT >= 31 && !hasExactAlarmPermission()) {
+    private void openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
+        try {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                     Uri.parse("package:" + getPackageName()));
-            try {
-                startActivity(intent);
-            } catch (Exception ignored) {
-            }
-            return;
+            startActivity(intent);
+        } catch (Exception error) {
+            Log.e("NoorPrayerAlarm", "Could not open exact-alarm settings", error);
         }
-        PrayerAlarmScheduler.schedule(this);
-        DhikrAlarmScheduler.schedule(this);
     }
 
     private void syncAlarmSchedule() {
@@ -307,29 +313,52 @@ public class MainActivity extends Activity {
         }
         android.content.SharedPreferences prefs = getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+
+        // Schedule first. Missing notification permission must not prevent an
+        // exact adhan from firing; Android may hide its foreground notification.
+        PrayerAlarmScheduler.schedule(this);
+        if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
+        else DhikrAlarmScheduler.cancel(this);
+
         boolean notificationsNeeded = prefs.getBoolean("reminder", false)
                 || prefs.getBoolean("dhikrOn", false)
                 || (prefs.getBoolean("adhan", false)
                 && prefs.getBoolean("showAdhanNotification", true));
-        if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded && !hasNotificationPermission()) {
+        boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
+        if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded
+                && !hasNotificationPermission() && !alreadyAsked) {
+            prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
                     NOTIFICATION_REQUEST);
-            return;
         }
-        requestExactAlarmPermission();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (alertsEnabled()) {
-            // Prayer scheduler selects exact or inexact delivery based on existing system access.
-            PrayerAlarmScheduler.schedule(this);
-            if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
+            android.content.SharedPreferences prefs = getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            boolean exactAllowed = hasExactAlarmPermission();
+            boolean known = prefs.contains("exactAlarmPermissionGranted");
+            boolean previous = prefs.getBoolean("exactAlarmPermissionGranted", false);
+            // Rebuild once when the Activity is first opened, or when the user
+            // returns after granting/revoking exact-alarm access. Do not cancel
+            // pending prayer alarms on every ordinary Activity resume.
+            if (!prayerScheduleInitializedForProcess || !known || previous != exactAllowed) {
+                PrayerAlarmScheduler.schedule(this, true);
+            }
+            prayerScheduleInitializedForProcess = true;
+            if (exactAllowed) DhikrAlarmScheduler.schedule(this);
+            else DhikrAlarmScheduler.cancel(this);
+        } else {
+            prayerScheduleInitializedForProcess = true;
         }
         if (webView != null) {
             webView.post(() -> webView.evaluateJavascript(
-                    "if(window.refreshQiblaCompass)window.refreshQiblaCompass()", null));
+                    "if(window.refreshQiblaCompass)window.refreshQiblaCompass();"
+                            + "if(window.refreshAlarmPermissionStatus)window.refreshAlarmPermissionStatus();",
+                    null));
         }
     }
 
@@ -351,7 +380,7 @@ public class MainActivity extends Activity {
             locationCallback = null;
             locationOrigin = null;
         } else if (requestCode == NOTIFICATION_REQUEST) {
-            requestExactAlarmPermission();
+            syncAlarmSchedule();
         } else if (requestCode == CAMERA_REQUEST) {
             PermissionRequest request = cameraPermissionRequest;
             cameraPermissionRequest = null;
@@ -371,6 +400,28 @@ public class MainActivity extends Activity {
             if (kind == null || message == null) return;
             Log.e("NoorAlImanWeb", kind.substring(0, Math.min(kind.length(), 40))
                     + ": " + message.substring(0, Math.min(message.length(), 700)));
+        }
+
+        @JavascriptInterface
+        public String getAlarmDiagnostics() {
+            android.content.SharedPreferences prefs = getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            org.json.JSONObject result = new org.json.JSONObject();
+            try {
+                result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("notificationPermission", hasNotificationPermission());
+                result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
+                result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
+                result.put("lastAlarmDelayMs", prefs.getLong("lastAlarmDelayMs", 0L));
+                result.put("lastAlarmType", prefs.getString("lastAlarmType", ""));
+                result.put("lastAlarmKey", prefs.getString("lastAlarmKey", ""));
+                result.put("lastAdhanPlaybackEventAt", prefs.getLong("lastAdhanPlaybackEventAt", 0L));
+                result.put("lastAdhanPlaybackState", prefs.getString("lastAdhanPlaybackState", ""));
+                result.put("lastAdhanPlaybackDetail", prefs.getString("lastAdhanPlaybackDetail", ""));
+                result.put("lastAdhanPlaybackPrayer", prefs.getString("lastAdhanPlaybackPrayer", ""));
+                result.put("lastAdhanPlaybackSound", prefs.getString("lastAdhanPlaybackSound", ""));
+            } catch (org.json.JSONException ignored) { }
+            return result.toString();
         }
 
         @JavascriptInterface
@@ -456,6 +507,16 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> startService(new Intent(MainActivity.this,
                     AdhanPlaybackService.class)
                     .setAction(AdhanPlaybackService.ACTION_UPDATE_NOTIFICATION)));
+        }
+
+        @JavascriptInterface
+        public boolean canScheduleExactAlarms() {
+            return hasExactAlarmPermission();
+        }
+
+        @JavascriptInterface
+        public void requestExactAlarmAccess() {
+            runOnUiThread(() -> openExactAlarmSettings());
         }
 
         @JavascriptInterface
