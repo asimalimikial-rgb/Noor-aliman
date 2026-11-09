@@ -95,11 +95,11 @@ final class PrayerAlarmScheduler {
                     String key = PRAYERS[i][0];
                     String name = PRAYERS[i][1];
                     long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
-                    if (adhanEnabled && prayerAt > now + 3_000L) {
+                    if (adhanEnabled && isFutureAlarm(prayerAt, now)) {
                         scheduleOne(context, manager, ids, prayerAt, "adhan", key, name);
                     }
                     long reminderAt = prayerAt - 10 * MINUTE;
-                    if (reminderEnabled && reminderAt > now + 3_000L) {
+                    if (reminderEnabled && isFutureAlarm(reminderAt, now)) {
                         scheduleOne(context, manager, ids, reminderAt, "reminder", key, name);
                     }
                 }
@@ -117,6 +117,10 @@ final class PrayerAlarmScheduler {
 
     static boolean shouldScheduleAlerts(boolean exactAlarmsAllowed) {
         return exactAlarmsAllowed;
+    }
+
+    static boolean isFutureAlarm(long alarmAt, long now) {
+        return alarmAt > now;
     }
 
     static boolean shouldReschedule(boolean force, boolean sameSignature,
