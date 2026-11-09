@@ -70,8 +70,9 @@ final class PrayerAlarmScheduler {
         long refreshAt = nextRefreshAt(timezone, now);
 
         // Avoid cancelling a pending alarm when renderTimes() repeats at a prayer boundary.
-        if (!force && signature.equals(prefs.getString(SCHEDULE_SIGNATURE, ""))
-                && prefs.getLong(NEXT_REFRESH_AT, 0L) > now) return;
+        if (!shouldReschedule(force,
+                signature.equals(prefs.getString(SCHEDULE_SIGNATURE, "")),
+                prefs.getLong(NEXT_REFRESH_AT, 0L), now)) return;
 
         cancelScheduled(context, manager, prefs);
         JSONArray ids = new JSONArray();
@@ -82,7 +83,7 @@ final class PrayerAlarmScheduler {
         localDay.set(Calendar.SECOND, 0);
         localDay.set(Calendar.MILLISECOND, 0);
 
-        if (!exactAlarmsAllowed) {
+        if (!shouldScheduleAlerts(exactAlarmsAllowed)) {
             Log.w(TAG, "Prayer alerts not scheduled: exact-alarm access is missing");
         } else {
             for (int day = 0; day < DAYS_AHEAD; day++) {
@@ -116,6 +117,11 @@ final class PrayerAlarmScheduler {
 
     static boolean shouldScheduleAlerts(boolean exactAlarmsAllowed) {
         return exactAlarmsAllowed;
+    }
+
+    static boolean shouldReschedule(boolean force, boolean sameSignature,
+                                    long nextRefreshAt, long now) {
+        return force || !sameSignature || nextRefreshAt <= now;
     }
 
     private static String scheduleSignature(double lat, double lng, String timezone,
