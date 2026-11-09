@@ -444,6 +444,7 @@ public class MainActivity extends Activity {
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
                 result.put("lastAlarmDelayMs", prefs.getLong("lastAlarmDelayMs", 0L));
+                result.put("lastAlarmWasExact", prefs.getBoolean("lastAlarmWasExact", true));
                 result.put("lastAlarmType", prefs.getString("lastAlarmType", ""));
                 result.put("lastAlarmKey", prefs.getString("lastAlarmKey", ""));
                 result.put("lastAdhanPlaybackEventAt", prefs.getLong("lastAdhanPlaybackEventAt", 0L));
