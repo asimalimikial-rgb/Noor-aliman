@@ -950,8 +950,10 @@ document.head.append(settingsHubStyle);
         : '—';
       const delay = Number.isFinite(Number(d.lastAlarmDelayMs))
         ? Math.round(Number(d.lastAlarmDelayMs) / 1000) : 0;
+      const precision = d.lastAlarmWasExact === false ? 'تقريبي (قد يتأخر)' : 'دقيق';
       const alarm = d.lastAlarmReceivedAt
         ? (d.lastAlarmType || 'تنبيه') + ' / ' + (d.lastAlarmKey || '') +
+          '؛ النوع ' + precision +
           '؛ المتوقع ' + stamp(d.lastAlarmExpectedAt) +
           '؛ وصل ' + stamp(d.lastAlarmReceivedAt) + '؛ التأخير ' + delay + ' ثانية'
         : 'لم يُسجّل وصول تنبيه بعد';
