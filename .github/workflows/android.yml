@@ -1,6 +1,10 @@
 # v1.18.0 release candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery]
