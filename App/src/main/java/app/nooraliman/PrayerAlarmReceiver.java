@@ -40,7 +40,9 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
         if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (Build.VERSION.SDK_INT >= 31 && (alarms == null || !alarms.canScheduleExactAlarms())) {
+            boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
+            if (wasExact && Build.VERSION.SDK_INT >= 31
+                    && (alarms == null || !alarms.canScheduleExactAlarms())) {
                 Log.w(TAG, "Dropped stale adhan event because exact-alarm access is unavailable: " + key);
                 recordPlaybackFailure(context, "exact-alarm-access-missing", "Exact-alarm access was revoked", key);
                 showAdhanStartFailure(context, name, intent.getDataString());
@@ -81,10 +83,13 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .putLong("lastAlarmExpectedAt", expectedAt)
                 .putLong("lastAlarmReceivedAt", receivedAt)
                 .putLong("lastAlarmDelayMs", delay)
+                .putBoolean("lastAlarmWasExact",
+                        intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true))
                 .putString("lastAlarmType", type == null ? "" : type)
                 .putString("lastAlarmKey", key == null ? "" : key)
                 .apply();
         Log.i(TAG, "Alarm delivered: type=" + type + ", key=" + key
+                + ", exact=" + intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true)
                 + ", delayMs=" + delay);
     }
 
