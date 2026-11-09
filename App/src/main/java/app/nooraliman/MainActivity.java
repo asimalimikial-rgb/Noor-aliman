@@ -344,8 +344,7 @@ public class MainActivity extends Activity {
         // Schedule first. Missing notification permission must not prevent an
         // exact adhan from firing; Android may hide its foreground notification.
         PrayerAlarmScheduler.schedule(this);
-        if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
-        else DhikrAlarmScheduler.cancel(this);
+        DhikrAlarmScheduler.schedule(this);
 
         boolean notificationsNeeded = prefs.getBoolean("reminder", false)
                 || prefs.getBoolean("dhikrOn", false)
@@ -377,8 +376,7 @@ public class MainActivity extends Activity {
                 PrayerAlarmScheduler.schedule(this, true);
             }
             prayerScheduleInitializedForProcess = true;
-            if (exactAllowed) DhikrAlarmScheduler.schedule(this);
-            else DhikrAlarmScheduler.cancel(this);
+            DhikrAlarmScheduler.schedule(this);
         } else {
             prayerScheduleInitializedForProcess = true;
         }
