@@ -721,6 +721,7 @@
     <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
     <div class="setting"><div><strong>إيقاف الأذان عند إطفاء الشاشة</strong><small>يوقف الأذان عند ضغط زر التشغيل أو عند انطفاء الشاشة تلقائيًا أثناء التشغيل.</small></div><input class="toggle" id="stopAdhanScreenOffToggle" type="checkbox" aria-label="إيقاف الأذان عند إطفاء الشاشة"></div>
     <div class="setting"><div><strong>دقة مواعيد الأذان والتنبيه</strong><small id="exactAlarmAccessStatus">جارٍ التحقق من إذن التنبيهات الدقيقة...</small></div><button class="sound-preview" id="exactAlarmAccessButton" type="button">تفعيل الإذن</button></div>
+    <div class="setting"><div><strong>تشخيص آخر تنبيه</strong><small id="alarmDiagnosticsStatus">لا توجد بيانات تشخيص بعد.</small></div><button class="sound-preview" id="refreshAlarmDiagnosticsButton" type="button">تحديث</button></div>
     <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
     <div class="adjustment-heading"><strong>الضبط اليدوي لمواقيت الصلاة</strong><small>التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.</small></div>
     <div class="prayer-adjustment-list" id="prayerAdjustmentList" aria-live="polite"></div>
@@ -888,6 +889,8 @@ document.head.append(settingsHubStyle);
   const fullScreenAccessStatus = $('fullScreenAccessStatus');
   const exactAlarmAccessButton = $('exactAlarmAccessButton');
   const exactAlarmAccessStatus = $('exactAlarmAccessStatus');
+  const alarmDiagnosticsStatus = $('alarmDiagnosticsStatus');
+  const refreshAlarmDiagnosticsButton = $('refreshAlarmDiagnosticsButton');
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
   const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
   const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
@@ -921,15 +924,43 @@ document.head.append(settingsHubStyle);
     if (exactAlarmAccessButton) exactAlarmAccessButton.textContent = allowed ? 'تم التفعيل' : 'تفعيل الإذن';
     if (exactAlarmAccessButton) exactAlarmAccessButton.disabled = allowed;
   }
+  function refreshAlarmDiagnostics() {
+    if (!window.NativeAlarms?.getAlarmDiagnostics) return;
+    try {
+      const d = JSON.parse(window.NativeAlarms.getAlarmDiagnostics() || '{}');
+      const tz = cityObj()?.tz || 'Africa/Khartoum';
+      const stamp = value => value > 0
+        ? new Intl.DateTimeFormat('ar', {timeZone: tz, dateStyle: 'short', timeStyle: 'medium'}).format(new Date(value))
+        : '—';
+      const delay = Number.isFinite(Number(d.lastAlarmDelayMs))
+        ? Math.round(Number(d.lastAlarmDelayMs) / 1000) : 0;
+      const alarm = d.lastAlarmReceivedAt
+        ? (d.lastAlarmType || 'تنبيه') + ' / ' + (d.lastAlarmKey || '') +
+          '؛ المتوقع ' + stamp(d.lastAlarmExpectedAt) +
+          '؛ وصل ' + stamp(d.lastAlarmReceivedAt) + '؛ التأخير ' + delay + ' ثانية'
+        : 'لم يُسجّل وصول تنبيه بعد';
+      const playback = d.lastAdhanPlaybackState
+        ? d.lastAdhanPlaybackState + (d.lastAdhanPlaybackDetail ? ' — ' + String(d.lastAdhanPlaybackDetail).slice(0, 90) : '')
+        : 'لم تُسجّل محاولة تشغيل أذان بعد';
+      if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
+        'التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
+        '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
+        '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback;
+    } catch (error) {
+      if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent = 'تعذّر قراءة سجل التنبيهات.';
+    }
+  }
   window.refreshAlarmPermissionStatus = () => {
     syncExactAlarmAccessStatus();
     syncFullScreenAccessStatus();
+    refreshAlarmDiagnostics();
   };
   exactAlarmAccessButton?.addEventListener('click', () => {
-    if (!NativeAlarms?.canScheduleExactAlarms?.()) {
-      NativeAlarms?.requestExactAlarmAccess?.();
+    if (!window.NativeAlarms?.canScheduleExactAlarms?.()) {
+      window.NativeAlarms?.requestExactAlarmAccess?.();
     }
   });
+  refreshAlarmDiagnosticsButton?.addEventListener('click', refreshAlarmDiagnostics);
   function syncNativePlaybackOptions() {
     if (window.NativeAlarms?.configurePlaybackOptions) {
       NativeAlarms.configurePlaybackOptions(notificationToggle?.checked !== false);
@@ -1026,6 +1057,7 @@ document.head.append(settingsHubStyle);
   syncNativePlaybackOptions();
   syncFullScreenAccessStatus();
   syncExactAlarmAccessStatus();
+  refreshAlarmDiagnostics();
   document.addEventListener('visibilitychange', window.refreshAlarmPermissionStatus);
   window.addEventListener('focus', window.refreshAlarmPermissionStatus);
 
