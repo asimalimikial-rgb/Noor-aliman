@@ -1,4 +1,4 @@
-# v1.18.0 release candidate build: compile, unit tests, signed APK and signature verification
+# v1.19.0 release candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -75,7 +75,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.18.0-signed-apk
+          name: noor-al-iman-v1.19.0-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -191,6 +191,43 @@ jobs:
             - إضافة موقع الدبيبة/مروي كخيار مستقل دون تغيير الموقع المحفوظ أو الافتراضي.
 
             **مهم:** يلزم تفعيل إذن «المنبهات والتذكيرات» وإذن الإشعارات من إعدادات Android. اجتازت النسخة الاختبارات الآلية والبناء والتحقق من التوقيع؛ اختبار الأجهزة الفعلية مستمر بعد النشر، وقد تختلف قيود البطارية بين الشركات والأجهزة.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-19-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.19.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.19.0-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.19.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.19.0
+          name: Noor Al-Iman v1.19.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.19.0 من نور الإيمان.
+
+            - تحسين استقرار التطبيق عند الانتقال إلى الخلفية والعودة، ومعالجة فقدان WebView Renderer واستعادة الحالة.
+            - تقليل النسخ المؤقتة للذاكرة أثناء تحميل صفحة التطبيق.
+            - تحسين دورة حياة تشغيل ملفات الأذان وإغلاق موارد الصوت بصورة آمنة.
+            - تحسين جدولة تنبيهات الصلاة والأذكار والتعامل مع صلاحية Exact Alarm والتنبيهات الاحتياطية.
+            - إضافة اختبارات مرجعية لمقارنة حساب مواقيت الصلاة بين Java وJavaScript لطرق حساب متعددة واختيارات العصر.
+            - إزالة أربعة ملفات/مجلدات Save/save غير المطلوبة.
+
+            اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. لم يُجرَ اختبار شامل على هاتف فعلي؛ لذلك يلزم التحقق من سلوك الخلفية والتنبيهات والأذان على الأجهزة قبل اعتماد الاستقرار ميدانياً.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256
