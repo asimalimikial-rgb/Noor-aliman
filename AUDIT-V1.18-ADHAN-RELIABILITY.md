@@ -46,7 +46,7 @@ Users can still choose GPS or another city. Coordinates are a locality-level map
 - Added exact-alarm permission gating tests.
 - Added idempotent scheduler decision tests (unchanged signature, changed signature, expired daily refresh, forced rebuild).
 - Existing face-down sensor tests retained.
-- Current source contains 11 JUnit tests across the two test classes.
+- Current source contains 13 JUnit tests across the two test classes, including boundary tests that ensure an alarm one millisecond ahead is not discarded.
 
 ## Automated verification
 
