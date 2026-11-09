@@ -32,7 +32,7 @@ The alarm receiver did not guard/report foreground-service start failures, and t
 **Fix:** Receiver launch failures are caught and logged, with a fallback notification when notification permission permits. Local diagnostics now record expected versus actual alarm delivery time, delay, alarm type/prayer, playback result, selected sound and error details. A settings row displays the last recorded result.
 
 ### 6. Northern Sudan location preset missing
-The city list contained Khartoum, Makkah, Cairo, Istanbul and GPS only; Khartoum was the fallback. A Dibeiba/Merowe preset is now added without changing the user's saved city or global default:
+The city list contained Khartoum, Makkah, Cairo, Istanbul and GPS only; Khartoum was the fallback. A Dibeiba/Merowe preset is now injected before the main WebView script executes, so it is available even when the saved city is already Dibeiba. It does not change the user's saved city or global default:
 - Latitude: 18.45352
 - Longitude: 31.81315
 - Time zone: Africa/Khartoum
