@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private CompassBridge compassBridge;
     private PermissionRequest cameraPermissionRequest;
     private OnBackInvokedCallback backInvokedCallback;
+    private boolean initialPrayerScheduleChecked;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -283,18 +284,15 @@ public class MainActivity extends Activity {
                 || ((AlarmManager) getSystemService(ALARM_SERVICE)).canScheduleExactAlarms();
     }
 
-    private void requestExactAlarmPermission() {
-        if (Build.VERSION.SDK_INT >= 31 && !hasExactAlarmPermission()) {
+    private void openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
+        try {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                     Uri.parse("package:" + getPackageName()));
-            try {
-                startActivity(intent);
-            } catch (Exception ignored) {
-            }
-            return;
+            startActivity(intent);
+        } catch (Exception error) {
+            Log.e("NoorPrayerAlarm", "Could not open exact-alarm settings", error);
         }
-        PrayerAlarmScheduler.schedule(this);
-        DhikrAlarmScheduler.schedule(this);
     }
 
     private void syncAlarmSchedule() {
@@ -307,29 +305,52 @@ public class MainActivity extends Activity {
         }
         android.content.SharedPreferences prefs = getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+
+        // Schedule first. Missing notification permission must not prevent an
+        // exact adhan from firing; Android may hide its foreground notification.
+        PrayerAlarmScheduler.schedule(this);
+        if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
+        else DhikrAlarmScheduler.cancel(this);
+
         boolean notificationsNeeded = prefs.getBoolean("reminder", false)
                 || prefs.getBoolean("dhikrOn", false)
                 || (prefs.getBoolean("adhan", false)
                 && prefs.getBoolean("showAdhanNotification", true));
-        if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded && !hasNotificationPermission()) {
+        boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
+        if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded
+                && !hasNotificationPermission() && !alreadyAsked) {
+            prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
                     NOTIFICATION_REQUEST);
-            return;
         }
-        requestExactAlarmPermission();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (alertsEnabled()) {
-            // Prayer scheduler selects exact or inexact delivery based on existing system access.
-            PrayerAlarmScheduler.schedule(this);
-            if (hasExactAlarmPermission()) DhikrAlarmScheduler.schedule(this);
+            android.content.SharedPreferences prefs = getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            boolean exactAllowed = hasExactAlarmPermission();
+            boolean known = prefs.contains("exactAlarmPermissionGranted");
+            boolean previous = prefs.getBoolean("exactAlarmPermissionGranted", false);
+            // Rebuild once when the Activity is first opened, or when the user
+            // returns after granting/revoking exact-alarm access. Do not cancel
+            // pending prayer alarms on every ordinary Activity resume.
+            if (!initialPrayerScheduleChecked || !known || previous != exactAllowed) {
+                PrayerAlarmScheduler.schedule(this, true);
+            }
+            initialPrayerScheduleChecked = true;
+            if (exactAllowed) DhikrAlarmScheduler.schedule(this);
+            else DhikrAlarmScheduler.cancel(this);
+        } else {
+            initialPrayerScheduleChecked = true;
         }
         if (webView != null) {
             webView.post(() -> webView.evaluateJavascript(
-                    "if(window.refreshQiblaCompass)window.refreshQiblaCompass()", null));
+                    "if(window.refreshQiblaCompass)window.refreshQiblaCompass();"
+                            + "if(window.refreshAlarmPermissionStatus)window.refreshAlarmPermissionStatus();",
+                    null));
         }
     }
 
@@ -351,7 +372,7 @@ public class MainActivity extends Activity {
             locationCallback = null;
             locationOrigin = null;
         } else if (requestCode == NOTIFICATION_REQUEST) {
-            requestExactAlarmPermission();
+            syncAlarmSchedule();
         } else if (requestCode == CAMERA_REQUEST) {
             PermissionRequest request = cameraPermissionRequest;
             cameraPermissionRequest = null;
@@ -456,6 +477,16 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> startService(new Intent(MainActivity.this,
                     AdhanPlaybackService.class)
                     .setAction(AdhanPlaybackService.ACTION_UPDATE_NOTIFICATION)));
+        }
+
+        @JavascriptInterface
+        public boolean canScheduleExactAlarms() {
+            return hasExactAlarmPermission();
+        }
+
+        @JavascriptInterface
+        public void requestExactAlarmAccess() {
+            runOnUiThread(() -> openExactAlarmSettings());
         }
 
         @JavascriptInterface
