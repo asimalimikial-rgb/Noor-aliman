@@ -936,7 +936,7 @@ document.head.append(settingsHubStyle);
       || NativeAlarms.canScheduleExactAlarms();
     if (exactAlarmAccessStatus) exactAlarmAccessStatus.textContent = allowed
       ? 'الإذن مفعّل؛ يمكن جدولة الأذان والتذكير في أوقاتهما بدقة.'
-      : 'الإذن غير مفعّل؛ سيستخدم التطبيق تنبيهات تقريبية قد تتأخر. فعّل صلاحية التنبيهات الدقيقة للحصول على توقيت أدق.';
+      : 'الإذن غير مفعّل؛ سيستخدم التطبيق تنبيهات تقريبية قد تتأخر، وقد يقيّد Android تشغيل الصوت تلقائيًا في الخلفية. فعّل الصلاحية لتوقيت أدق.';
     if (exactAlarmAccessButton) exactAlarmAccessButton.textContent = allowed ? 'تم التفعيل' : 'تفعيل الإذن';
     if (exactAlarmAccessButton) exactAlarmAccessButton.disabled = allowed;
   }
