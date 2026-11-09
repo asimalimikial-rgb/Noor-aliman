@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
     private PermissionRequest cameraPermissionRequest;
     private OnBackInvokedCallback backInvokedCallback;
     private static boolean prayerScheduleInitializedForProcess;
+    private boolean webViewRendererGone;
+    private boolean rendererRecoveryRequested;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -100,6 +102,31 @@ public class MainActivity extends Activity {
                     } catch (Exception ignored) { }
                 }
                 // Block file:, content:, javascript:, intent: and unknown schemes.
+                return true;
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view,
+                    android.webkit.RenderProcessGoneDetail detail) {
+                boolean didCrash = detail != null && detail.didCrash();
+                int priority = detail == null ? -1 : detail.rendererPriorityAtExit();
+                Log.e("NoorAlImanWeb", "WebView renderer exited; didCrash=" + didCrash
+                        + ", priorityAtExit=" + priority);
+                if (view != webView) return true;
+
+                webViewRendererGone = true;
+                if (!rendererRecoveryRequested) {
+                    rendererRecoveryRequested = true;
+                    runOnUiThread(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            android.widget.Toast.makeText(MainActivity.this,
+                                    "حدث خلل في عرض التطبيق؛ جارٍ إعادة فتحه دون مسح بياناتك.",
+                                    android.widget.Toast.LENGTH_LONG).show();
+                            recreate();
+                        }
+                    });
+                }
+                // The renderer is gone; this WebView must not be reused.
                 return true;
             }
         });
@@ -205,7 +232,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        if (webView != null) webView.saveState(outState);
+        if (webView != null && !webViewRendererGone) webView.saveState(outState);
         super.onSaveInstanceState(outState);
     }
 
@@ -336,6 +363,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (webView != null) webView.onResume();
         if (alertsEnabled()) {
             android.content.SharedPreferences prefs = getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
@@ -364,8 +392,11 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        if (webView != null) {
+        if (webView != null && !webViewRendererGone) {
             webView.evaluateJavascript("if(window.stopQiblaCamera)window.stopQiblaCamera()", null);
+            // Pause this WebView only; pauseTimers() would affect every WebView
+            // in the process and could interfere with unrelated components.
+            webView.onPause();
         }
         if (compassBridge != null) compassBridge.stop();
         super.onPause();
