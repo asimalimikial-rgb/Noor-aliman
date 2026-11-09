@@ -13,6 +13,7 @@ import android.os.Build;
 import android.util.Log;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
+import android.net.Uri;
 
 public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
@@ -34,6 +35,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         String type = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_TYPE);
         String key = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
         String name = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
+        recordDelivery(context, intent, type, key);
         SharedPreferences prefs = context.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
         if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
@@ -60,6 +62,27 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
             showReminder(context, key, name, intent.getDataString());
         }
+    }
+
+    private void recordDelivery(Context context, Intent intent, String type, String key) {
+        long receivedAt = System.currentTimeMillis();
+        long expectedAt = 0L;
+        try {
+            Uri data = intent.getData();
+            if (data != null && !data.getPathSegments().isEmpty()) {
+                expectedAt = Long.parseLong(data.getPathSegments().get(0));
+            }
+        } catch (RuntimeException ignored) { }
+        long delay = expectedAt == 0L ? 0L : receivedAt - expectedAt;
+        context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).edit()
+                .putLong("lastAlarmExpectedAt", expectedAt)
+                .putLong("lastAlarmReceivedAt", receivedAt)
+                .putLong("lastAlarmDelayMs", delay)
+                .putString("lastAlarmType", type == null ? "" : type)
+                .putString("lastAlarmKey", key == null ? "" : key)
+                .apply();
+        Log.i(TAG, "Alarm delivered: type=" + type + ", key=" + key
+                + ", delayMs=" + delay);
     }
 
     private void showAdhanStartFailure(Context context, String name, String data) {
