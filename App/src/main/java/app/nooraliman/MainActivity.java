@@ -233,6 +233,7 @@ public class MainActivity extends Activity {
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
                     page.toString(), "text/html", "UTF-8", null);
         } catch (Exception error) {
+            Log.e("NoorAlImanWeb", "Could not load bundled application assets", error);
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
                     "<meta charset='utf-8'><p dir='rtl'>تعذّر فتح التطبيق.</p>",
                     "text/html", "UTF-8", null);
@@ -378,7 +379,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (webView != null) webView.onResume();
+        if (webView != null && !webViewRendererGone) webView.onResume();
         if (alertsEnabled()) {
             android.content.SharedPreferences prefs = getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
@@ -396,7 +397,7 @@ public class MainActivity extends Activity {
         } else {
             prayerScheduleInitializedForProcess = true;
         }
-        if (webView != null) {
+        if (webView != null && !webViewRendererGone) {
             webView.post(() -> webView.evaluateJavascript(
                     "if(window.refreshQiblaCompass)window.refreshQiblaCompass();"
                             + "if(window.refreshAlarmPermissionStatus)window.refreshAlarmPermissionStatus();",
