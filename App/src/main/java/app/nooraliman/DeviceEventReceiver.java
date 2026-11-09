@@ -14,19 +14,22 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if ("android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED".equals(action)) {
             AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (Build.VERSION.SDK_INT >= 31 && manager != null && manager.canScheduleExactAlarms()) {
-                PrayerAlarmScheduler.schedule(context, true);
-                DhikrAlarmScheduler.schedule(context);
-                Log.i("NoorPrayerAlarm", "Exact-alarm access granted; prayer schedules rebuilt");
-            }
+            boolean exactAllowed = Build.VERSION.SDK_INT < 31
+                    || (manager != null && manager.canScheduleExactAlarms());
+            // Rebuild on both grant and revoke: use exact alarms when allowed,
+            // otherwise keep prayer and dhikr alerts alive through inexact fallback.
+            PrayerAlarmScheduler.schedule(context, true);
+            DhikrAlarmScheduler.schedule(context);
+            Log.i("NoorPrayerAlarm", "Exact-alarm permission changed; exact=" + exactAllowed
+                    + "; fallback schedules rebuilt");
             return;
         }
         if (Intent.ACTION_BOOT_COMPLETED.equals(action)
                 || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)
                 || Intent.ACTION_TIME_CHANGED.equals(action)
                 || Intent.ACTION_TIMEZONE_CHANGED.equals(action)) {
-            // The schedulers read saved preferences and safely no-op if disabled
-            // or if exact-alarm access has not been granted.
+            // The schedulers read saved preferences and no-op if disabled.
+            // If exact access is unavailable, they retain inexact fallback alarms.
             PrayerAlarmScheduler.schedule(context, true);
             DhikrAlarmScheduler.schedule(context);
         }

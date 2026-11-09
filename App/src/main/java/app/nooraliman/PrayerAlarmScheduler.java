@@ -26,6 +26,7 @@ final class PrayerAlarmScheduler {
     static final String EXTRA_NAME = "name";
     static final String EXTRA_SOUND = "sound";
     static final String EXTRA_PREVIEW = "preview";
+    static final String EXTRA_EXACT = "exact";
     private static final String IDS = "scheduled_alarm_ids";
     private static final String SCHEDULE_SIGNATURE = "prayer_schedule_signature";
     private static final String NEXT_REFRESH_AT = "prayer_schedule_refresh_at";
@@ -83,9 +84,10 @@ final class PrayerAlarmScheduler {
         localDay.set(Calendar.SECOND, 0);
         localDay.set(Calendar.MILLISECOND, 0);
 
-        if (!shouldScheduleAlerts(exactAlarmsAllowed)) {
-            Log.w(TAG, "Prayer alerts not scheduled: exact-alarm access is missing");
-        } else {
+        if (!exactAlarmsAllowed) {
+            Log.w(TAG, "Exact-alarm access is missing; scheduling inexact prayer alerts as fallback");
+        }
+        {
             for (int day = 0; day < DAYS_AHEAD; day++) {
                 Calendar date = (Calendar) localDay.clone();
                 date.add(Calendar.DAY_OF_MONTH, day);
@@ -96,11 +98,13 @@ final class PrayerAlarmScheduler {
                     String name = PRAYERS[i][1];
                     long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
                     if (adhanEnabled && isFutureAlarm(prayerAt, now)) {
-                        scheduleOne(context, manager, ids, prayerAt, "adhan", key, name);
+                        scheduleOne(context, manager, ids, prayerAt, "adhan", key, name,
+                                exactAlarmsAllowed);
                     }
                     long reminderAt = prayerAt - 10 * MINUTE;
                     if (reminderEnabled && isFutureAlarm(reminderAt, now)) {
-                        scheduleOne(context, manager, ids, reminderAt, "reminder", key, name);
+                        scheduleOne(context, manager, ids, reminderAt, "reminder", key, name,
+                                exactAlarmsAllowed);
                     }
                 }
             }
@@ -115,7 +119,7 @@ final class PrayerAlarmScheduler {
                 + ", alarms=" + ids.length());
     }
 
-    static boolean shouldScheduleAlerts(boolean exactAlarmsAllowed) {
+    static boolean shouldUseExactAlarms(boolean exactAlarmsAllowed) {
         return exactAlarmsAllowed;
     }
 
@@ -184,22 +188,48 @@ final class PrayerAlarmScheduler {
     }
 
     private static void scheduleOne(Context context, AlarmManager manager, JSONArray ids,
-                                    long at, String type, String key, String name) {
+                                    long at, String type, String key, String name,
+                                    boolean exactAlarm) {
         String uri = String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE)
                 .setData(Uri.parse(uri))
                 .putExtra(EXTRA_TYPE, type)
                 .putExtra(EXTRA_KEY, key)
-                .putExtra(EXTRA_NAME, name);
+                .putExtra(EXTRA_NAME, name)
+                .putExtra(EXTRA_EXACT, exactAlarm);
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            if (exactAlarm) {
+                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            } else {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            }
             ids.put(uri);
         } catch (SecurityException denied) {
-            pending.cancel();
-            Log.e(TAG, "Exact prayer alarm rejected: " + uri, denied);
+            if (exactAlarm) {
+                Log.w(TAG, "Exact alarm rejected; retrying as inexact fallback: " + uri, denied);
+                Intent fallbackIntent = new Intent(context, PrayerAlarmReceiver.class)
+                        .setAction(ACTION_FIRE)
+                        .setData(Uri.parse(uri))
+                        .putExtra(EXTRA_TYPE, type)
+                        .putExtra(EXTRA_KEY, key)
+                        .putExtra(EXTRA_NAME, name)
+                        .putExtra(EXTRA_EXACT, false);
+                PendingIntent fallback = PendingIntent.getBroadcast(context, 0, fallbackIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                try {
+                    manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, fallback);
+                    ids.put(uri);
+                } catch (SecurityException fallbackDenied) {
+                    fallback.cancel();
+                    Log.e(TAG, "Inexact prayer fallback rejected: " + uri, fallbackDenied);
+                }
+            } else {
+                pending.cancel();
+                Log.e(TAG, "Inexact prayer alarm rejected: " + uri, denied);
+            }
         }
     }
 
@@ -226,7 +256,7 @@ final class PrayerAlarmScheduler {
         }
     }
 
-    private static long[] calculate(Calendar date, TimeZone timezone, double lat, double lng,
+    static long[] calculate(Calendar date, TimeZone timezone, double lat, double lng,
                                     String method, String asr) {
         int year = date.get(Calendar.YEAR);
         int month = date.get(Calendar.MONTH);

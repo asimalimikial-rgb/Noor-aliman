@@ -26,6 +26,10 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Verify Ramadan/Isha boundary dates against the selected calculation method and a trusted calendar.
 
 ## Prayer alerts and adhan
+- [ ] With exact-alarm permission denied, verify the inexact fallback event is delivered and the diagnostics label it approximate; measure real delay on the target Android device.
+- [ ] Revoke exact-alarm access while the app is backgrounded, then reopen it; verify the fallback schedule is rebuilt and the UI explains possible delay.
+- [ ] Grant exact-alarm access again; verify prayer and dhikr schedules return to exact mode.
+- [ ] Play each adhan recording repeatedly; verify asynchronous preparation succeeds and no descriptor/resource leak appears after stop, completion, or error.
 - [ ] With exact-alarm permission granted, verify each enabled prayer alarm at a test time.
 - [ ] On Android 12+, deny/revoke exact-alarm access while prayer alerts are enabled; confirm prayer alarms are still scheduled through the inexact fallback (allow for Android delivery delay).
 - [ ] Reopen/resume the app while exact-alarm access remains denied; confirm prayer fallback alarms are re-created rather than skipped.
@@ -58,6 +62,9 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Test persistence and recovery of bookmarks, downloads, and settings after process death.
 
 ## WebView, accessibility, and performance
+- [ ] Background and resume the app repeatedly; verify the WebView remains responsive and user state is retained.
+- [ ] Exercise renderer-loss recovery (where test tooling permits); verify a fresh WebView is created without clearing local settings or downloads.
+- [ ] Test on a device/emulator without compass sensors; verify the app reports unavailable compass instead of crashing.
 - [ ] Verify the published website HTML begins with `<!doctype html>` as the first non-whitespace content and renders in standards mode.
 - [ ] Verify local app fonts and Quran page layout with network disabled; compare Arabic glyph shaping and line breaks.
 - [ ] Test camera/location permission flows and confirm untrusted origins are denied.

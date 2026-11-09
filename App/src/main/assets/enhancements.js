@@ -936,7 +936,7 @@ document.head.append(settingsHubStyle);
       || NativeAlarms.canScheduleExactAlarms();
     if (exactAlarmAccessStatus) exactAlarmAccessStatus.textContent = allowed
       ? 'الإذن مفعّل؛ يمكن جدولة الأذان والتذكير في أوقاتهما بدقة.'
-      : 'الإذن غير مفعّل؛ لن يعمل الأذان التلقائي أو التذكير الدقيق حتى تمنح التطبيق صلاحية التنبيهات الدقيقة.';
+      : 'الإذن غير مفعّل؛ سيستخدم التطبيق تنبيهات تقريبية قد تتأخر، وقد يقيّد Android تشغيل الصوت تلقائيًا في الخلفية. فعّل الصلاحية لتوقيت أدق.';
     if (exactAlarmAccessButton) exactAlarmAccessButton.textContent = allowed ? 'تم التفعيل' : 'تفعيل الإذن';
     if (exactAlarmAccessButton) exactAlarmAccessButton.disabled = allowed;
   }
@@ -950,8 +950,10 @@ document.head.append(settingsHubStyle);
         : '—';
       const delay = Number.isFinite(Number(d.lastAlarmDelayMs))
         ? Math.round(Number(d.lastAlarmDelayMs) / 1000) : 0;
+      const precision = d.lastAlarmWasExact === false ? 'تقريبي (قد يتأخر)' : 'دقيق';
       const alarm = d.lastAlarmReceivedAt
         ? (d.lastAlarmType || 'تنبيه') + ' / ' + (d.lastAlarmKey || '') +
+          '؛ النوع ' + precision +
           '؛ المتوقع ' + stamp(d.lastAlarmExpectedAt) +
           '؛ وصل ' + stamp(d.lastAlarmReceivedAt) + '؛ التأخير ' + delay + ' ثانية'
         : 'لم يُسجّل وصول تنبيه بعد';
