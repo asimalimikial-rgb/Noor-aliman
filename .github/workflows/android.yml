@@ -1,4 +1,4 @@
-# v1.17 candidate build: compile, unit tests, signed APK and signature verification
+# v1.18.0 release candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 on:
@@ -71,7 +71,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
+          name: noor-al-iman-v1.18.0-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -130,7 +130,7 @@ jobs:
       - name: Download signed APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: noor-al-iman-v1.17-overhaul-candidate-signed-apk
+          name: noor-al-iman-v1.18.0-signed-apk
           path: release-assets
 
       - name: Publish Noor Al-Iman v1.17.0 GitHub Release
@@ -150,6 +150,43 @@ jobs:
             - لم تتغير ملفات الصوت أو أذونات Android.
 
             نجح بناء APK الموقّع والتحقق من توقيعه آلياً. تظل تجربة الجهاز الفعلي مطلوبة للتحقق من سلوك الحساسات والإشعارات وشاشة القفل.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-18-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.18.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.18.0-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.18.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.18.0
+          name: Noor Al-Iman v1.18.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.18.0 من نور الإيمان.
+
+            - إصلاح جدولة الأذان والتذكير باستخدام Exact Alarms عند منح صلاحية Android المطلوبة.
+            - منع إعادة بناء الجدولة دون تغير الإعدادات، ومعالجة حالات إعادة الجدولة عند العودة للتطبيق.
+            - استعادة الجدولة عند تغير الوقت والمنطقة الزمنية وإعادة تشغيل الهاتف ومنح الصلاحية.
+            - توحيد حساب التاريخ الهجري مع Umm al-Qura على إصدارات Android المدعومة.
+            - إضافة تشخيص محلي يقارن وقت التنبيه المتوقع بوقت وصوله ويسجل أخطاء تشغيل الأذان.
+            - إضافة موقع الدبيبة/مروي كخيار مستقل دون تغيير الموقع المحفوظ أو الافتراضي.
+
+            **مهم:** يلزم تفعيل إذن «المنبهات والتذكيرات» وإذن الإشعارات من إعدادات Android. اجتازت النسخة الاختبارات الآلية والبناء والتحقق من التوقيع؛ اختبار الأجهزة الفعلية مستمر بعد النشر، وقد تختلف قيود البطارية بين الشركات والأجهزة.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256
