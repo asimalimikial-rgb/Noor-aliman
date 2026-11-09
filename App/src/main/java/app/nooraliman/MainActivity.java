@@ -195,7 +195,16 @@ public class MainActivity extends Activity {
             }
         });
 
-        loadApplicationAssets();
+        boolean restoredWebView = false;
+        if (savedInstanceState != null) {
+            try {
+                restoredWebView = webView.restoreState(savedInstanceState) != null;
+            } catch (RuntimeException restoreFailure) {
+                Log.w("NoorAlImanWeb", "Saved WebView state could not be restored; loading a fresh page",
+                        restoreFailure);
+            }
+        }
+        if (!restoredWebView) loadApplicationAssets();
     }
 
     private static boolean isTrustedAppOrigin(Uri uri) {
