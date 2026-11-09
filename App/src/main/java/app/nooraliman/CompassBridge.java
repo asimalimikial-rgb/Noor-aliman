@@ -42,6 +42,11 @@ public final class CompassBridge implements SensorEventListener {
         if (running && Math.abs(lat - latitude) < 0.000001
                 && Math.abs(lon - longitude) < 0.000001) return true;
 
+        if (sensorManager == null) {
+            heading = -1;
+            running = false;
+            return false;
+        }
         stopListening();
         latitude = lat;
         longitude = lon;
