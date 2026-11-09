@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 
 import java.util.Calendar;
 
@@ -68,8 +69,14 @@ final class DhikrAlarmScheduler {
                     .setAction(DhikrPlaybackService.ACTION_PLAY)
                     .putExtra(EXTRA_TYPE, prefs.getString("dhikrType", "subhan"))
                     .putExtra(EXTRA_VOLUME, prefs.getFloat("dhikrVol", 0.6f));
-            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
-            else context.startService(service);
+            try {
+                if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
+                else context.startService(service);
+            } catch (RuntimeException startFailure) {
+                // A restricted background launch must not permanently stop the
+                // repeating dhikr schedule.
+                Log.e("NoorDhikrAlarm", "Could not start timed dhikr service", startFailure);
+            }
         }
         schedule(context);
     }
