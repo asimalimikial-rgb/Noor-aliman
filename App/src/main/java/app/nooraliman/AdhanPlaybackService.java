@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Log;
 
 public class AdhanPlaybackService extends Service implements SensorEventListener {
     static final String ACTION_PLAY = "app.nooraliman.action.PLAY_ADHAN";
@@ -31,6 +32,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     static final String ACTION_UPDATE_SENSOR_SETTINGS = "app.nooraliman.action.UPDATE_SENSOR_SETTINGS";
     static final String ACTION_FINISHED = "app.nooraliman.action.ADHAN_FINISHED";
     private static final String CHANNEL = "adhan_playback_controls_v3";
+    private static final String TAG = "NoorAdhanPlayback";
     private static final int NOTIFICATION_ID = 71;
     private static volatile boolean playing;
     private static volatile boolean playbackActive;
@@ -117,6 +119,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         preview = intent != null && intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_PREVIEW, false);
         if (preview && (currentPrayerKey == null || currentPrayerKey.isEmpty())) currentPrayerKey = "fajr";
         if (!isAllowedSound(currentSound)) currentSound = "classic";
+        if (!preview) recordPlaybackState("service-started", "");
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
         configureScreenOffStopReceiver();
         playAdhan(currentSound, currentPrayerKey);
@@ -187,7 +190,10 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private boolean requestAudioFocus() {
-        if (audioManager == null) return false;
+        if (audioManager == null) {
+            Log.e(TAG, "AudioManager unavailable");
+            return false;
+        }
         AudioAttributes attributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
@@ -203,6 +209,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         }
         hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if (!hasAudioFocus) Log.w(TAG, "Audio focus request denied: " + result);
         return hasAudioFocus;
     }
 
@@ -216,7 +223,11 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
 
     private void playAdhan(String sound, String prayerKey) {
         releasePlayer();
-        if (!requestAudioFocus()) { stopSelf(); return; }
+        if (!requestAudioFocus()) {
+            recordPlaybackState("audio-focus-denied", "Audio focus was not granted");
+            stopSelf();
+            return;
+        }
         try (AssetFileDescriptor audio = openAdhanAsset(sound, prayerKey)) {
             MediaPlayer created = new MediaPlayer();
             player = created;
@@ -230,13 +241,29 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 try {
                     mp.start();
                     playing = true;
+                    recordPlaybackState("playing", "");
+                    Log.i(TAG, "Adhan playback started: " + sound + "/" + prayerKey);
                     startFaceDownSensorIfEnabled();
-                } catch (IllegalStateException error) { stopSelf(); }
+                } catch (IllegalStateException error) {
+                    recordPlaybackState("playback-start-error", error.toString());
+                    Log.e(TAG, "MediaPlayer could not start", error);
+                    stopSelf();
+                }
             });
-            created.setOnCompletionListener(mp -> stopSelf());
-            created.setOnErrorListener((mp, what, extra) -> { stopSelf(); return true; });
+            created.setOnCompletionListener(mp -> {
+                recordPlaybackState("completed", "");
+                stopSelf();
+            });
+            created.setOnErrorListener((mp, what, extra) -> {
+                recordPlaybackState("media-player-error", what + ":" + extra);
+                Log.e(TAG, "MediaPlayer error what=" + what + ", extra=" + extra);
+                stopSelf();
+                return true;
+            });
             created.prepareAsync();
         } catch (Exception error) {
+            recordPlaybackState("asset-or-prepare-error", error.toString());
+            Log.e(TAG, "Could not prepare adhan asset: " + sound + "/" + prayerKey, error);
             stopSelf();
         }
     }
@@ -318,6 +345,16 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if ("makkah".equals(sound)) return "أذان مكة";
         if ("doha".equals(sound)) return "أذان الدوحة، قطر";
         return "الأذان الكامل";
+    }
+
+    private void recordPlaybackState(String state, String detail) {
+        getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+                .putLong("lastAdhanPlaybackEventAt", System.currentTimeMillis())
+                .putString("lastAdhanPlaybackState", state == null ? "" : state)
+                .putString("lastAdhanPlaybackDetail", detail == null ? "" : detail)
+                .putString("lastAdhanPlaybackPrayer", currentPrayerKey == null ? "" : currentPrayerKey)
+                .putString("lastAdhanPlaybackSound", currentSound == null ? "" : currentSound)
+                .apply();
     }
 
     private void releasePlayer() {
