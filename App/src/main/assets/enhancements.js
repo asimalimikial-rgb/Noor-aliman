@@ -720,6 +720,7 @@
     <div class="setting"><div><strong>إيقاف الأذان عند قلب الهاتف</strong><small>اقلب الهاتف على وجهه أثناء تشغيل الأذان لإيقاف الصوت تلقائيًا.</small></div><input class="toggle" id="stopAdhanFaceDownToggle" type="checkbox" aria-label="إيقاف الأذان عند قلب الهاتف"></div>
     <div class="setting"><div><strong>إيقاف الأذان بأزرار الصوت</strong><small>يعمل هذا الخيار عندما تكون شاشة الأذان ظاهرة؛ وقد لا يستجيب إذا منع Android ظهورها.</small></div><input class="toggle" id="stopAdhanVolumeKeysToggle" type="checkbox" aria-label="إيقاف الأذان بأزرار الصوت"></div>
     <div class="setting"><div><strong>إيقاف الأذان عند إطفاء الشاشة</strong><small>يوقف الأذان عند ضغط زر التشغيل أو عند انطفاء الشاشة تلقائيًا أثناء التشغيل.</small></div><input class="toggle" id="stopAdhanScreenOffToggle" type="checkbox" aria-label="إيقاف الأذان عند إطفاء الشاشة"></div>
+    <div class="setting"><div><strong>دقة مواعيد الأذان والتنبيه</strong><small id="exactAlarmAccessStatus">جارٍ التحقق من إذن التنبيهات الدقيقة...</small></div><button class="sound-preview" id="exactAlarmAccessButton" type="button">تفعيل الإذن</button></div>
     <div class="setting"><div><strong>شاشة الأذان عند قفل الهاتف</strong><small id="fullScreenAccessStatus">يسمح Android بعرض شاشة الأذان عند توفر صلاحية ملء الشاشة.</small></div><button class="sound-preview" id="fullScreenAccessButton" type="button">ضبط الإذن</button></div>
     <div class="adjustment-heading"><strong>الضبط اليدوي لمواقيت الصلاة</strong><small>التعديل بالدقائق فوق الحساب الأصلي، ويحفظ تلقائيًا.</small></div>
     <div class="prayer-adjustment-list" id="prayerAdjustmentList" aria-live="polite"></div>
@@ -885,6 +886,8 @@ document.head.append(settingsHubStyle);
   const screenOffToggle = $('stopAdhanScreenOffToggle');
   const fullScreenAccessButton = $('fullScreenAccessButton');
   const fullScreenAccessStatus = $('fullScreenAccessStatus');
+  const exactAlarmAccessButton = $('exactAlarmAccessButton');
+  const exactAlarmAccessStatus = $('exactAlarmAccessStatus');
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
   const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
   const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
@@ -909,6 +912,24 @@ document.head.append(settingsHubStyle);
     if (fullScreenAccessButton) fullScreenAccessButton.textContent = allowed ? 'تم التفعيل' : 'ضبط الإذن';
     if (fullScreenAccessButton) fullScreenAccessButton.disabled = allowed;
   }
+  function syncExactAlarmAccessStatus() {
+    const allowed = !window.NativeAlarms?.canScheduleExactAlarms
+      || NativeAlarms.canScheduleExactAlarms();
+    if (exactAlarmAccessStatus) exactAlarmAccessStatus.textContent = allowed
+      ? 'الإذن مفعّل؛ يمكن جدولة الأذان والتذكير في أوقاتهما بدقة.'
+      : 'الإذن غير مفعّل؛ لن يعمل الأذان التلقائي أو التذكير الدقيق حتى تمنح التطبيق صلاحية التنبيهات الدقيقة.';
+    if (exactAlarmAccessButton) exactAlarmAccessButton.textContent = allowed ? 'تم التفعيل' : 'تفعيل الإذن';
+    if (exactAlarmAccessButton) exactAlarmAccessButton.disabled = allowed;
+  }
+  window.refreshAlarmPermissionStatus = () => {
+    syncExactAlarmAccessStatus();
+    syncFullScreenAccessStatus();
+  };
+  exactAlarmAccessButton?.addEventListener('click', () => {
+    if (!NativeAlarms?.canScheduleExactAlarms?.()) {
+      NativeAlarms?.requestExactAlarmAccess?.();
+    }
+  });
   function syncNativePlaybackOptions() {
     if (window.NativeAlarms?.configurePlaybackOptions) {
       NativeAlarms.configurePlaybackOptions(notificationToggle?.checked !== false);
@@ -1004,7 +1025,9 @@ document.head.append(settingsHubStyle);
   }
   syncNativePlaybackOptions();
   syncFullScreenAccessStatus();
-  document.addEventListener('visibilitychange', syncFullScreenAccessStatus);
+  syncExactAlarmAccessStatus();
+  document.addEventListener('visibilitychange', window.refreshAlarmPermissionStatus);
+  window.addEventListener('focus', window.refreshAlarmPermissionStatus);
 
   const adhanStopBar = document.createElement('div');
   adhanStopBar.className = 'adhan-stop-bar';
