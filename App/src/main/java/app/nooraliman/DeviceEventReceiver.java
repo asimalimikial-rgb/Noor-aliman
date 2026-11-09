@@ -28,8 +28,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                 || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)
                 || Intent.ACTION_TIME_CHANGED.equals(action)
                 || Intent.ACTION_TIMEZONE_CHANGED.equals(action)) {
-            // The schedulers read saved preferences and safely no-op if disabled
-            // or if exact-alarm access has not been granted.
+            // The schedulers read saved preferences and no-op if disabled.
+            // If exact access is unavailable, they retain inexact fallback alarms.
             PrayerAlarmScheduler.schedule(context, true);
             DhikrAlarmScheduler.schedule(context);
         }
