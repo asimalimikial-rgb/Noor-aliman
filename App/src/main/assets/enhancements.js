@@ -1,5 +1,20 @@
 (() => {
   const $ = id => document.getElementById(id);
+  // A local Northern Sudan preset avoids silently using Khartoum coordinates for Merowe/Dibeiba.
+  if (typeof CITIES !== 'undefined' && !CITIES.dubeiba) {
+    CITIES.dubeiba = {
+      n: 'الدبيبة، مروي، الولاية الشمالية',
+      lat: 18.45352, lng: 31.81315, tz: 'Africa/Khartoum', m: 'umm'
+    };
+    document.querySelectorAll('.city-select,#settingCity').forEach(select => {
+      if (![...select.options].some(option => option.value === 'dubeiba')) {
+        const option = document.createElement('option');
+        option.value = 'dubeiba';
+        option.textContent = CITIES.dubeiba.n;
+        select.append(option);
+      }
+    });
+  }
   const ALZAIN = 'ar.alzainmohamedahmed';
   const ABDULKAREEM = 'ar.muhammadabdulkareem';
   const EN = {
@@ -16,7 +31,8 @@
     'صباحًا': 'Morning', 'ظهرًا': 'Noon', 'عصرًا': 'Afternoon', 'مساءً': 'Evening',
     'مساحتك اليومية': 'Your daily space', 'تخصيص تجربتك ←': 'Personalize your experience →',
     'موقعك الحالي': 'Your location', 'تغيير': 'Change', 'وجهتك إلى البيت الحرام': 'Your direction to the Sacred House',
-    'الخرطوم، السودان': 'Khartoum, Sudan', 'مكة المكرمة، السعودية': 'Makkah, Saudi Arabia',
+    'الخرطوم، السودان': 'Khartoum, Sudan', 'الدبيبة، مروي، الولاية الشمالية': 'Ad Dubaybah, Merowe, Northern State',
+    'مكة المكرمة، السعودية': 'Makkah, Saudi Arabia',
     'القاهرة، مصر': 'Cairo, Egypt', 'إسطنبول، تركيا': 'Istanbul, Turkey', 'موقعي الحالي': 'My location',
     '● محسوب فلكيًا': '● Calculated astronomically', 'شمال': 'North', 'شمال شرقي': 'Northeast',
     'شرق': 'East', 'جنوب شرقي': 'Southeast', 'جنوب': 'South', 'جنوب غربي': 'Southwest',
