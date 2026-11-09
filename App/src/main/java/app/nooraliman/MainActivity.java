@@ -395,6 +395,28 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getAlarmDiagnostics() {
+            android.content.SharedPreferences prefs = getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            org.json.JSONObject result = new org.json.JSONObject();
+            try {
+                result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("notificationPermission", hasNotificationPermission());
+                result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
+                result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
+                result.put("lastAlarmDelayMs", prefs.getLong("lastAlarmDelayMs", 0L));
+                result.put("lastAlarmType", prefs.getString("lastAlarmType", ""));
+                result.put("lastAlarmKey", prefs.getString("lastAlarmKey", ""));
+                result.put("lastAdhanPlaybackEventAt", prefs.getLong("lastAdhanPlaybackEventAt", 0L));
+                result.put("lastAdhanPlaybackState", prefs.getString("lastAdhanPlaybackState", ""));
+                result.put("lastAdhanPlaybackDetail", prefs.getString("lastAdhanPlaybackDetail", ""));
+                result.put("lastAdhanPlaybackPrayer", prefs.getString("lastAdhanPlaybackPrayer", ""));
+                result.put("lastAdhanPlaybackSound", prefs.getString("lastAdhanPlaybackSound", ""));
+            } catch (org.json.JSONException ignored) { }
+            return result.toString();
+        }
+
+        @JavascriptInterface
         public String loadWebSettings() {
             try {
                 return new org.json.JSONObject(getSharedPreferences(
