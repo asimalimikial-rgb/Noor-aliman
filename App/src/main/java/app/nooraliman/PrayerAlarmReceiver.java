@@ -42,6 +42,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (Build.VERSION.SDK_INT >= 31 && (alarms == null || !alarms.canScheduleExactAlarms())) {
                 Log.w(TAG, "Dropped stale adhan event because exact-alarm access is unavailable: " + key);
+                recordPlaybackFailure(context, "exact-alarm-access-missing", "Exact-alarm access was revoked", key);
                 showAdhanStartFailure(context, name, intent.getDataString());
                 return;
             }
@@ -57,6 +58,8 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             } catch (RuntimeException startFailure) {
                 // Never let a restricted background-service launch fail silently.
                 Log.e(TAG, "Could not start adhan playback service for " + key, startFailure);
+                recordPlaybackFailure(context, "foreground-service-start-failed",
+                        startFailure.toString(), key);
                 showAdhanStartFailure(context, name, intent.getDataString());
             }
         } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
@@ -83,6 +86,16 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .apply();
         Log.i(TAG, "Alarm delivered: type=" + type + ", key=" + key
                 + ", delayMs=" + delay);
+    }
+
+    private void recordPlaybackFailure(Context context, String state,
+                                       String detail, String prayerKey) {
+        context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).edit()
+                .putLong("lastAdhanPlaybackEventAt", System.currentTimeMillis())
+                .putString("lastAdhanPlaybackState", state)
+                .putString("lastAdhanPlaybackDetail", detail == null ? "" : detail)
+                .putString("lastAdhanPlaybackPrayer", prayerKey == null ? "" : prayerKey)
+                .apply();
     }
 
     private void showAdhanStartFailure(Context context, String name, String data) {
