@@ -38,6 +38,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private static volatile boolean playbackActive;
     static boolean isPlaybackActive() { return playbackActive; }
     private MediaPlayer player;
+    private AssetFileDescriptor activeAudioDescriptor;
     private boolean preview;
     private String prayerName = "";
     private String currentSound = "classic";
@@ -228,7 +229,9 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             stopSelf();
             return;
         }
-        try (AssetFileDescriptor audio = openAdhanAsset(sound, prayerKey)) {
+        try {
+            AssetFileDescriptor audio = openAdhanAsset(sound, prayerKey);
+            activeAudioDescriptor = audio;
             MediaPlayer created = new MediaPlayer();
             player = created;
             created.setAudioAttributes(new AudioAttributes.Builder()
@@ -237,6 +240,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             created.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
             created.setDataSource(audio.getFileDescriptor(), audio.getStartOffset(), audio.getLength());
             created.setOnPreparedListener(mp -> {
+                closeAudioDescriptor();
                 if (player != mp) return;
                 try {
                     mp.start();
@@ -262,9 +266,19 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             });
             created.prepareAsync();
         } catch (Exception error) {
+            closeAudioDescriptor();
             recordPlaybackState("asset-or-prepare-error", error.toString());
             Log.e(TAG, "Could not prepare adhan asset: " + sound + "/" + prayerKey, error);
             stopSelf();
+        }
+    }
+
+    private void closeAudioDescriptor() {
+        AssetFileDescriptor descriptor = activeAudioDescriptor;
+        activeAudioDescriptor = null;
+        if (descriptor != null) {
+            try { descriptor.close(); }
+            catch (Exception error) { Log.w(TAG, "Could not close adhan asset descriptor", error); }
         }
     }
 
@@ -367,6 +381,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             try { player.release(); } catch (Exception ignored) { }
             player = null;
         }
+        closeAudioDescriptor();
         playing = false;
         abandonAudioFocus();
     }
