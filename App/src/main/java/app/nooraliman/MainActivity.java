@@ -180,6 +180,14 @@ public class MainActivity extends Activity {
     private void loadApplicationAssets() {
         try {
             String html = readAsset("noor-aliman.html");
+            // Inject the local city before the main HTML script runs, so a saved
+            // "dubeiba" selection is valid on the very first render after restart.
+            String cityMarker = "const CITIES={";
+            String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
+                    + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
+            if (html.contains(cityMarker) && !html.contains("dubeiba:")) {
+                html = html.replace(cityMarker, localCity);
+            }
             String enhancements = readAsset("enhancements.js");
             int bodyEnd = html.toLowerCase(java.util.Locale.ROOT).lastIndexOf("</body>");
             if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
