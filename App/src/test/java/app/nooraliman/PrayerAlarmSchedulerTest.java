@@ -9,7 +9,7 @@ public class PrayerAlarmSchedulerTest {
         assertEquals(-38.0569, actual, 0.01);
     }
 
-    @Test public void hanafiAsrAngleIsLowerThanStandard() {
+    @Test public void hanafiAsrAngleIsLessNegativeThanStandard() {
         double standard = PrayerAlarmScheduler.asrAngle(15.5, 0.0, false);
         double hanafi = PrayerAlarmScheduler.asrAngle(15.5, 0.0, true);
         assertTrue(hanafi > standard);
