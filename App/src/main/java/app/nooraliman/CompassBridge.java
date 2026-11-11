@@ -7,12 +7,13 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
-import android.os.Looper;
+import android.os.HandlerThread;
 import android.webkit.JavascriptInterface;
 
 public final class CompassBridge implements SensorEventListener {
     private final Activity activity;
     private final SensorManager sensorManager;
+    private final HandlerThread sensorThread;
     private final Handler sensorHandler;
     private final float[] rotation = new float[9];
     private final float[] remapped = new float[9];
@@ -31,7 +32,9 @@ public final class CompassBridge implements SensorEventListener {
     CompassBridge(Activity activity) {
         this.activity = activity;
         sensorManager = (SensorManager) activity.getSystemService(Activity.SENSOR_SERVICE);
-        sensorHandler = new Handler(Looper.getMainLooper());
+        sensorThread = new HandlerThread("NoorCompassSensors");
+        sensorThread.start();
+        sensorHandler = new Handler(sensorThread.getLooper());
     }
 
     @JavascriptInterface
