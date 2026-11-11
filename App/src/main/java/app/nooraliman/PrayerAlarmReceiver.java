@@ -41,10 +41,11 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
-            if (wasExact && Build.VERSION.SDK_INT >= 31
-                    && (alarms == null || !alarms.canScheduleExactAlarms())) {
-                Log.w(TAG, "Dropped stale adhan event because exact-alarm access is unavailable: " + key);
-                recordPlaybackFailure(context, "exact-alarm-access-missing", "Exact-alarm access was revoked", key);
+            if (Build.VERSION.SDK_INT >= 31
+                    && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
+                Log.w(TAG, "Dropped adhan event because it was not exact or exact-alarm access is unavailable: " + key);
+                recordPlaybackFailure(context, "exact-alarm-access-missing",
+                        "Exact-alarm access is required; approximate adhan events are ignored", key);
                 showAdhanStartFailure(context, name, intent.getDataString());
                 return;
             }
