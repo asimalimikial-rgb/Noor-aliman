@@ -1098,6 +1098,7 @@ document.head.append(settingsHubStyle);
   syncNativePlaybackOptions();
   syncFullScreenAccessStatus();
   syncExactAlarmAccessStatus();
+  syncNotificationAccessStatus();
   refreshAlarmDiagnostics();
   document.addEventListener('visibilitychange', window.refreshAlarmPermissionStatus);
   window.addEventListener('focus', window.refreshAlarmPermissionStatus);
