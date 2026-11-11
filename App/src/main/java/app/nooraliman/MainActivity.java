@@ -42,7 +42,6 @@ public class MainActivity extends Activity {
     private OnBackInvokedCallback backInvokedCallback;
     private static boolean prayerScheduleInitializedForProcess;
     private boolean webViewRendererGone;
-    private boolean rendererRecoveryRequested;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -457,8 +456,9 @@ public class MainActivity extends Activity {
     }
 
     private boolean hasExactAlarmPermission() {
-        return Build.VERSION.SDK_INT < 31
-                || ((AlarmManager) getSystemService(ALARM_SERVICE)).canScheduleExactAlarms();
+        if (Build.VERSION.SDK_INT < 31) return true;
+        AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        return manager != null && manager.canScheduleExactAlarms();
     }
 
     private void openExactAlarmSettings() {
@@ -468,7 +468,13 @@ public class MainActivity extends Activity {
                     Uri.parse("package:" + getPackageName()));
             startActivity(intent);
         } catch (Exception error) {
-            Log.e("NoorPrayerAlarm", "Could not open exact-alarm settings", error);
+            Log.w("NoorPrayerAlarm", "Could not open the dedicated exact-alarm settings screen", error);
+            try {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + getPackageName())));
+            } catch (Exception fallbackError) {
+                Log.e("NoorPrayerAlarm", "Could not open application settings", fallbackError);
+            }
         }
     }
 
@@ -514,8 +520,20 @@ public class MainActivity extends Activity {
             // Rebuild once when the Activity is first opened, or when the user
             // returns after granting/revoking exact-alarm access. Do not cancel
             // pending prayer alarms on every ordinary Activity resume.
-            if (!prayerScheduleInitializedForProcess || !known || previous != exactAllowed) {
+            boolean permissionChanged = known && previous != exactAllowed;
+            boolean rebuildSchedule = !prayerScheduleInitializedForProcess || !known
+                    || permissionChanged;
+            if (rebuildSchedule) {
+                if (permissionChanged) {
+                    Log.i("NoorPrayerAlarm", "Exact-alarm permission changed while app was away; "
+                            + "rebuilding prayer schedule. granted=" + exactAllowed);
+                } else {
+                    Log.i("NoorPrayerAlarm", "Initializing prayer alarm schedule; exact="
+                            + exactAllowed);
+                }
                 PrayerAlarmScheduler.schedule(this, true);
+                prefs.edit().putLong("lastExactAlarmPermissionSyncAt",
+                        System.currentTimeMillis()).apply();
             }
             prayerScheduleInitializedForProcess = true;
             DhikrAlarmScheduler.schedule(this);
@@ -594,6 +612,22 @@ public class MainActivity extends Activity {
                 result.put("lastAdhanPlaybackDetail", prefs.getString("lastAdhanPlaybackDetail", ""));
                 result.put("lastAdhanPlaybackPrayer", prefs.getString("lastAdhanPlaybackPrayer", ""));
                 result.put("lastAdhanPlaybackSound", prefs.getString("lastAdhanPlaybackSound", ""));
+                android.content.SharedPreferences runtime = getSharedPreferences(
+                        "noor_runtime_diagnostics", MODE_PRIVATE);
+                result.put("webviewRendererExitCount",
+                        runtime.getInt("webviewRendererExitCount", 0));
+                result.put("lastWebviewRendererExitAt",
+                        runtime.getLong("lastWebviewRendererExitAt", 0L));
+                result.put("lastWebviewRendererDidCrash",
+                        runtime.getBoolean("lastWebviewRendererDidCrash", false));
+                result.put("lastWebviewRendererPssKb",
+                        runtime.getLong("lastWebviewRendererPssKb", 0L));
+                result.put("lastSystemAvailableMemory",
+                        runtime.getLong("lastSystemAvailableMemory", 0L));
+                result.put("lastSystemLowMemory",
+                        runtime.getBoolean("lastSystemLowMemory", false));
+                result.put("manualRendererRetryCount",
+                        runtime.getInt("manualRendererRetryCount", 0));
             } catch (org.json.JSONException ignored) { }
             return result.toString();
         }
