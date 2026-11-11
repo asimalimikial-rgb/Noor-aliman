@@ -3,11 +3,13 @@ package app.nooraliman;
 import android.Manifest;
 import android.app.AlarmManager;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.graphics.Insets;
 import android.util.Log;
 import android.view.WindowInsets;
@@ -45,6 +47,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        logRecentProcessExits();
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
         if (Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
@@ -108,25 +111,13 @@ public class MainActivity extends Activity {
             @Override
             public boolean onRenderProcessGone(WebView view,
                     android.webkit.RenderProcessGoneDetail detail) {
-                boolean didCrash = detail != null && detail.didCrash();
-                int priority = detail == null ? -1 : detail.rendererPriorityAtExit();
-                Log.e("NoorAlImanWeb", "WebView renderer exited; didCrash=" + didCrash
-                        + ", priorityAtExit=" + priority);
                 if (view != webView) return true;
-
                 webViewRendererGone = true;
-                if (!rendererRecoveryRequested) {
-                    rendererRecoveryRequested = true;
-                    runOnUiThread(() -> {
-                        if (!isFinishing() && !isDestroyed()) {
-                            android.widget.Toast.makeText(MainActivity.this,
-                                    "حدث خلل في عرض التطبيق؛ جارٍ إعادة فتحه دون مسح بياناتك.",
-                                    android.widget.Toast.LENGTH_LONG).show();
-                            recreate();
-                        }
-                    });
-                }
-                // The renderer is gone; this WebView must not be reused.
+                recordRendererExit(detail);
+                if (compassBridge != null) compassBridge.stop();
+                // Never recreate automatically here: the same page could crash again
+                // immediately and create an Activity/WebView recovery loop.
+                runOnUiThread(() -> showRendererFailureScreen());
                 return true;
             }
         });
@@ -205,6 +196,131 @@ public class MainActivity extends Activity {
             }
         }
         if (!restoredWebView) loadApplicationAssets();
+    }
+
+    private void recordRendererExit(android.webkit.RenderProcessGoneDetail detail) {
+        boolean didCrash = detail != null && detail.didCrash();
+        int priority = detail == null ? -1 : detail.rendererPriorityAtExit();
+        long pssKb = Debug.getPss();
+        ActivityManager.MemoryInfo memory = new ActivityManager.MemoryInfo();
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        if (manager != null) manager.getMemoryInfo(memory);
+
+        android.content.SharedPreferences diagnostics = getSharedPreferences(
+                "noor_runtime_diagnostics", MODE_PRIVATE);
+        int count = diagnostics.getInt("webviewRendererExitCount", 0) + 1;
+        diagnostics.edit()
+                .putInt("webviewRendererExitCount", count)
+                .putLong("lastWebviewRendererExitAt", System.currentTimeMillis())
+                .putBoolean("lastWebviewRendererDidCrash", didCrash)
+                .putInt("lastWebviewRendererPriority", priority)
+                .putLong("lastWebviewRendererPssKb", pssKb)
+                .putLong("lastSystemAvailableMemory", memory.availMem)
+                .putBoolean("lastSystemLowMemory", memory.lowMemory)
+                .apply();
+
+        Log.e("NoorAlImanWeb", "Renderer exited; didCrash=" + didCrash
+                + ", priorityAtExit=" + priority + ", processPssKb=" + pssKb
+                + ", availableMemory=" + memory.availMem + ", lowMemory=" + memory.lowMemory
+                + ", rendererExitCount=" + count);
+    }
+
+    private void logRecentProcessExits() {
+        if (Build.VERSION.SDK_INT < 30) return;
+        try {
+            ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            if (manager == null) return;
+            java.util.List<android.app.ApplicationExitInfo> exits =
+                    manager.getHistoricalProcessExitReasons(getPackageName(), 0, 5);
+            if (exits == null || exits.isEmpty()) {
+                Log.i("NoorRuntime", "No historical process exit records returned by Android");
+                return;
+            }
+            for (android.app.ApplicationExitInfo exit : exits) {
+                Log.w("NoorRuntime", "Historical process exit: reason=" + exit.getReason()
+                        + ", status=" + exit.getStatus()
+                        + ", importance=" + exit.getImportance()
+                        + ", timestamp=" + exit.getTimestamp()
+                        + ", pssKb=" + exit.getPss()
+                        + ", rssKb=" + exit.getRss()
+                        + ", process=" + exit.getProcessName()
+                        + ", description=" + exit.getDescription());
+            }
+        } catch (RuntimeException error) {
+            Log.w("NoorRuntime", "Could not read historical process exit information", error);
+        }
+    }
+
+    private void showRendererFailureScreen() {
+        if (isFinishing() || isDestroyed()) return;
+
+        WebView failedView = webView;
+        webView = null;
+        if (failedView != null) {
+            android.view.ViewParent parent = failedView.getParent();
+            if (parent instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) parent).removeView(failedView);
+            }
+            try {
+                failedView.removeJavascriptInterface("NativeAlarms");
+                failedView.removeJavascriptInterface("NativeCompass");
+                failedView.removeJavascriptInterface("NativeTafsir");
+                failedView.stopLoading();
+                failedView.destroy();
+            } catch (RuntimeException error) {
+                Log.w("NoorAlImanWeb", "Could not fully dispose failed WebView", error);
+            }
+        }
+
+        android.widget.LinearLayout screen = new android.widget.LinearLayout(this);
+        screen.setOrientation(android.widget.LinearLayout.VERTICAL);
+        screen.setGravity(android.view.Gravity.CENTER);
+        screen.setPadding(32, 32, 32, 32);
+        screen.setBackgroundColor(0xFFF5F3EA);
+
+        android.widget.TextView title = new android.widget.TextView(this);
+        title.setText("تعذّر عرض نور الإيمان");
+        title.setTextColor(0xFF102C26);
+        title.setTextSize(22);
+        title.setGravity(android.view.Gravity.CENTER);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        android.widget.TextView message = new android.widget.TextView(this);
+        message.setText("توقفت وحدة عرض التطبيق بصورة غير متوقعة. لم نحذف إعداداتك أو بياناتك. يمكنك المحاولة يدوياً، ولن يعيد التطبيق تحميل الصفحة تلقائياً بصورة متكررة.");
+        message.setTextColor(0xFF39443F);
+        message.setTextSize(16);
+        message.setGravity(android.view.Gravity.CENTER);
+        message.setPadding(0, 20, 0, 24);
+
+        android.widget.Button retry = new android.widget.Button(this);
+        retry.setText("إعادة المحاولة");
+        retry.setOnClickListener(v -> {
+            getSharedPreferences("noor_runtime_diagnostics", MODE_PRIVATE).edit()
+                    .putLong("lastManualRendererRetryAt", System.currentTimeMillis())
+                    .putInt("manualRendererRetryCount", getSharedPreferences(
+                            "noor_runtime_diagnostics", MODE_PRIVATE)
+                            .getInt("manualRendererRetryCount", 0) + 1)
+                    .apply();
+            recreate();
+        });
+
+        android.widget.Button close = new android.widget.Button(this);
+        close.setText("إغلاق التطبيق");
+        close.setOnClickListener(v -> finish());
+
+        screen.addView(title, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(message, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(retry, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(close, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        setContentView(screen);
     }
 
     private static boolean isTrustedAppOrigin(Uri uri) {
@@ -704,7 +820,7 @@ public class MainActivity extends Activity {
             cameraPermissionRequest.deny();
             cameraPermissionRequest = null;
         }
-        if (compassBridge != null) compassBridge.stop();
+        if (compassBridge != null) compassBridge.shutdown();
         if (Build.VERSION.SDK_INT >= 33 && backInvokedCallback != null) {
             getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
             backInvokedCallback = null;
