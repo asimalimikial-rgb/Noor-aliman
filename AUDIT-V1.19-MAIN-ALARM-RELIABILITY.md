@@ -3,7 +3,7 @@
 **Source of truth:** `main` at `ba7baf79510c8a7e05326bdefb559063a76e850e`  
 **Patch branch:** `fix/v1.19-main-alarm-reliability`  
 **Scope:** Prayer alarm precision, timed dhikr idempotency, notification permission recovery and regression coverage.  
-**Status:** Implemented on the patch branch; CI and device QA are pending. This is not a claim of a completed end-to-end device audit.
+**Status:** Implemented on the patch branch; GitHub Actions run #154 passed (unit-test task, Release build and APK signature verification). Physical-device QA is still pending. This is not a claim of a completed end-to-end device audit.
 
 ## Confirmed issues on main
 
@@ -46,8 +46,17 @@
 - No dedication/الإهداء text was changed.
 - No release was published and `main` was not modified directly.
 
+## Automated validation completed
+GitHub Actions run [#154](https://github.com/asimalimikial-rgb/Noor-aliman/actions/runs/43036894314) completed successfully:
+- Web asset validation passed.
+- Java 17 / Android SDK 36 setup passed.
+- `clean testDebugUnitTest assembleRelease` passed.
+- APK signature verification passed (one signer; v1 and v2 verification true).
+- Signed APK and SHA-256 artifact uploaded as `noor-al-iman-v1.19.0-signed-apk`.
+- Release publishing jobs were skipped as expected because this is a pull request, not a push to `main` with a publish commit.
+
 ## Validation still required
-1. GitHub Actions: Java compilation, unit tests, signed Release APK build and APK signature verification.
+1. Physical-device QA:
 2. Android 12+: revoke/grant exact-alarm permission and verify no inexact prayer alerts are scheduled.
 3. Screen-off/background/Doze and Samsung battery management tests.
 4. Notification permission denied/granted settings round-trip.
