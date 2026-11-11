@@ -1,6 +1,6 @@
-# Noor Al-Iman v1.16 candidate — device test checklist
+# Noor Al-Iman — Android device test checklist
 
-This checklist describes the current five-recording source state and the v1.16 reliability changes. Source checks and CI builds do not replace testing on a physical Android device.
+This checklist covers the current Android application and its reliability patches. Source checks and CI builds do not replace testing on a physical Android device.
 
 ## Install, upgrade, and lifecycle
 - [ ] Install the candidate over v1.15 using the same signing key; confirm Android accepts the upgrade and saved preferences remain.
@@ -33,8 +33,8 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Verify legacy inexact adhan broadcasts are ignored on Android 12+ and do not start AdhanPlaybackService.
 - [ ] Play each adhan recording repeatedly; verify asynchronous preparation succeeds and no descriptor/resource leak appears after stop, completion, or error.
 - [ ] With exact-alarm permission granted, verify each enabled prayer alarm at a test time.
-- [ ] On Android 12+, deny/revoke exact-alarm access while prayer alerts are enabled; confirm prayer alarms are still scheduled through the inexact fallback (allow for Android delivery delay).
-- [ ] Reopen/resume the app while exact-alarm access remains denied; confirm prayer fallback alarms are re-created rather than skipped.
+- [ ] On Android 12+, deny/revoke exact-alarm access while prayer alerts are enabled; confirm the scheduler reports `exact_permission_required`, cancels old user-facing prayer alarms, and does not create an inexact prayer fallback.
+- [ ] Reopen/resume the app while exact-alarm access remains denied; confirm the settings UI clearly explains that prayer alerts are not scheduled until the user grants access.
 - [ ] Restore exact-alarm access; confirm the next schedule uses exact alarms again.
 - [ ] Verify the app does not request or change any permission as part of the fallback path.
 - [ ] Verify notification permission granted and denied paths.
@@ -65,7 +65,7 @@ This checklist describes the current five-recording source state and the v1.16 r
 
 ## WebView, accessibility, and performance
 - [ ] Background and resume the app repeatedly; verify the WebView remains responsive and user state is retained.
-- [ ] Exercise renderer-loss recovery (where test tooling permits); verify a fresh WebView is created without clearing local settings or downloads.
+- [ ] Exercise renderer-loss recovery (where test tooling permits); verify the app displays the native recovery screen, does not automatically call `recreate()`, and preserves local settings/downloads when the user explicitly chooses Retry.
 - [ ] Test on a device/emulator without compass sensors; verify the app reports unavailable compass instead of crashing.
 - [ ] Verify the published website HTML begins with `<!doctype html>` as the first non-whitespace content and renders in standards mode.
 - [ ] Verify local app fonts and Quran page layout with network disabled; compare Arabic glyph shaping and line breaks.
@@ -95,7 +95,7 @@ This checklist describes the current five-recording source state and the v1.16 r
 ## v1.17 automated checks
 - [ ] Run Node syntax validation on `App/src/main/assets/enhancements.js`.
 - [ ] Verify the public website starts with an HTML doctype and the Android Release APK builds and passes signature verification.
-- [ ] Note: no `src/test` or `src/androidTest` source sets currently exist; a successful Gradle test task alone does not demonstrate feature-level unit or device coverage.
+- [ ] Confirm the existing `src/test` unit tests run; note that no instrumentation/device test suite is currently established, so a successful Gradle test task does not prove device-level behavior.
 
 
 ## v1.19 alarm reliability regression checks
@@ -107,3 +107,19 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Grant notification permission from Android app settings and return to Noor Al-Iman; verify the status updates without reinstalling or clearing app data.
 - [ ] Confirm prayer alarm diagnostics distinguish exact permission missing, exact scheduling success, partial scheduling failure, and unavailable AlarmManager.
 - [ ] Confirm no Android manifest permission declarations, signing configuration, audio assets, or dedication text changed in the v1.19 reliability patch.
+
+
+## v1.19.1 renderer stability and runtime diagnostics
+- [ ] Trigger a WebView renderer termination in a controlled test environment; verify `onRenderProcessGone()` records the event and displays the native recovery screen without automatic Activity recreation.
+- [ ] Confirm the recovery screen offers explicit Retry and Close actions and does not clear WebView DOM storage, saved settings, bookmarks, downloads, or audio selections.
+- [ ] Repeatedly trigger renderer termination; verify each failure returns to the recovery screen and does not start an automatic recreate/reload loop.
+- [ ] On Android 11+, relaunch after a process exit and inspect `ApplicationExitInfo` logs for reason, status, timestamp, process name, PSS, RSS, and description.
+- [ ] Confirm renderer diagnostics record renderer exit count, crash flag, renderer priority, process PSS, available system memory, and low-memory state.
+- [ ] Confirm the in-app diagnostics panel displays renderer exit count and the last renderer event without exposing private user data.
+- [ ] Open Qibla/compass, verify sensor callbacks are delivered through the dedicated `NoorCompassSensors` HandlerThread at `SENSOR_DELAY_UI`, and confirm heading remains stable.
+- [ ] Leave Qibla, background the app, and destroy/recreate the Activity; verify the sensor listener is unregistered and the HandlerThread is shut down without leaks.
+- [ ] Verify exact-alarm access is rechecked on return from Android settings; when permission changes, confirm prayer alarms are rebuilt once and the UI status refreshes.
+- [ ] Deny exact-alarm access, grant it from Android settings, return to the app, and confirm `scheduled_exact` plus future alarm PendingIntents are restored.
+- [ ] Confirm the exact-alarm settings action falls back to Android app details settings if the dedicated system screen cannot be opened.
+- [ ] Capture Logcat and `dumpsys activity exit-info app.nooraliman` after any Device Care warning; do not attribute the warning to WebView or memory without matching evidence.
+- [ ] Test the recovery flow and memory behavior on the actual Samsung device, including low-memory conditions; emulator/CI results are not a substitute.
