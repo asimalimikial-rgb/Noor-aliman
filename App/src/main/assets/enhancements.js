@@ -982,6 +982,12 @@ document.head.append(settingsHubStyle);
       const playback = d.lastAdhanPlaybackState
         ? d.lastAdhanPlaybackState + (d.lastAdhanPlaybackDetail ? ' — ' + String(d.lastAdhanPlaybackDetail).slice(0, 90) : '')
         : 'لم تُسجّل محاولة تشغيل أذان بعد';
+      const rendererCount = Number(d.webviewRendererExitCount || 0);
+      const renderer = rendererCount > 0
+        ? 'مرات توقف WebView: ' + rendererCount +
+          '؛ آخر توقف: ' + stamp(d.lastWebviewRendererExitAt) +
+          '؛ ذاكرة العملية: ' + Math.round(Number(d.lastWebviewRendererPssKb || 0) / 1024) + ' MB'
+        : 'لم يُسجّل توقف WebView';
       const scheduleState = ({
         exact_permission_required: 'لم تُجدول تنبيهات الصلاة: يلزم إذن التنبيه الدقيق',
         scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
@@ -993,7 +999,8 @@ document.head.append(settingsHubStyle);
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
         scheduleState + '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
-        '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback;
+        '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback +
+        '؛ استقرار عرض الصفحة: ' + renderer;
     } catch (error) {
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent = 'تعذّر قراءة سجل التنبيهات.';
     }
