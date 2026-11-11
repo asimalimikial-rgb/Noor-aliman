@@ -113,7 +113,7 @@ public class MainActivity extends Activity {
                 if (view != webView) return true;
                 webViewRendererGone = true;
                 recordRendererExit(detail);
-                if (compassBridge != null) compassBridge.stop();
+                if (compassBridge != null) compassBridge.shutdown();
                 // Never recreate automatically here: the same page could crash again
                 // immediately and create an Activity/WebView recovery loop.
                 runOnUiThread(() -> showRendererFailureScreen());
