@@ -982,8 +982,16 @@ document.head.append(settingsHubStyle);
       const playback = d.lastAdhanPlaybackState
         ? d.lastAdhanPlaybackState + (d.lastAdhanPlaybackDetail ? ' — ' + String(d.lastAdhanPlaybackDetail).slice(0, 90) : '')
         : 'لم تُسجّل محاولة تشغيل أذان بعد';
+      const scheduleState = ({
+        exact_permission_required: 'لم تُجدول تنبيهات الصلاة: يلزم إذن التنبيه الدقيق',
+        scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
+        partial_schedule_failure: 'بعض تنبيهات الصلاة لم تُجدول؛ راجع سجل النظام',
+        schedule_failed: 'فشلت جدولة تنبيهات الصلاة؛ راجع سجل النظام',
+        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
+        alarm_manager_unavailable: 'خدمة AlarmManager غير متاحة'
+      })[d.prayerAlarmScheduleStatus] || 'حالة الجدولة غير معروفة';
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
-        'التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
+        scheduleState + '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
         '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback;
     } catch (error) {
