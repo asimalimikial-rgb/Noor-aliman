@@ -140,6 +140,10 @@ final class PrayerAlarmScheduler {
         return exactAlarmsAllowed;
     }
 
+    static boolean shouldSchedulePrayerAlerts(boolean exactAlarmsAllowed) {
+        return exactAlarmsAllowed;
+    }
+
     static boolean isFutureAlarm(long alarmAt, long now) {
         return alarmAt > now;
     }
