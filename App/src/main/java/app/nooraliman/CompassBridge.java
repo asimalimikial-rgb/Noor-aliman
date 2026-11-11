@@ -57,7 +57,7 @@ public final class CompassBridge implements SensorEventListener {
         Sensor rotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         if (rotationVector != null
                 && sensorManager.registerListener(this, rotationVector,
-                SensorManager.SENSOR_DELAY_GAME, sensorHandler)) {
+                SensorManager.SENSOR_DELAY_UI, sensorHandler)) {
             rotationVectorMode = true;
             running = true;
             return true;
@@ -67,9 +67,9 @@ public final class CompassBridge implements SensorEventListener {
         Sensor magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         if (accelerometer == null || magnetometer == null) return false;
         boolean accelRegistered = sensorManager.registerListener(this, accelerometer,
-                SensorManager.SENSOR_DELAY_GAME, sensorHandler);
+                SensorManager.SENSOR_DELAY_UI, sensorHandler);
         boolean magneticRegistered = sensorManager.registerListener(this, magnetometer,
-                SensorManager.SENSOR_DELAY_GAME, sensorHandler);
+                SensorManager.SENSOR_DELAY_UI, sensorHandler);
         if (!accelRegistered || !magneticRegistered) {
             stopListening();
             return false;
@@ -88,6 +88,11 @@ public final class CompassBridge implements SensorEventListener {
     @JavascriptInterface
     public double headingDegrees() {
         return heading;
+    }
+
+    synchronized void shutdown() {
+        stopListening();
+        sensorThread.quitSafely();
     }
 
     @Override
@@ -137,7 +142,7 @@ public final class CompassBridge implements SensorEventListener {
     }
 
     private void stopListening() {
-        sensorManager.unregisterListener(this);
+        if (sensorManager != null) sensorManager.unregisterListener(this);
         running = false;
         rotationVectorMode = false;
         hasGravity = false;
