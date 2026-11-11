@@ -464,6 +464,8 @@ public class MainActivity extends Activity {
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("prayerAlarmScheduleStatus",
+                        prefs.getString("prayerAlarmScheduleStatus", "unknown"));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
