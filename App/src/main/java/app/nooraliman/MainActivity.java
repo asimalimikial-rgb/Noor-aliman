@@ -576,6 +576,24 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean canPostNotifications() {
+            return hasNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception error) {
+                    Log.e("NoorPrayerAlarm", "Could not open notification settings", error);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean canUseFullScreenIntent() {
             return Build.VERSION.SDK_INT < 34
                     || ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
