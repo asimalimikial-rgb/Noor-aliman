@@ -38,16 +38,19 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         recordDelivery(context, intent, type, key);
         SharedPreferences prefs = context.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-        if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
-            AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
-            if (wasExact && Build.VERSION.SDK_INT >= 31
-                    && (alarms == null || !alarms.canScheduleExactAlarms())) {
-                Log.w(TAG, "Dropped stale adhan event because exact-alarm access is unavailable: " + key);
-                recordPlaybackFailure(context, "exact-alarm-access-missing", "Exact-alarm access was revoked", key);
+        boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
+        AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT >= 31
+                && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
+            Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: " + type + "/" + key);
+            if ("adhan".equals(type)) {
+                recordPlaybackFailure(context, "exact-alarm-access-missing",
+                        "Exact-alarm access is required; approximate adhan events are ignored", key);
                 showAdhanStartFailure(context, name, intent.getDataString());
-                return;
             }
+            return;
+        }
+        if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
             Intent service = new Intent(context, AdhanPlaybackService.class)
                     .setAction(AdhanPlaybackService.ACTION_PLAY)
                     .putExtra(PrayerAlarmScheduler.EXTRA_NAME, name)

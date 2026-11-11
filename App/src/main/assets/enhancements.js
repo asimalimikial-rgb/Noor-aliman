@@ -907,6 +907,19 @@ document.head.append(settingsHubStyle);
   const exactAlarmAccessStatus = $('exactAlarmAccessStatus');
   const alarmDiagnosticsStatus = $('alarmDiagnosticsStatus');
   const refreshAlarmDiagnosticsButton = $('refreshAlarmDiagnosticsButton');
+  const notificationAccessStatus = document.createElement('small');
+  const notificationAccessButton = document.createElement('button');
+  notificationAccessButton.type = 'button';
+  notificationAccessButton.textContent = 'إعدادات الإشعارات';
+  notificationAccessButton.className = exactAlarmAccessButton?.className || '';
+  notificationAccessButton.addEventListener('click', () =>
+    window.NativeAlarms?.openNotificationSettings?.());
+  if (exactAlarmAccessButton?.parentElement) {
+    const notificationAccessRow = document.createElement('div');
+    notificationAccessRow.className = 'notification-access-row';
+    notificationAccessRow.append(notificationAccessStatus, notificationAccessButton);
+    exactAlarmAccessButton.parentElement.insertAdjacentElement('afterend', notificationAccessRow);
+  }
   const showAdhanNotification = store.get('showAdhanNotification', true) !== false;
   const stopAdhanFaceDown = store.get('stopAdhanFaceDown', false) === true;
   const stopAdhanVolumeKeys = store.get('stopAdhanVolumeKeys', false) === true;
@@ -936,9 +949,18 @@ document.head.append(settingsHubStyle);
       || NativeAlarms.canScheduleExactAlarms();
     if (exactAlarmAccessStatus) exactAlarmAccessStatus.textContent = allowed
       ? 'الإذن مفعّل؛ يمكن جدولة الأذان والتذكير في أوقاتهما بدقة.'
-      : 'الإذن غير مفعّل؛ سيستخدم التطبيق تنبيهات تقريبية قد تتأخر، وقد يقيّد Android تشغيل الصوت تلقائيًا في الخلفية. فعّل الصلاحية لتوقيت أدق.';
+      : 'الإذن غير مفعّل؛ لن تُجدول تنبيهات الصلاة تلقائيًا حتى تفعّله. التنبيه التقريبي لا يضمن وقت الصلاة وقد لا يسمح Android بتشغيل الأذان من الخلفية.';
     if (exactAlarmAccessButton) exactAlarmAccessButton.textContent = allowed ? 'تم التفعيل' : 'تفعيل الإذن';
     if (exactAlarmAccessButton) exactAlarmAccessButton.disabled = allowed;
+  }
+  function syncNotificationAccessStatus() {
+    const allowed = !window.NativeAlarms?.canPostNotifications
+      || NativeAlarms.canPostNotifications();
+    notificationAccessStatus.textContent = allowed
+      ? 'إشعارات التطبيق مسموحة.'
+      : 'إذن الإشعارات مرفوض؛ افتح إعدادات التطبيق وفعّله لإظهار التذكيرات وعناصر التحكم.';
+    notificationAccessButton.disabled = allowed;
+    notificationAccessButton.textContent = allowed ? 'الإشعارات مفعّلة' : 'فتح إعدادات الإشعارات';
   }
   function refreshAlarmDiagnostics() {
     if (!window.NativeAlarms?.getAlarmDiagnostics) return;
@@ -960,8 +982,16 @@ document.head.append(settingsHubStyle);
       const playback = d.lastAdhanPlaybackState
         ? d.lastAdhanPlaybackState + (d.lastAdhanPlaybackDetail ? ' — ' + String(d.lastAdhanPlaybackDetail).slice(0, 90) : '')
         : 'لم تُسجّل محاولة تشغيل أذان بعد';
+      const scheduleState = ({
+        exact_permission_required: 'لم تُجدول تنبيهات الصلاة: يلزم إذن التنبيه الدقيق',
+        scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
+        partial_schedule_failure: 'بعض تنبيهات الصلاة لم تُجدول؛ راجع سجل النظام',
+        schedule_failed: 'فشلت جدولة تنبيهات الصلاة؛ راجع سجل النظام',
+        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
+        alarm_manager_unavailable: 'خدمة AlarmManager غير متاحة'
+      })[d.prayerAlarmScheduleStatus] || 'حالة الجدولة غير معروفة';
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
-        'التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
+        scheduleState + '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
         '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback;
     } catch (error) {
@@ -970,6 +1000,7 @@ document.head.append(settingsHubStyle);
   }
   window.refreshAlarmPermissionStatus = () => {
     syncExactAlarmAccessStatus();
+    syncNotificationAccessStatus();
     syncFullScreenAccessStatus();
     refreshAlarmDiagnostics();
   };
@@ -1075,6 +1106,7 @@ document.head.append(settingsHubStyle);
   syncNativePlaybackOptions();
   syncFullScreenAccessStatus();
   syncExactAlarmAccessStatus();
+  syncNotificationAccessStatus();
   refreshAlarmDiagnostics();
   document.addEventListener('visibilitychange', window.refreshAlarmPermissionStatus);
   window.addEventListener('focus', window.refreshAlarmPermissionStatus);

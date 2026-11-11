@@ -464,6 +464,8 @@ public class MainActivity extends Activity {
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("prayerAlarmScheduleStatus",
+                        prefs.getString("prayerAlarmScheduleStatus", "unknown"));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
@@ -573,6 +575,24 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void requestExactAlarmAccess() {
             runOnUiThread(() -> openExactAlarmSettings());
+        }
+
+        @JavascriptInterface
+        public boolean canPostNotifications() {
+            return hasNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception error) {
+                    Log.e("NoorPrayerAlarm", "Could not open notification settings", error);
+                }
+            });
         }
 
         @JavascriptInterface

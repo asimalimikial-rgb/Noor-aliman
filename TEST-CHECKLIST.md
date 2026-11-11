@@ -26,9 +26,11 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Verify Ramadan/Isha boundary dates against the selected calculation method and a trusted calendar.
 
 ## Prayer alerts and adhan
-- [ ] With exact-alarm permission denied, verify the inexact fallback event is delivered and the diagnostics label it approximate; measure real delay on the target Android device.
-- [ ] Revoke exact-alarm access while the app is backgrounded, then reopen it; verify the fallback schedule is rebuilt and the UI explains possible delay.
-- [ ] Grant exact-alarm access again; verify prayer and dhikr schedules return to exact mode.
+- [ ] With exact-alarm permission denied, verify no user-facing prayer adhan or 10-minute reminder is scheduled; the settings UI must state that exact-alarm access is required.
+- [ ] Revoke exact-alarm access while the app is backgrounded, then reopen it; verify previously stored prayer alerts are cancelled and no inexact prayer fallback is created.
+- [ ] Grant exact-alarm access again; verify all future prayer alerts are rebuilt with setExactAndAllowWhileIdle().
+- [ ] Force an exact-alarm SecurityException in a test environment; verify no inexact fallback is attempted and diagnostics report schedule failure.
+- [ ] Verify legacy inexact adhan broadcasts are ignored on Android 12+ and do not start AdhanPlaybackService.
 - [ ] Play each adhan recording repeatedly; verify asynchronous preparation succeeds and no descriptor/resource leak appears after stop, completion, or error.
 - [ ] With exact-alarm permission granted, verify each enabled prayer alarm at a test time.
 - [ ] On Android 12+, deny/revoke exact-alarm access while prayer alerts are enabled; confirm prayer alarms are still scheduled through the inexact fallback (allow for Android delivery delay).
@@ -94,3 +96,14 @@ This checklist describes the current five-recording source state and the v1.16 r
 - [ ] Run Node syntax validation on `App/src/main/assets/enhancements.js`.
 - [ ] Verify the public website starts with an HTML doctype and the Android Release APK builds and passes signature verification.
 - [ ] Note: no `src/test` or `src/androidTest` source sets currently exist; a successful Gradle test task alone does not demonstrate feature-level unit or device coverage.
+
+
+## v1.19 alarm reliability regression checks
+- [ ] Open and resume the app repeatedly with unchanged dhikr settings; verify the existing pending dhikr alarm is preserved and not cancelled/recreated.
+- [ ] Change the dhikr interval or active time window; verify exactly one replacement alarm is scheduled using the new settings.
+- [ ] Bring the app to the foreground within two minutes of a scheduled dhikr alarm; verify the due broadcast is not cancelled at the delivery boundary.
+- [ ] Let a dhikr alarm fire; verify its consumed schedule metadata is cleared and the next interval is scheduled.
+- [ ] Deny Android notification permission; verify the app displays a direct route to Android app settings rather than silently suppressing future permission guidance.
+- [ ] Grant notification permission from Android app settings and return to Noor Al-Iman; verify the status updates without reinstalling or clearing app data.
+- [ ] Confirm prayer alarm diagnostics distinguish exact permission missing, exact scheduling success, partial scheduling failure, and unavailable AlarmManager.
+- [ ] Confirm no Android manifest permission declarations, signing configuration, audio assets, or dedication text changed in the v1.19 reliability patch.
