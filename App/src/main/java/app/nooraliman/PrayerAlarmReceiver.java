@@ -17,6 +17,7 @@ import android.net.Uri;
 
 public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
+    private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
     private static final String TAG = "NoorPrayerAlarm";
 
     @Override
@@ -123,12 +124,12 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
         if (Build.VERSION.SDK_INT >= 26) {
-            NotificationChannel channel = new NotificationChannel(REMINDER_CHANNEL,
-                    "تذكير الصلاة", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("تنبيهات حالة الأذان");
+            NotificationChannel channel = new NotificationChannel(ADHAN_FAILURE_CHANNEL,
+                    "حالة تشغيل الأذان", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("تنبيهات عند تعذّر تشغيل الأذان");
             manager.createNotificationChannel(channel);
-            if (manager.getNotificationChannel(REMINDER_CHANNEL) != null
-                    && manager.getNotificationChannel(REMINDER_CHANNEL).getImportance()
+            if (manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL) != null
+                    && manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL).getImportance()
                     == NotificationManager.IMPORTANCE_NONE) return;
         }
         String safeKey = failureState + "|" + (prayerKey == null ? "" : prayerKey);
@@ -144,7 +145,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         PendingIntent content = PendingIntent.getActivity(context, 91, openApp,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
-                ? new Notification.Builder(context, REMINDER_CHANNEL)
+                ? new Notification.Builder(context, ADHAN_FAILURE_CHANNEL)
                 : new Notification.Builder(context).setPriority(Notification.PRIORITY_HIGH);
         String title = "تعذّر تشغيل أذان " + (prayerName == null || prayerName.isEmpty()
                 ? "الصلاة" : prayerName);
