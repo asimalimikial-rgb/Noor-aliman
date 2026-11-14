@@ -10,6 +10,7 @@ Base archive commit: `d45f244cacbaf2373221134f608e4b4ec46e5119`
    - Connected in-service failure paths (`audio-focus-denied`, asset/prepare failure, MediaPlayer error, and playback start error) to the same helper.
    - Preview playback is excluded.
    - Failure notifications are debounced per failure-state/prayer pair for five seconds, respect Android 13+ notification permission, and do not override a user-disabled notification channel.
+   - Failure notifications use a dedicated `adhan_failure_v1` channel, separate from `prayer_reminders_v2`, so channel creation cannot suppress or lock in incorrect sound/vibration settings for ordinary prayer reminders. Users can independently disable the failure-notification channel.
    - The existing playback foreground-service notification channel and its sound/vibration settings were not changed.
 
 2. **HTML asset loading memory path**
