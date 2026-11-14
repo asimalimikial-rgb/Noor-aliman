@@ -3,6 +3,7 @@ package app.nooraliman;
 import android.Manifest;
 import android.app.AlarmManager;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,8 +27,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
@@ -330,32 +332,27 @@ public class MainActivity extends Activity {
 
     private void loadApplicationAssets() {
         try {
-            String html = readAsset("noor-aliman.html");
-            String enhancements = readAsset("enhancements.js");
-            // Build the injected page in one pass. The source HTML is about 3.3 MB;
-            // chained replace/substring/lowercase operations create several full
-            // copies and can amplify memory pressure on low-RAM devices.
+            // Read UTF-8 characters directly into builders. This avoids the intermediate
+            // byte[] + decoded String copies produced by ByteArrayOutputStream.toString().
+            StringBuilder html = readAssetBuilder("noor-aliman.html");
+            StringBuilder enhancements = readAssetBuilder("enhancements.js");
             String cityMarker = "const CITIES={";
             String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
                     + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
-            boolean injectCity = !html.contains("dubeiba:");
-            int cityAt = injectCity ? html.indexOf(cityMarker) : -1;
             int bodyEnd = html.lastIndexOf("</body>");
             if (bodyEnd < 0) bodyEnd = lastIndexOfIgnoreCase(html, "</body>");
             if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
 
-            StringBuilder page = new StringBuilder(
-                    html.length() + enhancements.length() + localCity.length() + 24);
-            if (cityAt >= 0 && cityAt < bodyEnd) {
-                page.append(html, 0, cityAt).append(localCity)
-                        .append(html, cityAt + cityMarker.length(), bodyEnd);
-            } else {
-                page.append(html, 0, bodyEnd);
+            if (html.indexOf("dubeiba:") < 0) {
+                int cityAt = html.indexOf(cityMarker);
+                if (cityAt >= 0 && cityAt < bodyEnd) {
+                    html.replace(cityAt, cityAt + cityMarker.length(), localCity);
+                    bodyEnd += localCity.length() - cityMarker.length();
+                }
             }
-            page.append("\n<script>\n").append(enhancements).append("\n</script>\n")
-                    .append(html, bodyEnd, html.length());
+            html.insert(bodyEnd, "\n<script>\n" + enhancements + "\n</script>\n");
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
-                    page.toString(), "text/html", "UTF-8", null);
+                    html.toString(), "text/html", "UTF-8", null);
         } catch (Exception error) {
             Log.e("NoorAlImanWeb", "Could not load bundled application assets", error);
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
@@ -391,14 +388,19 @@ public class MainActivity extends Activity {
         handleBackNavigation();
     }
 
-    private String readAsset(String name) throws Exception {
+    private StringBuilder readAssetBuilder(String name) throws Exception {
+        StringBuilder content = new StringBuilder();
         try (InputStream input = getAssets().open(name);
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+             Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            char[] buffer = new char[8192];
             int count;
-            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return output.toString(StandardCharsets.UTF_8.name());
+            while ((count = reader.read(buffer)) != -1) content.append(buffer, 0, count);
         }
+        return content;
+    }
+
+    private String readAsset(String name) throws Exception {
+        return readAssetBuilder(name).toString();
     }
 
     public final class TafsirBridge {
@@ -507,6 +509,25 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void maybeExplainMissingExactAlarmAccess(
+            android.content.SharedPreferences prefs) {
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
+        if (!prefs.getBoolean("adhan", false) && !prefs.getBoolean("reminder", false)) return;
+        long now = System.currentTimeMillis();
+        long lastPrompt = prefs.getLong("lastExactAlarmInAppPromptAt", 0L);
+        if (now - lastPrompt < 24L * 60L * 60L * 1000L) return;
+        prefs.edit().putLong("lastExactAlarmInAppPromptAt", now).apply();
+        new AlertDialog.Builder(this)
+                .setTitle("يلزم تفعيل التنبيهات الدقيقة")
+                .setMessage("لن يستطيع نور الإيمان تشغيل الأذان في موعده عند إغلاق التطبيق "
+                        + "من دون إذن التنبيهات الدقيقة. يمكنك تفعيل الإذن من إعدادات أندرويد. "
+                        + "إذا لم تفعّله، ستظل مواقيت الصلاة ظاهرة داخل التطبيق، لكن التنبيه "
+                        + "الصوتي في الخلفية لن يكون مضموناً.")
+                .setPositiveButton("فتح الإعدادات", (dialog, which) -> openExactAlarmSettings())
+                .setNegativeButton("لاحقاً", null)
+                .show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -514,6 +535,7 @@ public class MainActivity extends Activity {
         if (alertsEnabled()) {
             android.content.SharedPreferences prefs = getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            maybeExplainMissingExactAlarmAccess(prefs);
             boolean exactAllowed = hasExactAlarmPermission();
             boolean known = prefs.contains("exactAlarmPermissionGranted");
             boolean previous = prefs.getBoolean("exactAlarmPermissionGranted", false);

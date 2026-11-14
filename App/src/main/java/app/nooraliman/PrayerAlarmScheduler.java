@@ -194,7 +194,8 @@ final class PrayerAlarmScheduler {
                     pending.cancel();
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception error) {
+            Log.e(TAG, "Could not parse/cancel persisted prayer alarm IDs; stale PendingIntents may remain", error);
         }
         Intent refresh = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_REFRESH)
