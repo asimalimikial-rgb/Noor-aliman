@@ -361,9 +361,21 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static int lastIndexOfIgnoreCase(String source, String target) {
+    private static int lastIndexOfIgnoreCase(CharSequence source, String target) {
         for (int i = source.length() - target.length(); i >= 0; i--) {
-            if (source.regionMatches(true, i, target, 0, target.length())) return i;
+            boolean matches = true;
+            for (int j = 0; j < target.length(); j++) {
+                char actual = source.charAt(i + j);
+                char expected = target.charAt(j);
+                if (actual != expected
+                        && Character.toUpperCase(actual) != Character.toUpperCase(expected)
+                        && Character.toLowerCase(Character.toUpperCase(actual))
+                                != Character.toLowerCase(Character.toUpperCase(expected))) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) return i;
         }
         return -1;
     }
