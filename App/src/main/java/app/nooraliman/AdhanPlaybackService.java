@@ -225,7 +225,9 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private void playAdhan(String sound, String prayerKey) {
         releasePlayer();
         if (!requestAudioFocus()) {
-            recordPlaybackState("audio-focus-denied", "Audio focus was not granted");
+            String detail = "Audio focus was not granted";
+            recordPlaybackState("audio-focus-denied", detail);
+            notifyPlaybackFailure("audio-focus-denied", "تعذّر الحصول على أولوية الصوت لتشغيل الأذان.");
             stopSelf();
             return;
         }
@@ -251,6 +253,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 } catch (IllegalStateException error) {
                     recordPlaybackState("playback-start-error", error.toString());
                     Log.e(TAG, "MediaPlayer could not start", error);
+                    notifyPlaybackFailure("playback-start-error", "تعذّر بدء تشغيل ملف الأذان.");
                     stopSelf();
                 }
             });
@@ -261,6 +264,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             created.setOnErrorListener((mp, what, extra) -> {
                 recordPlaybackState("media-player-error", what + ":" + extra);
                 Log.e(TAG, "MediaPlayer error what=" + what + ", extra=" + extra);
+                notifyPlaybackFailure("media-player-error", "حدث خطأ أثناء تشغيل ملف الأذان.");
                 stopSelf();
                 return true;
             });
@@ -269,8 +273,15 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             closeAudioDescriptor();
             recordPlaybackState("asset-or-prepare-error", error.toString());
             Log.e(TAG, "Could not prepare adhan asset: " + sound + "/" + prayerKey, error);
+            notifyPlaybackFailure("asset-or-prepare-error", "تعذّر فتح أو تجهيز ملف الأذان المحدد.");
             stopSelf();
         }
+    }
+
+    private void notifyPlaybackFailure(String state, String message) {
+        if (preview) return;
+        PrayerAlarmReceiver.showAdhanFailure(this, state, prayerName,
+                currentPrayerKey, message);
     }
 
     private void closeAudioDescriptor() {

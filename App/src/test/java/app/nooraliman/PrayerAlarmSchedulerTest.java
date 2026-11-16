@@ -24,9 +24,14 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.isFutureAlarm(999L, 1_000L));
     }
 
-    @Test public void exactAlarmPermissionSelectsAlarmPrecisionWithoutDisablingAlerts() {
+    @Test public void exactAlarmPermissionSelectsAlarmPrecision() {
         assertTrue(PrayerAlarmScheduler.shouldUseExactAlarms(true));
         assertFalse(PrayerAlarmScheduler.shouldUseExactAlarms(false));
+    }
+
+    @Test public void prayerAlertsAreNotScheduledWithoutExactAlarmPermission() {
+        assertTrue(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(true));
+        assertFalse(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(false));
     }
 
     @Test public void unchangedScheduleDoesNotCancelPendingAlarms() {

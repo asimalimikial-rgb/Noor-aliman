@@ -3,11 +3,14 @@ package app.nooraliman;
 import android.Manifest;
 import android.app.AlarmManager;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.graphics.Insets;
 import android.util.Log;
 import android.view.WindowInsets;
@@ -24,8 +27,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
@@ -40,11 +44,11 @@ public class MainActivity extends Activity {
     private OnBackInvokedCallback backInvokedCallback;
     private static boolean prayerScheduleInitializedForProcess;
     private boolean webViewRendererGone;
-    private boolean rendererRecoveryRequested;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        logRecentProcessExits();
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
         if (Build.VERSION.SDK_INT >= 29) getWindow().setNavigationBarContrastEnforced(false);
@@ -108,25 +112,13 @@ public class MainActivity extends Activity {
             @Override
             public boolean onRenderProcessGone(WebView view,
                     android.webkit.RenderProcessGoneDetail detail) {
-                boolean didCrash = detail != null && detail.didCrash();
-                int priority = detail == null ? -1 : detail.rendererPriorityAtExit();
-                Log.e("NoorAlImanWeb", "WebView renderer exited; didCrash=" + didCrash
-                        + ", priorityAtExit=" + priority);
                 if (view != webView) return true;
-
                 webViewRendererGone = true;
-                if (!rendererRecoveryRequested) {
-                    rendererRecoveryRequested = true;
-                    runOnUiThread(() -> {
-                        if (!isFinishing() && !isDestroyed()) {
-                            android.widget.Toast.makeText(MainActivity.this,
-                                    "حدث خلل في عرض التطبيق؛ جارٍ إعادة فتحه دون مسح بياناتك.",
-                                    android.widget.Toast.LENGTH_LONG).show();
-                            recreate();
-                        }
-                    });
-                }
-                // The renderer is gone; this WebView must not be reused.
+                recordRendererExit(detail);
+                if (compassBridge != null) compassBridge.shutdown();
+                // Never recreate automatically here: the same page could crash again
+                // immediately and create an Activity/WebView recovery loop.
+                runOnUiThread(() -> showRendererFailureScreen());
                 return true;
             }
         });
@@ -207,6 +199,131 @@ public class MainActivity extends Activity {
         if (!restoredWebView) loadApplicationAssets();
     }
 
+    private void recordRendererExit(android.webkit.RenderProcessGoneDetail detail) {
+        boolean didCrash = detail != null && detail.didCrash();
+        int priority = detail == null ? -1 : detail.rendererPriorityAtExit();
+        long pssKb = Debug.getPss();
+        ActivityManager.MemoryInfo memory = new ActivityManager.MemoryInfo();
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        if (manager != null) manager.getMemoryInfo(memory);
+
+        android.content.SharedPreferences diagnostics = getSharedPreferences(
+                "noor_runtime_diagnostics", MODE_PRIVATE);
+        int count = diagnostics.getInt("webviewRendererExitCount", 0) + 1;
+        diagnostics.edit()
+                .putInt("webviewRendererExitCount", count)
+                .putLong("lastWebviewRendererExitAt", System.currentTimeMillis())
+                .putBoolean("lastWebviewRendererDidCrash", didCrash)
+                .putInt("lastWebviewRendererPriority", priority)
+                .putLong("lastWebviewRendererPssKb", pssKb)
+                .putLong("lastSystemAvailableMemory", memory.availMem)
+                .putBoolean("lastSystemLowMemory", memory.lowMemory)
+                .apply();
+
+        Log.e("NoorAlImanWeb", "Renderer exited; didCrash=" + didCrash
+                + ", priorityAtExit=" + priority + ", processPssKb=" + pssKb
+                + ", availableMemory=" + memory.availMem + ", lowMemory=" + memory.lowMemory
+                + ", rendererExitCount=" + count);
+    }
+
+    private void logRecentProcessExits() {
+        if (Build.VERSION.SDK_INT < 30) return;
+        try {
+            ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            if (manager == null) return;
+            java.util.List<android.app.ApplicationExitInfo> exits =
+                    manager.getHistoricalProcessExitReasons(getPackageName(), 0, 5);
+            if (exits == null || exits.isEmpty()) {
+                Log.i("NoorRuntime", "No historical process exit records returned by Android");
+                return;
+            }
+            for (android.app.ApplicationExitInfo exit : exits) {
+                Log.w("NoorRuntime", "Historical process exit: reason=" + exit.getReason()
+                        + ", status=" + exit.getStatus()
+                        + ", importance=" + exit.getImportance()
+                        + ", timestamp=" + exit.getTimestamp()
+                        + ", pssKb=" + exit.getPss()
+                        + ", rssKb=" + exit.getRss()
+                        + ", process=" + exit.getProcessName()
+                        + ", description=" + exit.getDescription());
+            }
+        } catch (RuntimeException error) {
+            Log.w("NoorRuntime", "Could not read historical process exit information", error);
+        }
+    }
+
+    private void showRendererFailureScreen() {
+        if (isFinishing() || isDestroyed()) return;
+
+        WebView failedView = webView;
+        webView = null;
+        if (failedView != null) {
+            android.view.ViewParent parent = failedView.getParent();
+            if (parent instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) parent).removeView(failedView);
+            }
+            try {
+                failedView.removeJavascriptInterface("NativeAlarms");
+                failedView.removeJavascriptInterface("NativeCompass");
+                failedView.removeJavascriptInterface("NativeTafsir");
+                failedView.stopLoading();
+                failedView.destroy();
+            } catch (RuntimeException error) {
+                Log.w("NoorAlImanWeb", "Could not fully dispose failed WebView", error);
+            }
+        }
+
+        android.widget.LinearLayout screen = new android.widget.LinearLayout(this);
+        screen.setOrientation(android.widget.LinearLayout.VERTICAL);
+        screen.setGravity(android.view.Gravity.CENTER);
+        screen.setPadding(32, 32, 32, 32);
+        screen.setBackgroundColor(0xFFF5F3EA);
+
+        android.widget.TextView title = new android.widget.TextView(this);
+        title.setText("تعذّر عرض نور الإيمان");
+        title.setTextColor(0xFF102C26);
+        title.setTextSize(22);
+        title.setGravity(android.view.Gravity.CENTER);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        android.widget.TextView message = new android.widget.TextView(this);
+        message.setText("توقفت وحدة عرض التطبيق بصورة غير متوقعة. لم نحذف إعداداتك أو بياناتك. يمكنك المحاولة يدوياً، ولن يعيد التطبيق تحميل الصفحة تلقائياً بصورة متكررة.");
+        message.setTextColor(0xFF39443F);
+        message.setTextSize(16);
+        message.setGravity(android.view.Gravity.CENTER);
+        message.setPadding(0, 20, 0, 24);
+
+        android.widget.Button retry = new android.widget.Button(this);
+        retry.setText("إعادة المحاولة");
+        retry.setOnClickListener(v -> {
+            getSharedPreferences("noor_runtime_diagnostics", MODE_PRIVATE).edit()
+                    .putLong("lastManualRendererRetryAt", System.currentTimeMillis())
+                    .putInt("manualRendererRetryCount", getSharedPreferences(
+                            "noor_runtime_diagnostics", MODE_PRIVATE)
+                            .getInt("manualRendererRetryCount", 0) + 1)
+                    .apply();
+            recreate();
+        });
+
+        android.widget.Button close = new android.widget.Button(this);
+        close.setText("إغلاق التطبيق");
+        close.setOnClickListener(v -> finish());
+
+        screen.addView(title, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(message, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(retry, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(close, new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        setContentView(screen);
+    }
+
     private static boolean isTrustedAppOrigin(Uri uri) {
         return uri != null && "https".equalsIgnoreCase(uri.getScheme())
                 && "appassets.androidplatform.net".equalsIgnoreCase(uri.getHost())
@@ -215,32 +332,27 @@ public class MainActivity extends Activity {
 
     private void loadApplicationAssets() {
         try {
-            String html = readAsset("noor-aliman.html");
-            String enhancements = readAsset("enhancements.js");
-            // Build the injected page in one pass. The source HTML is about 3.3 MB;
-            // chained replace/substring/lowercase operations create several full
-            // copies and can amplify memory pressure on low-RAM devices.
+            // Read UTF-8 characters directly into builders. This avoids the intermediate
+            // byte[] + decoded String copies produced by ByteArrayOutputStream.toString().
+            StringBuilder html = readAssetBuilder("noor-aliman.html");
+            StringBuilder enhancements = readAssetBuilder("enhancements.js");
             String cityMarker = "const CITIES={";
             String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
                     + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
-            boolean injectCity = !html.contains("dubeiba:");
-            int cityAt = injectCity ? html.indexOf(cityMarker) : -1;
             int bodyEnd = html.lastIndexOf("</body>");
             if (bodyEnd < 0) bodyEnd = lastIndexOfIgnoreCase(html, "</body>");
             if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
 
-            StringBuilder page = new StringBuilder(
-                    html.length() + enhancements.length() + localCity.length() + 24);
-            if (cityAt >= 0 && cityAt < bodyEnd) {
-                page.append(html, 0, cityAt).append(localCity)
-                        .append(html, cityAt + cityMarker.length(), bodyEnd);
-            } else {
-                page.append(html, 0, bodyEnd);
+            if (html.indexOf("dubeiba:") < 0) {
+                int cityAt = html.indexOf(cityMarker);
+                if (cityAt >= 0 && cityAt < bodyEnd) {
+                    html.replace(cityAt, cityAt + cityMarker.length(), localCity);
+                    bodyEnd += localCity.length() - cityMarker.length();
+                }
             }
-            page.append("\n<script>\n").append(enhancements).append("\n</script>\n")
-                    .append(html, bodyEnd, html.length());
+            html.insert(bodyEnd, "\n<script>\n" + enhancements + "\n</script>\n");
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
-                    page.toString(), "text/html", "UTF-8", null);
+                    html.toString(), "text/html", "UTF-8", null);
         } catch (Exception error) {
             Log.e("NoorAlImanWeb", "Could not load bundled application assets", error);
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
@@ -249,9 +361,21 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static int lastIndexOfIgnoreCase(String source, String target) {
+    private static int lastIndexOfIgnoreCase(CharSequence source, String target) {
         for (int i = source.length() - target.length(); i >= 0; i--) {
-            if (source.regionMatches(true, i, target, 0, target.length())) return i;
+            boolean matches = true;
+            for (int j = 0; j < target.length(); j++) {
+                char actual = source.charAt(i + j);
+                char expected = target.charAt(j);
+                if (actual != expected
+                        && Character.toUpperCase(actual) != Character.toUpperCase(expected)
+                        && Character.toLowerCase(Character.toUpperCase(actual))
+                                != Character.toLowerCase(Character.toUpperCase(expected))) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) return i;
         }
         return -1;
     }
@@ -276,14 +400,19 @@ public class MainActivity extends Activity {
         handleBackNavigation();
     }
 
-    private String readAsset(String name) throws Exception {
+    private StringBuilder readAssetBuilder(String name) throws Exception {
+        StringBuilder content = new StringBuilder();
         try (InputStream input = getAssets().open(name);
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+             Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            char[] buffer = new char[8192];
             int count;
-            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return output.toString(StandardCharsets.UTF_8.name());
+            while ((count = reader.read(buffer)) != -1) content.append(buffer, 0, count);
         }
+        return content;
+    }
+
+    private String readAsset(String name) throws Exception {
+        return readAssetBuilder(name).toString();
     }
 
     public final class TafsirBridge {
@@ -341,8 +470,9 @@ public class MainActivity extends Activity {
     }
 
     private boolean hasExactAlarmPermission() {
-        return Build.VERSION.SDK_INT < 31
-                || ((AlarmManager) getSystemService(ALARM_SERVICE)).canScheduleExactAlarms();
+        if (Build.VERSION.SDK_INT < 31) return true;
+        AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        return manager != null && manager.canScheduleExactAlarms();
     }
 
     private void openExactAlarmSettings() {
@@ -352,7 +482,13 @@ public class MainActivity extends Activity {
                     Uri.parse("package:" + getPackageName()));
             startActivity(intent);
         } catch (Exception error) {
-            Log.e("NoorPrayerAlarm", "Could not open exact-alarm settings", error);
+            Log.w("NoorPrayerAlarm", "Could not open the dedicated exact-alarm settings screen", error);
+            try {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + getPackageName())));
+            } catch (Exception fallbackError) {
+                Log.e("NoorPrayerAlarm", "Could not open application settings", fallbackError);
+            }
         }
     }
 
@@ -385,6 +521,25 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void maybeExplainMissingExactAlarmAccess(
+            android.content.SharedPreferences prefs) {
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
+        if (!prefs.getBoolean("adhan", false) && !prefs.getBoolean("reminder", false)) return;
+        long now = System.currentTimeMillis();
+        long lastPrompt = prefs.getLong("lastExactAlarmInAppPromptAt", 0L);
+        if (now - lastPrompt < 24L * 60L * 60L * 1000L) return;
+        prefs.edit().putLong("lastExactAlarmInAppPromptAt", now).apply();
+        new AlertDialog.Builder(this)
+                .setTitle("يلزم تفعيل التنبيهات الدقيقة")
+                .setMessage("لن يستطيع نور الإيمان تشغيل الأذان في موعده عند إغلاق التطبيق "
+                        + "من دون إذن التنبيهات الدقيقة. يمكنك تفعيل الإذن من إعدادات أندرويد. "
+                        + "إذا لم تفعّله، ستظل مواقيت الصلاة ظاهرة داخل التطبيق، لكن التنبيه "
+                        + "الصوتي في الخلفية لن يكون مضموناً.")
+                .setPositiveButton("فتح الإعدادات", (dialog, which) -> openExactAlarmSettings())
+                .setNegativeButton("لاحقاً", null)
+                .show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -392,14 +547,27 @@ public class MainActivity extends Activity {
         if (alertsEnabled()) {
             android.content.SharedPreferences prefs = getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            maybeExplainMissingExactAlarmAccess(prefs);
             boolean exactAllowed = hasExactAlarmPermission();
             boolean known = prefs.contains("exactAlarmPermissionGranted");
             boolean previous = prefs.getBoolean("exactAlarmPermissionGranted", false);
             // Rebuild once when the Activity is first opened, or when the user
             // returns after granting/revoking exact-alarm access. Do not cancel
             // pending prayer alarms on every ordinary Activity resume.
-            if (!prayerScheduleInitializedForProcess || !known || previous != exactAllowed) {
+            boolean permissionChanged = known && previous != exactAllowed;
+            boolean rebuildSchedule = !prayerScheduleInitializedForProcess || !known
+                    || permissionChanged;
+            if (rebuildSchedule) {
+                if (permissionChanged) {
+                    Log.i("NoorPrayerAlarm", "Exact-alarm permission changed while app was away; "
+                            + "rebuilding prayer schedule. granted=" + exactAllowed);
+                } else {
+                    Log.i("NoorPrayerAlarm", "Initializing prayer alarm schedule; exact="
+                            + exactAllowed);
+                }
                 PrayerAlarmScheduler.schedule(this, true);
+                prefs.edit().putLong("lastExactAlarmPermissionSyncAt",
+                        System.currentTimeMillis()).apply();
             }
             prayerScheduleInitializedForProcess = true;
             DhikrAlarmScheduler.schedule(this);
@@ -464,6 +632,8 @@ public class MainActivity extends Activity {
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("prayerAlarmScheduleStatus",
+                        prefs.getString("prayerAlarmScheduleStatus", "unknown"));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
@@ -476,6 +646,22 @@ public class MainActivity extends Activity {
                 result.put("lastAdhanPlaybackDetail", prefs.getString("lastAdhanPlaybackDetail", ""));
                 result.put("lastAdhanPlaybackPrayer", prefs.getString("lastAdhanPlaybackPrayer", ""));
                 result.put("lastAdhanPlaybackSound", prefs.getString("lastAdhanPlaybackSound", ""));
+                android.content.SharedPreferences runtime = getSharedPreferences(
+                        "noor_runtime_diagnostics", MODE_PRIVATE);
+                result.put("webviewRendererExitCount",
+                        runtime.getInt("webviewRendererExitCount", 0));
+                result.put("lastWebviewRendererExitAt",
+                        runtime.getLong("lastWebviewRendererExitAt", 0L));
+                result.put("lastWebviewRendererDidCrash",
+                        runtime.getBoolean("lastWebviewRendererDidCrash", false));
+                result.put("lastWebviewRendererPssKb",
+                        runtime.getLong("lastWebviewRendererPssKb", 0L));
+                result.put("lastSystemAvailableMemory",
+                        runtime.getLong("lastSystemAvailableMemory", 0L));
+                result.put("lastSystemLowMemory",
+                        runtime.getBoolean("lastSystemLowMemory", false));
+                result.put("manualRendererRetryCount",
+                        runtime.getInt("manualRendererRetryCount", 0));
             } catch (org.json.JSONException ignored) { }
             return result.toString();
         }
@@ -573,6 +759,24 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void requestExactAlarmAccess() {
             runOnUiThread(() -> openExactAlarmSettings());
+        }
+
+        @JavascriptInterface
+        public boolean canPostNotifications() {
+            return hasNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception error) {
+                    Log.e("NoorPrayerAlarm", "Could not open notification settings", error);
+                }
+            });
         }
 
         @JavascriptInterface
@@ -684,7 +888,7 @@ public class MainActivity extends Activity {
             cameraPermissionRequest.deny();
             cameraPermissionRequest = null;
         }
-        if (compassBridge != null) compassBridge.stop();
+        if (compassBridge != null) compassBridge.shutdown();
         if (Build.VERSION.SDK_INT >= 33 && backInvokedCallback != null) {
             getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
             backInvokedCallback = null;

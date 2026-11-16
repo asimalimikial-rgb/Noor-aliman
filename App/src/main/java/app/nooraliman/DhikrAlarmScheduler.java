@@ -9,60 +9,111 @@ import android.os.Build;
 import android.util.Log;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 final class DhikrAlarmScheduler {
     static final String ACTION_FIRE = "app.nooraliman.action.DHIKR";
     static final String EXTRA_TYPE = "dhikr_type";
     static final String EXTRA_VOLUME = "dhikr_volume";
     private static final String DATA = "noor://dhikr/next";
+    private static final String SIGNATURE = "dhikr_schedule_signature";
+    private static final String NEXT_AT = "dhikr_schedule_next_at";
     private static final long MINUTE = 60_000L;
+    private static final long DELIVERY_GRACE = 120_000L;
 
     private DhikrAlarmScheduler() {}
 
     static void schedule(Context context) {
-        cancel(context);
         android.content.SharedPreferences prefs = prefs(context);
-        if (!prefs.getBoolean("dhikrOn", false)) return;
+        if (!prefs.getBoolean("dhikrOn", false)) {
+            cancel(context);
+            return;
+        }
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (manager == null) return;
+        if (manager == null) {
+            Log.e("NoorDhikrAlarm", "AlarmManager is unavailable");
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        String signature = scheduleSignature(prefs);
+        long scheduledAt = prefs.getLong(NEXT_AT, 0L);
+        PendingIntent existing = pendingIntent(context, PendingIntent.FLAG_NO_CREATE);
+        if (shouldKeepScheduled(signature.equals(prefs.getString(SIGNATURE, "")),
+                scheduledAt, now, existing != null)) {
+            return;
+        }
+        if (existing != null) {
+            manager.cancel(existing);
+            existing.cancel();
+        }
+
         boolean exactAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE).setData(Uri.parse(DATA));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        long at = nextAt(System.currentTimeMillis(), prefs);
+        long at = nextAt(now, prefs);
         try {
             if (exactAllowed) {
                 manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
             } else {
                 manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
             }
+            prefs.edit().putString(SIGNATURE, signature).putLong(NEXT_AT, at).apply();
         } catch (SecurityException denied) {
             if (exactAllowed) {
                 try {
                     manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+                    prefs.edit().putString(SIGNATURE, signature).putLong(NEXT_AT, at).apply();
                 } catch (SecurityException fallbackDenied) {
                     pending.cancel();
+                    prefs.edit().remove(SIGNATURE).remove(NEXT_AT).apply();
+                    Log.e("NoorDhikrAlarm", "Could not schedule timed dhikr", fallbackDenied);
                 }
             } else {
                 pending.cancel();
+                prefs.edit().remove(SIGNATURE).remove(NEXT_AT).apply();
+                Log.e("NoorDhikrAlarm", "Could not schedule timed dhikr", denied);
             }
         }
     }
 
+    static boolean shouldKeepScheduled(boolean sameSignature, long scheduledAt,
+                                       long now, boolean pendingExists) {
+        return sameSignature && pendingExists && scheduledAt > 0L
+                && scheduledAt >= now - DELIVERY_GRACE;
+    }
+
+    private static String scheduleSignature(android.content.SharedPreferences prefs) {
+        return String.format(Locale.US, "%d|%s|%s|%s",
+                prefs.getInt("dhikrEvery", 15),
+                prefs.getString("dhikrFrom", "06:00"),
+                prefs.getString("dhikrTo", "22:00"),
+                java.util.TimeZone.getDefault().getID());
+    }
+
     static void cancel(Context context) {
+        PendingIntent pending = pendingIntent(context, PendingIntent.FLAG_NO_CREATE);
+        if (pending != null) {
+            AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (manager != null) manager.cancel(pending);
+            pending.cancel();
+        }
+        prefs(context).edit().remove(SIGNATURE).remove(NEXT_AT).apply();
+    }
+
+    private static PendingIntent pendingIntent(Context context, int mode) {
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE).setData(Uri.parse(DATA));
-        PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
-                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
-        if (pending == null) return;
-        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        manager.cancel(pending);
-        pending.cancel();
+        return PendingIntent.getBroadcast(context, 0, intent,
+                mode | PendingIntent.FLAG_IMMUTABLE);
     }
 
     static void fire(Context context) {
         android.content.SharedPreferences prefs = prefs(context);
+        // The alarm has been consumed. Clear its identity before scheduling the next interval.
+        prefs.edit().remove(SIGNATURE).remove(NEXT_AT).apply();
         if (!prefs.getBoolean("dhikrOn", false)) return;
         if (inWindow(System.currentTimeMillis(), prefs)) {
             Intent service = new Intent(context, DhikrPlaybackService.class)
@@ -73,8 +124,6 @@ final class DhikrAlarmScheduler {
                 if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
                 else context.startService(service);
             } catch (RuntimeException startFailure) {
-                // A restricted background launch must not permanently stop the
-                // repeating dhikr schedule.
                 Log.e("NoorDhikrAlarm", "Could not start timed dhikr service", startFailure);
             }
         }

@@ -17,6 +17,7 @@ import android.net.Uri;
 
 public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
+    private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
     private static final String TAG = "NoorPrayerAlarm";
 
     @Override
@@ -38,16 +39,20 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         recordDelivery(context, intent, type, key);
         SharedPreferences prefs = context.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-        if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
-            AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
-            if (wasExact && Build.VERSION.SDK_INT >= 31
-                    && (alarms == null || !alarms.canScheduleExactAlarms())) {
-                Log.w(TAG, "Dropped stale adhan event because exact-alarm access is unavailable: " + key);
-                recordPlaybackFailure(context, "exact-alarm-access-missing", "Exact-alarm access was revoked", key);
-                showAdhanStartFailure(context, name, intent.getDataString());
-                return;
+        boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
+        AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT >= 31
+                && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
+            Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: " + type + "/" + key);
+            if ("adhan".equals(type)) {
+                recordPlaybackFailure(context, "exact-alarm-access-missing",
+                        "Exact-alarm access is required; approximate adhan events are ignored", key);
+                showAdhanFailure(context, "exact-alarm-access-missing", name, key,
+                        "فعّل إذن التنبيهات الدقيقة من إعدادات أندرويد لتشغيل الأذان في موعده.");
             }
+            return;
+        }
+        if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
             Intent service = new Intent(context, AdhanPlaybackService.class)
                     .setAction(AdhanPlaybackService.ACTION_PLAY)
                     .putExtra(PrayerAlarmScheduler.EXTRA_NAME, name)
@@ -62,7 +67,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 Log.e(TAG, "Could not start adhan playback service for " + key, startFailure);
                 recordPlaybackFailure(context, "foreground-service-start-failed",
                         startFailure.toString(), key);
-                showAdhanStartFailure(context, name, intent.getDataString());
+                showAdhanStartFailure(context, name, key);
             }
         } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
             showReminder(context, key, name, intent.getDataString());
@@ -103,7 +108,15 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .apply();
     }
 
-    private void showAdhanStartFailure(Context context, String name, String data) {
+    private void showAdhanStartFailure(Context context, String name, String prayerKey) {
+        showAdhanFailure(context, "service-start-failed", name, prayerKey,
+                "تعذّر بدء خدمة تشغيل الأذان. تحقق من إعدادات البطارية والتنبيهات.");
+    }
+
+    /** Shared failure surface for alarm dispatch and failures occurring inside the playback service. */
+    static void showAdhanFailure(Context context, String failureState, String prayerName,
+                                 String prayerKey, String message) {
+        if (context == null || failureState == null) return;
         if (Build.VERSION.SDK_INT >= 33
                 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
@@ -111,26 +124,40 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
         if (Build.VERSION.SDK_INT >= 26) {
-            NotificationChannel channel = new NotificationChannel(REMINDER_CHANNEL,
-                    "تذكير الصلاة", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("تنبيهات حالة الأذان");
+            NotificationChannel channel = new NotificationChannel(ADHAN_FAILURE_CHANNEL,
+                    "حالة تشغيل الأذان", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("تنبيهات عند تعذّر تشغيل الأذان");
             manager.createNotificationChannel(channel);
+            if (manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL) != null
+                    && manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL).getImportance()
+                    == NotificationManager.IMPORTANCE_NONE) return;
         }
+        String safeKey = failureState + "|" + (prayerKey == null ? "" : prayerKey);
+        SharedPreferences prefs = context.getSharedPreferences(
+                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        String debounceKey = "lastAdhanFailureNoticeAt_" + Integer.toHexString(safeKey.hashCode());
+        if (now - prefs.getLong(debounceKey, 0L) < 5000L) return;
+        prefs.edit().putLong(debounceKey, now).apply();
+
         Intent openApp = new Intent(context, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent content = PendingIntent.getActivity(context, 91, openApp,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
-                ? new Notification.Builder(context, REMINDER_CHANNEL)
+                ? new Notification.Builder(context, ADHAN_FAILURE_CHANNEL)
                 : new Notification.Builder(context).setPriority(Notification.PRIORITY_HIGH);
+        String title = "تعذّر تشغيل أذان " + (prayerName == null || prayerName.isEmpty()
+                ? "الصلاة" : prayerName);
         Notification notification = builder.setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle("تعذّر تشغيل الأذان تلقائياً")
-                .setContentText("افتح نور الإيمان وتحقق من إذن التنبيهات الدقيقة.")
+                .setContentTitle(title)
+                .setContentText(message == null || message.isEmpty()
+                        ? "افتح نور الإيمان للتحقق من حالة تشغيل الأذان." : message)
                 .setCategory(Notification.CATEGORY_ERROR)
                 .setAutoCancel(true)
                 .setContentIntent(content)
                 .build();
-        manager.notify((data == null ? "adhan-failure" : data).hashCode(), notification);
+        manager.notify(safeKey.hashCode(), notification);
     }
 
     private void showReminder(Context context, String key, String name, String data) {
