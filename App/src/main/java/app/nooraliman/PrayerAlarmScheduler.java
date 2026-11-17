@@ -27,9 +27,12 @@ final class PrayerAlarmScheduler {
     static final String EXTRA_SOUND = "sound";
     static final String EXTRA_PREVIEW = "preview";
     static final String EXTRA_EXACT = "exact";
+    static final String EXTRA_PRAYER_AT = "prayer_at";
     private static final String IDS = "scheduled_alarm_ids";
     private static final String SCHEDULE_SIGNATURE = "prayer_schedule_signature";
     private static final String NEXT_REFRESH_AT = "prayer_schedule_refresh_at";
+    private static final String IN_PROGRESS = "prayer_schedule_in_progress";
+    private static final String NEXT_EVENT_AT = "prayer_next_event_at";
     private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
     private static final double R = Math.PI / 180.0;
@@ -45,7 +48,7 @@ final class PrayerAlarmScheduler {
         schedule(context, false);
     }
 
-    static void schedule(Context context, boolean force) {
+    static synchronized void schedule(Context context, boolean force) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         boolean adhanEnabled = prefs.getBoolean("adhan", false);
         boolean reminderEnabled = prefs.getBoolean("reminder", false);
@@ -53,37 +56,36 @@ final class PrayerAlarmScheduler {
             cancel(context);
             return;
         }
-
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (manager == null) {
             cancelScheduled(context, null, prefs);
             prefs.edit().putBoolean("exactAlarmPermissionGranted", false)
-                    .putString("prayerAlarmScheduleStatus", "alarm_manager_unavailable").apply();
+                    .putString("prayerAlarmScheduleStatus", "alarm_manager_unavailable")
+                    .putBoolean(IN_PROGRESS, false).apply();
             Log.e(TAG, "AlarmManager is unavailable; prayer alerts were not scheduled");
             return;
         }
-        boolean exactAlarmsAllowed = Build.VERSION.SDK_INT < 31
-                || manager.canScheduleExactAlarms();
-        double lat = prefs.getFloat("latitude", 15.5007f);
-        double lng = prefs.getFloat("longitude", 32.5599f);
+        boolean exactAlarmsAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
+        double lat = prefs.getFloat("latitude", 18.45352f);
+        double lng = prefs.getFloat("longitude", 31.81315f);
         String timezoneId = prefs.getString("timezone", "Africa/Khartoum");
         String method = prefs.getString("method", "umm");
         String asr = prefs.getString("asr", "std");
-        String sound = prefs.getString("adhanSound", "classic");
+        String sound = prefs.getString("adhanSound", "doha");
         String adjustments = prefs.getString("prayerAdjustments", "{}");
         TimeZone timezone = TimeZone.getTimeZone(timezoneId);
         long now = System.currentTimeMillis();
         String signature = scheduleSignature(lat, lng, timezoneId, method, asr,
                 adhanEnabled, reminderEnabled, sound, adjustments, exactAlarmsAllowed);
         long refreshAt = nextRefreshAt(timezone, now);
-
-        // Avoid cancelling a pending alarm when renderTimes() repeats at a prayer boundary.
-        if (!shouldReschedule(force,
+        boolean interrupted = prefs.getBoolean(IN_PROGRESS, false);
+        long previousEventAt = prefs.getLong(NEXT_EVENT_AT, 0L);
+        boolean eventExpired = isEventExpired(previousEventAt, now);
+        if (!shouldReschedule(force || interrupted || eventExpired,
                 signature.equals(prefs.getString(SCHEDULE_SIGNATURE, "")),
                 prefs.getLong(NEXT_REFRESH_AT, 0L), now)) return;
 
         cancelScheduled(context, manager, prefs);
-        JSONArray ids = new JSONArray();
         Calendar localDay = Calendar.getInstance(timezone);
         localDay.setTimeInMillis(now);
         localDay.set(Calendar.HOUR_OF_DAY, 12);
@@ -91,49 +93,83 @@ final class PrayerAlarmScheduler {
         localDay.set(Calendar.SECOND, 0);
         localDay.set(Calendar.MILLISECOND, 0);
 
-        int requestedAlarms = 0;
-        int scheduledAlarms = 0;
-        if (!exactAlarmsAllowed) {
-            Log.w(TAG, "Exact-alarm access is missing; user-facing prayer alerts are not scheduled");
-        } else {
+        AlarmEvent nextEvent = null;
+        if (exactAlarmsAllowed) {
             for (int day = 0; day < DAYS_AHEAD; day++) {
                 Calendar date = (Calendar) localDay.clone();
                 date.add(Calendar.DAY_OF_MONTH, day);
                 long[] prayerTimes = calculate(date, timezone, lat, lng, method, asr);
                 for (int i = 0; i < PRAYERS.length; i++) {
                     if (prayerTimes[i] == Long.MIN_VALUE) continue;
-                    String key = PRAYERS[i][0];
-                    String name = PRAYERS[i][1];
+                    String key = PRAYERS[i][0], name = PRAYERS[i][1];
                     long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
                     if (adhanEnabled && isFutureAlarm(prayerAt, now)) {
-                        requestedAlarms++;
-                        if (scheduleOne(context, manager, ids, prayerAt, "adhan", key, name)) {
-                            scheduledAlarms++;
-                        }
+                        nextEvent = earlierFutureEvent(nextEvent,
+                                new AlarmEvent(prayerAt, prayerAt, "adhan", key, name), now);
                     }
                     long reminderAt = prayerAt - 10 * MINUTE;
                     if (reminderEnabled && isFutureAlarm(reminderAt, now)) {
-                        requestedAlarms++;
-                        if (scheduleOne(context, manager, ids, reminderAt, "reminder", key, name)) {
-                            scheduledAlarms++;
-                        }
+                        nextEvent = earlierFutureEvent(nextEvent,
+                                new AlarmEvent(reminderAt, prayerAt, "reminder", key, name), now);
                     }
                 }
             }
         }
-        String scheduleStatus = !exactAlarmsAllowed ? "exact_permission_required"
-                : requestedAlarms == 0 ? "no_future_alarms"
-                : scheduledAlarms == requestedAlarms ? "scheduled_exact"
-                : scheduledAlarms == 0 ? "schedule_failed" : "partial_schedule_failure";
-        prefs.edit().putString(IDS, ids.toString())
-                .putString(SCHEDULE_SIGNATURE, signature)
-                .putLong(NEXT_REFRESH_AT, refreshAt)
-                .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed)
-                .putString("prayerAlarmScheduleStatus", scheduleStatus)
-                .apply();
-        scheduleRefresh(context, manager, refreshAt);
-        Log.i(TAG, "Schedule refreshed; exact=" + exactAlarmsAllowed
-                + ", status=" + scheduleStatus + ", alarms=" + ids.length());
+        JSONArray ids = new JSONArray();
+        if (nextEvent != null) ids.put(nextEvent.uri());
+        boolean stateSaved = prefs.edit().putString(IDS, ids.toString())
+                .putString(SCHEDULE_SIGNATURE, signature).putLong(NEXT_REFRESH_AT, refreshAt)
+                .putLong(NEXT_EVENT_AT, nextEvent == null ? 0L : nextEvent.at)
+                .putBoolean(IN_PROGRESS, true)
+                .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed).commit();
+        boolean eventScheduled = stateSaved && exactAlarmsAllowed && nextEvent != null
+                && scheduleOne(context, manager, nextEvent);
+        if (!eventScheduled) {
+            ids = new JSONArray();
+            prefs.edit().putString(IDS, ids.toString()).commit();
+        }
+        // A transient setAlarmClock failure must not suppress retries until tomorrow.
+        if (exactAlarmsAllowed && nextEvent != null && !eventScheduled) {
+            refreshAt = retryRefreshAt(refreshAt, now);
+            prefs.edit().putLong(NEXT_REFRESH_AT, refreshAt).apply();
+            Log.w(TAG, "Next exact alarm failed; retry target set to 15 minutes");
+        }
+        boolean refreshScheduled = scheduleRefresh(context, manager, refreshAt);
+        String status = !exactAlarmsAllowed ? "exact_permission_required"
+                : nextEvent == null ? "no_future_alarms"
+                : eventScheduled ? "scheduled_exact" : "schedule_failed";
+        prefs.edit().putBoolean(IN_PROGRESS, false)
+                .putString("prayerScheduleRefreshStatus",
+                        refreshScheduled ? "scheduled_inexact_non_wakeup" : "schedule_failed")
+                .putString("prayerAlarmScheduleStatus", status).apply();
+        Log.i(TAG, "Next prayer event refreshed; exact=" + exactAlarmsAllowed
+                + ", type=" + (nextEvent == null ? "none" : nextEvent.type)
+                + ", status=" + status + ", refresh=" + refreshScheduled);
+    }
+
+    static final class AlarmEvent {
+        final long at, prayerAt;
+        final String type, key, name;
+        AlarmEvent(long at, long prayerAt, String type, String key, String name) {
+            this.at = at; this.prayerAt = prayerAt; this.type = type; this.key = key; this.name = name;
+        }
+        String uri() {
+            return String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
+        }
+    }
+
+    static boolean isEventExpired(long scheduledAt, long now) {
+        return scheduledAt > 0L && scheduledAt <= now;
+    }
+
+    static long retryRefreshAt(long dailyRefreshAt, long now) {
+        return Math.min(dailyRefreshAt, now + 15L * MINUTE);
+    }
+
+    static AlarmEvent earlierFutureEvent(AlarmEvent current, AlarmEvent candidate, long now) {
+        if (candidate == null || !isFutureAlarm(candidate.at, now)) return current;
+        if (current == null || !isFutureAlarm(current.at, now) || candidate.at < current.at) return candidate;
+        return current;
     }
 
     static boolean shouldUseExactAlarms(boolean exactAlarmsAllowed) {
@@ -173,7 +209,7 @@ final class PrayerAlarmScheduler {
         return next.getTimeInMillis();
     }
 
-    static void cancel(Context context) {
+    static synchronized void cancel(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         cancelScheduled(context, manager, prefs);
@@ -185,8 +221,7 @@ final class PrayerAlarmScheduler {
             JSONArray ids = new JSONArray(prefs.getString(IDS, "[]"));
             for (int i = 0; i < ids.length(); i++) {
                 Intent intent = new Intent(context, PrayerAlarmReceiver.class)
-                        .setAction(ACTION_FIRE)
-                        .setData(Uri.parse(ids.getString(i)));
+                        .setAction(ACTION_FIRE).setData(Uri.parse(ids.getString(i)));
                 PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                         PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
                 if (pending != null) {
@@ -195,55 +230,62 @@ final class PrayerAlarmScheduler {
                 }
             }
         } catch (Exception error) {
-            Log.e(TAG, "Could not parse/cancel persisted prayer alarm IDs; stale PendingIntents may remain", error);
+            Log.e(TAG, "Could not parse/cancel persisted prayer alarm IDs", error);
         }
         Intent refresh = new Intent(context, PrayerAlarmReceiver.class)
-                .setAction(ACTION_REFRESH)
-                .setData(Uri.parse("noor://alarm/refresh"));
+                .setAction(ACTION_REFRESH).setData(Uri.parse("noor://alarm/refresh"));
         PendingIntent pendingRefresh = PendingIntent.getBroadcast(context, 0, refresh,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
         if (pendingRefresh != null) {
             if (manager != null) manager.cancel(pendingRefresh);
             pendingRefresh.cancel();
         }
-        prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT).apply();
+        Intent showIntent = new Intent(context, MainActivity.class)
+                .setAction("app.nooraliman.action.SHOW_NEXT_PRAYER_ALARM");
+        PendingIntent show = PendingIntent.getActivity(context, 74, showIntent,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (show != null) show.cancel();
+        prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT)
+                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT).apply();
     }
 
-    private static boolean scheduleOne(Context context, AlarmManager manager, JSONArray ids,
-                                        long at, String type, String key, String name) {
-        String uri = String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
-        Intent intent = new Intent(context, PrayerAlarmReceiver.class)
-                .setAction(ACTION_FIRE)
-                .setData(Uri.parse(uri))
-                .putExtra(EXTRA_TYPE, type)
-                .putExtra(EXTRA_KEY, key)
-                .putExtra(EXTRA_NAME, name)
+    private static boolean scheduleOne(Context context, AlarmManager manager, AlarmEvent event) {
+        Intent fire = new Intent(context, PrayerAlarmReceiver.class)
+                .setAction(ACTION_FIRE).setData(Uri.parse(event.uri()))
+                .putExtra(EXTRA_TYPE, event.type).putExtra(EXTRA_KEY, event.key)
+                .putExtra(EXTRA_NAME, event.name).putExtra(EXTRA_PRAYER_AT, event.prayerAt)
                 .putExtra(EXTRA_EXACT, true);
-        PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
+        PendingIntent operation = PendingIntent.getBroadcast(context, 0, fire,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Intent open = new Intent(context, MainActivity.class)
+                .setAction("app.nooraliman.action.SHOW_NEXT_PRAYER_ALARM")
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .putExtra(EXTRA_KEY, event.key).putExtra(EXTRA_NAME, event.name);
+        PendingIntent show = PendingIntent.getActivity(context, 74, open,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-            ids.put(uri);
+            manager.setAlarmClock(new AlarmManager.AlarmClockInfo(event.at, show), operation);
             return true;
-        } catch (SecurityException denied) {
-            pending.cancel();
-            Log.e(TAG, "Exact prayer alarm rejected; no inexact fallback will be used: "
-                    + uri, denied);
+        } catch (RuntimeException failure) {
+            operation.cancel();
+            show.cancel();
+            Log.e(TAG, "Could not schedule next exact alarm-clock event: " + event.uri(), failure);
             return false;
         }
     }
 
-    private static void scheduleRefresh(Context context, AlarmManager manager, long refreshAt) {
+    private static boolean scheduleRefresh(Context context, AlarmManager manager, long refreshAt) {
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
-                .setAction(ACTION_REFRESH)
-                .setData(Uri.parse("noor://alarm/refresh"));
+                .setAction(ACTION_REFRESH).setData(Uri.parse("noor://alarm/refresh"));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, refreshAt, pending);
-        } catch (SecurityException denied) {
+            manager.set(AlarmManager.RTC, refreshAt, pending);
+            return true;
+        } catch (RuntimeException failure) {
             pending.cancel();
-            Log.e(TAG, "Could not schedule daily prayer refresh", denied);
+            Log.e(TAG, "Could not schedule non-wakeup daily prayer refresh", failure);
+            return false;
         }
     }
 

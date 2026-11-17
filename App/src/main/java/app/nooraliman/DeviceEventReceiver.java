@@ -17,8 +17,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             boolean exactAllowed = Build.VERSION.SDK_INT < 31
                     || (manager != null && manager.canScheduleExactAlarms());
             // Android sends this broadcast when exact-alarm access is granted.
-            // If access is unavailable, prayer alarms are not scheduled; dhikr has
-            // its own inexact fallback implementation.
+            // Prayer alarms are rebuilt as one next alarm-clock event; timed dhikr
+            // uses a normal inexact alarm and does not consume the idle quota.
             PrayerAlarmScheduler.schedule(context, true);
             DhikrAlarmScheduler.schedule(context);
             Log.i("NoorPrayerAlarm", "Exact-alarm grant broadcast received; exact=" + exactAllowed
@@ -30,7 +30,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                 || Intent.ACTION_TIME_CHANGED.equals(action)
                 || Intent.ACTION_TIMEZONE_CHANGED.equals(action)) {
             // The schedulers read saved preferences and no-op if disabled.
-            // Prayer alerts require exact-alarm access; dhikr may use its own fallback.
+            // Prayer alerts require exact-alarm access; timed dhikr is inexact.
             PrayerAlarmScheduler.schedule(context, true);
             DhikrAlarmScheduler.schedule(context);
         }

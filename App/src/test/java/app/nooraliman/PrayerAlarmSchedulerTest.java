@@ -34,6 +34,40 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(false));
     }
 
+    @Test public void nextEventSelectionKeepsTheEarliestFutureEvent() {
+        long now = 1_000_000L;
+        PrayerAlarmScheduler.AlarmEvent later = new PrayerAlarmScheduler.AlarmEvent(
+                1_500_000L, 1_500_000L, "adhan", "asr", "العصر");
+        PrayerAlarmScheduler.AlarmEvent earlier = new PrayerAlarmScheduler.AlarmEvent(
+                1_200_000L, 1_800_000L, "reminder", "maghrib", "المغرب");
+        assertSame(earlier, PrayerAlarmScheduler.earlierFutureEvent(later, earlier, now));
+        assertSame(later, PrayerAlarmScheduler.earlierFutureEvent(later,
+                new PrayerAlarmScheduler.AlarmEvent(900_000L, 900_000L,
+                        "adhan", "fajr", "الفجر"), now));
+    }
+
+    @Test public void failedExactAlarmRetriesBeforeDailyRefresh() {
+        assertEquals(1_900_000L,
+                PrayerAlarmScheduler.retryRefreshAt(5_000_000L, 1_000_000L));
+        assertEquals(1_500_000L,
+                PrayerAlarmScheduler.retryRefreshAt(1_500_000L, 1_000_000L));
+    }
+
+    @Test public void consumedOrMissedNextEventForcesScheduleRebuild() {
+        assertTrue(PrayerAlarmScheduler.isEventExpired(1_000L, 1_000L));
+        assertTrue(PrayerAlarmScheduler.isEventExpired(900L, 1_000L));
+        assertFalse(PrayerAlarmScheduler.isEventExpired(1_100L, 1_000L));
+        assertFalse(PrayerAlarmScheduler.isEventExpired(0L, 1_000L));
+    }
+
+    @Test public void chainedReminderCarriesActualPrayerTime() {
+        PrayerAlarmScheduler.AlarmEvent event = new PrayerAlarmScheduler.AlarmEvent(
+                1_100_000L, 1_700_000L, "reminder", "dhuhr", "الظهر");
+        assertEquals(1_100_000L, event.at);
+        assertEquals(1_700_000L, event.prayerAt);
+        assertTrue(event.uri().contains("/dhuhr/reminder"));
+    }
+
     @Test public void unchangedScheduleDoesNotCancelPendingAlarms() {
         assertFalse(PrayerAlarmScheduler.shouldReschedule(
                 false, true, 2_000_000L, 1_000_000L));

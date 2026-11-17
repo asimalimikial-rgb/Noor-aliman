@@ -1,4 +1,4 @@
-# v1.19.0 release candidate build: compile, unit tests, signed APK and signature verification
+# v1.20.0 release candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability]
   pull_request:
     branches: [main, fix/v1.19-main-alarm-reliability]
   workflow_dispatch: {}
@@ -27,8 +27,29 @@ jobs:
       - name: Validate web assets
         run: |
           set -euo pipefail
+          node --check App/src/main/assets/scripts/app.js
+          node --check App/src/main/assets/scripts/tafsir-ui.js
+          node --check App/src/main/assets/scripts/compass.js
           node --check App/src/main/assets/enhancements.js
-          python3 -c "from pathlib import Path; p=Path('index.html').read_bytes(); assert p.lstrip().lower().startswith(b'<!doctype html>'), 'index.html must begin with an HTML doctype'"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          public = Path('index.html').read_bytes()
+          app = Path('App/src/main/assets/noor-aliman.html').read_text(encoding='utf-8')
+          assert public.lstrip().lower().startswith(b'<!doctype html>'), 'index.html must begin with an HTML doctype'
+          assert app.lstrip().lower().startswith('<!doctype html>'), 'app shell must begin with an HTML doctype'
+          assert not re.search(r'<script\b(?![^>]*\bsrc=)[^>]*>', app, re.I), 'app shell must not contain inline scripts'
+          for asset in ('styles/noor-aliman.css', 'scripts/app.js', 'scripts/tafsir-ui.js', 'scripts/compass.js', 'enhancements.js', 'data/embedded-tafsir.json'):
+              assert (Path('App/src/main/assets') / asset).is_file(), f'missing app asset: {asset}'
+          assert "script-src 'self'" in app, 'script CSP must be external-only'
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
+          prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
+          assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
+          assert 'setAlarmClock' in prayer, 'prayer scheduler must use alarm-clock events'
+          PY
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -77,7 +98,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.19.0-signed-apk
+          name: noor-al-iman-v1.20.0-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -230,6 +251,43 @@ jobs:
             - إزالة أربعة ملفات/مجلدات Save/save غير المطلوبة.
 
             اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. لم يُجرَ اختبار شامل على هاتف فعلي؛ لذلك يلزم التحقق من سلوك الخلفية والتنبيهات والأذان على الأجهزة قبل اعتماد الاستقرار ميدانياً.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-20-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.20.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.20.0 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.20.0-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.20.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.20.0
+          name: Noor Al-Iman v1.20.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.20.0 من نور الإيمان.
+
+            - إعادة تنظيم واجهة التطبيق بفصل HTML وCSS وJavaScript إلى وحدات مستقلة.
+            - فصل بيانات التفسير المحلية في ملفات JSON مستقلة.
+            - تحسين جدولة الصلاة باستخدام AlarmClock وإعادة المحاولة عند تعذر إنشاء المنبه الدقيق.
+            - تحسين دورة حياة MediaPlayer ومعالجة فشل التحضير وإتاحة إيقاف الأذان من الإشعار.
+            - إزالة حد المعاينة الثابت وتحسين تحميل الأصول المحلية داخل WebView.
+            - إصلاح تحميل مكرر لأصول الواجهة وإضافة اختبار لإعادة محاولة الجدولة.
+
+            اجتاز APK البناء والاختبارات الآلية والتحقق من التوقيع عبر GitHub Actions. لم يكتمل اختبار شامل على هاتف فعلي؛ يظل اختبار Doze وإدارة البطارية والأذان الكامل مطلوباً على أجهزة Android المختلفة.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256

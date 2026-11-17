@@ -123,3 +123,21 @@ This checklist covers the current Android application and its reliability patche
 - [ ] Confirm the exact-alarm settings action falls back to Android app details settings if the dedicated system screen cannot be opened.
 - [ ] Capture Logcat and `dumpsys activity exit-info app.nooraliman` after any Device Care warning; do not attribute the warning to WebView or memory without matching evidence.
 - [ ] Test the recovery flow and memory behavior on the actual Samsung device, including low-memory conditions; emulator/CI results are not a substitute.
+
+
+## v1.20 comprehensive alarm and WebView refactor regression checks
+- [ ] Confirm only one next prayer/reminder PendingIntent is scheduled at a time and it is a setAlarmClock event.
+- [ ] Verify the next event chains after reminder and adhan delivery, including stale events, disabled alerts, and playback startup failures.
+- [ ] Enter Doze and verify the next prayer alarm-clock event is delivered independently of the allow-while-idle quota.
+- [ ] Verify timed dhikr uses AlarmManager.set(RTC_WAKEUP) and never setAndAllowWhileIdle/setExactAndAllowWhileIdle; confirm Doze delay does not delay prayer.
+- [ ] Verify adhan events more than five minutes late are skipped and recorded; reminders show actual remaining minutes and are skipped after prayer time.
+- [ ] Verify MediaPlayer preparation timeout stops the service and records prepare-timeout if no callback arrives within 20 seconds.
+- [ ] Verify adhan preview ends only when native MediaPlayer playback finishes; test full Doha Fajr and confirm no fixed 185-second timeout.
+- [ ] With Full-screen Intent unavailable, confirm the foreground notification still has an actionable Stop Adhan control.
+- [ ] Verify new installs default to Dubeiba/Meroe while saved city/location preferences survive upgrade unchanged.
+- [ ] Verify the small HTML shell loads through WebViewAssetLoader and CSS/JS/JSON assets remain available offline.
+- [ ] Confirm script-src no longer permits inline scripts and external scripts execute in original order.
+- [ ] Open both local tafsir sources offline; confirm JSON loads lazily from the APK and all 6,236 ayah keys per source remain available.
+- [ ] Simulate IndexedDB cache write failure; confirm fetched Quran page data is still displayed.
+- [ ] Confirm old saved WebView state is not restored across the asset-shell revision change.
+- [ ] Verify no manifest permissions, application identity, SDK levels, signing configuration, audio assets, tafsir text, or dedication changed.

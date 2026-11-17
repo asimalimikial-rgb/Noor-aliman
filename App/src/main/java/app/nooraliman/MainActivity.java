@@ -26,6 +26,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceResponse;
+import androidx.webkit.WebViewAssetLoader;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,7 +38,11 @@ public class MainActivity extends Activity {
     private static final int LOCATION_REQUEST = 41;
     private static final int NOTIFICATION_REQUEST = 42;
     private static final int CAMERA_REQUEST = 43;
+    private static final String WEB_CONTENT_REVISION_KEY = "noor_web_content_revision";
+    private static final int WEB_CONTENT_REVISION = 2;
+    private static final String APP_ASSET_URL = "https://appassets.androidplatform.net/assets/noor-aliman.html";
     private WebView webView;
+    private WebViewAssetLoader assetLoader;
     private GeolocationPermissions.Callback locationCallback;
     private String locationOrigin;
     private CompassBridge compassBridge;
@@ -60,6 +66,9 @@ public class MainActivity extends Activity {
         }
 
         webView = new WebView(this);
+        assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
         webView.setOnApplyWindowInsetsListener((view, insets) -> {
             int left, top, right, bottom;
             if (Build.VERSION.SDK_INT >= 30) {
@@ -95,6 +104,17 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(compassBridge, "NativeCompass");
         webView.addJavascriptInterface(new TafsirBridge(), "NativeTafsir");
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view,
+                    WebResourceRequest request) {
+                return assetLoader == null ? null : assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                return assetLoader == null ? null : assetLoader.shouldInterceptRequest(Uri.parse(url));
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -188,7 +208,9 @@ public class MainActivity extends Activity {
         });
 
         boolean restoredWebView = false;
-        if (savedInstanceState != null) {
+        boolean compatibleSavedState = savedInstanceState != null
+                && savedInstanceState.getInt(WEB_CONTENT_REVISION_KEY, -1) == WEB_CONTENT_REVISION;
+        if (compatibleSavedState) {
             try {
                 restoredWebView = webView.restoreState(savedInstanceState) != null;
             } catch (RuntimeException restoreFailure) {
@@ -331,29 +353,10 @@ public class MainActivity extends Activity {
     }
 
     private void loadApplicationAssets() {
+        if (webView == null) return;
         try {
-            // Read UTF-8 characters directly into builders. This avoids the intermediate
-            // byte[] + decoded String copies produced by ByteArrayOutputStream.toString().
-            StringBuilder html = readAssetBuilder("noor-aliman.html");
-            StringBuilder enhancements = readAssetBuilder("enhancements.js");
-            String cityMarker = "const CITIES={";
-            String localCity = "const CITIES={dubeiba:{n:'الدبيبة، مروي، الولاية الشمالية',"
-                    + "lat:18.45352,lng:31.81315,tz:'Africa/Khartoum',m:'umm'},";
-            int bodyEnd = html.lastIndexOf("</body>");
-            if (bodyEnd < 0) bodyEnd = lastIndexOfIgnoreCase(html, "</body>");
-            if (bodyEnd < 0) throw new IllegalStateException("Missing HTML body");
-
-            if (html.indexOf("dubeiba:") < 0) {
-                int cityAt = html.indexOf(cityMarker);
-                if (cityAt >= 0 && cityAt < bodyEnd) {
-                    html.replace(cityAt, cityAt + cityMarker.length(), localCity);
-                    bodyEnd += localCity.length() - cityMarker.length();
-                }
-            }
-            html.insert(bodyEnd, "\n<script>\n" + enhancements + "\n</script>\n");
-            webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
-                    html.toString(), "text/html", "UTF-8", null);
-        } catch (Exception error) {
+            webView.loadUrl(APP_ASSET_URL);
+        } catch (RuntimeException error) {
             Log.e("NoorAlImanWeb", "Could not load bundled application assets", error);
             webView.loadDataWithBaseURL("https://appassets.androidplatform.net/",
                     "<meta charset='utf-8'><p dir='rtl'>تعذّر فتح التطبيق.</p>",
@@ -361,28 +364,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static int lastIndexOfIgnoreCase(CharSequence source, String target) {
-        for (int i = source.length() - target.length(); i >= 0; i--) {
-            boolean matches = true;
-            for (int j = 0; j < target.length(); j++) {
-                char actual = source.charAt(i + j);
-                char expected = target.charAt(j);
-                if (actual != expected
-                        && Character.toUpperCase(actual) != Character.toUpperCase(expected)
-                        && Character.toLowerCase(Character.toUpperCase(actual))
-                                != Character.toLowerCase(Character.toUpperCase(expected))) {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches) return i;
-        }
-        return -1;
-    }
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         if (webView != null && !webViewRendererGone) webView.saveState(outState);
+        outState.putInt(WEB_CONTENT_REVISION_KEY, WEB_CONTENT_REVISION);
         super.onSaveInstanceState(outState);
     }
 
@@ -733,6 +718,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isAdhanPlaying() {
             return AdhanPlaybackService.isPlaying();
+        }
+
+        @JavascriptInterface
+        public boolean isAdhanPlaybackActive() {
+            return AdhanPlaybackService.isPlaybackActive();
         }
 
         @JavascriptInterface

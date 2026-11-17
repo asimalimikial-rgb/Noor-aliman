@@ -34,10 +34,25 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private static final String CHANNEL = "adhan_playback_controls_v3";
     private static final String TAG = "NoorAdhanPlayback";
     private static final int NOTIFICATION_ID = 71;
+    private static final long PREPARE_TIMEOUT_MS = 20_000L;
     private static volatile boolean playing;
     private static volatile boolean playbackActive;
     static boolean isPlaybackActive() { return playbackActive; }
     private MediaPlayer player;
+    private MediaPlayer preparingPlayer;
+    private long preparationStartedAt;
+    private final Runnable preparationTimeout = () -> {
+        MediaPlayer pending = preparingPlayer;
+        if (pending == null || player != pending || playing
+                || !isPreparationTimedOut(preparationStartedAt,
+                        android.os.SystemClock.uptimeMillis())) return;
+        preparingPlayer = null;
+        preparationStartedAt = 0L;
+        recordPlaybackState("prepare-timeout", "MediaPlayer.prepareAsync() did not complete within 20 seconds");
+        Log.e(TAG, "MediaPlayer preparation timed out after " + PREPARE_TIMEOUT_MS + "ms");
+        notifyPlaybackFailure("prepare-timeout", "استغرق تجهيز ملف الأذان وقتاً أطول من المتوقع.");
+        stopSelf();
+    };
     private AssetFileDescriptor activeAudioDescriptor;
     private boolean preview;
     private String prayerName = "";
@@ -74,6 +89,10 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     };
 
     static boolean isPlaying() { return playing; }
+
+    static boolean isPreparationTimedOut(long startedAt, long now) {
+        return startedAt > 0L && now >= startedAt && now - startedAt >= PREPARE_TIMEOUT_MS;
+    }
 
     @Override
     public void onCreate() {
@@ -115,11 +134,15 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         createChannel();
         prayerName = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
         currentPrayerKey = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
-        currentSound = intent == null ? "classic"
-                : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
+        String configuredSound = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+                .getString("adhanSound", "doha");
+        currentSound = intent == null
+                ? configuredSound : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
+        if (currentSound == null || currentSound.trim().isEmpty()) currentSound = configuredSound;
         preview = intent != null && intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_PREVIEW, false);
         if (preview && (currentPrayerKey == null || currentPrayerKey.isEmpty())) currentPrayerKey = "fajr";
-        if (!isAllowedSound(currentSound)) currentSound = "classic";
+        if (!isAllowedSound(currentSound)) currentSound = configuredSound;
+        if (!isAllowedSound(currentSound)) currentSound = "doha";
         if (!preview) recordPlaybackState("service-started", "");
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
         configureScreenOffStopReceiver();
@@ -175,7 +198,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setOngoing(true)
                 .setContentIntent(openPending);
-        if (showControls) builder.addAction(android.R.drawable.ic_media_pause, "إيقاف الأذان", stopPending);
+        // Keep a stop action available even when optional notification details are hidden.
+        builder.addAction(android.R.drawable.ic_media_pause, "إيقاف الأذان", stopPending);
 
         // Android 14+ may deny full-screen intents unless the user grants the special access.
         // In that case the ordinary high-priority notification remains available.
@@ -242,6 +266,9 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             created.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
             created.setDataSource(audio.getFileDescriptor(), audio.getStartOffset(), audio.getLength());
             created.setOnPreparedListener(mp -> {
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
                 closeAudioDescriptor();
                 if (player != mp) return;
                 try {
@@ -258,18 +285,31 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 }
             });
             created.setOnCompletionListener(mp -> {
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
                 recordPlaybackState("completed", "");
                 stopSelf();
             });
             created.setOnErrorListener((mp, what, extra) -> {
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
                 recordPlaybackState("media-player-error", what + ":" + extra);
                 Log.e(TAG, "MediaPlayer error what=" + what + ", extra=" + extra);
                 notifyPlaybackFailure("media-player-error", "حدث خطأ أثناء تشغيل ملف الأذان.");
                 stopSelf();
                 return true;
             });
+            preparingPlayer = created;
+            preparationStartedAt = android.os.SystemClock.uptimeMillis();
+            handler.removeCallbacks(preparationTimeout);
+            handler.postDelayed(preparationTimeout, PREPARE_TIMEOUT_MS);
             created.prepareAsync();
         } catch (Exception error) {
+            handler.removeCallbacks(preparationTimeout);
+            preparingPlayer = null;
+            preparationStartedAt = 0L;
             closeAudioDescriptor();
             recordPlaybackState("asset-or-prepare-error", error.toString());
             Log.e(TAG, "Could not prepare adhan asset: " + sound + "/" + prayerKey, error);
@@ -384,6 +424,9 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private void releasePlayer() {
+        handler.removeCallbacks(preparationTimeout);
+        preparingPlayer = null;
+        preparationStartedAt = 0L;
         if (sensorManager != null) sensorManager.unregisterListener(this);
         handler.removeCallbacks(stopIfStillFaceDown);
         faceDownStopPending = false;

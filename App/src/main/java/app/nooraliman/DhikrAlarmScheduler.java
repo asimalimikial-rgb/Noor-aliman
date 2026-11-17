@@ -19,7 +19,7 @@ final class DhikrAlarmScheduler {
     private static final String SIGNATURE = "dhikr_schedule_signature";
     private static final String NEXT_AT = "dhikr_schedule_next_at";
     private static final long MINUTE = 60_000L;
-    private static final long DELIVERY_GRACE = 120_000L;
+    private static final long DELIVERY_GRACE = 90L * 60_000L;
 
     private DhikrAlarmScheduler() {}
 
@@ -34,48 +34,31 @@ final class DhikrAlarmScheduler {
             Log.e("NoorDhikrAlarm", "AlarmManager is unavailable");
             return;
         }
-
         long now = System.currentTimeMillis();
         String signature = scheduleSignature(prefs);
         long scheduledAt = prefs.getLong(NEXT_AT, 0L);
         PendingIntent existing = pendingIntent(context, PendingIntent.FLAG_NO_CREATE);
         if (shouldKeepScheduled(signature.equals(prefs.getString(SIGNATURE, "")),
-                scheduledAt, now, existing != null)) {
-            return;
-        }
+                scheduledAt, now, existing != null)) return;
         if (existing != null) {
             manager.cancel(existing);
             existing.cancel();
         }
-
-        boolean exactAllowed = Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms();
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE).setData(Uri.parse(DATA));
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         long at = nextAt(now, prefs);
         try {
-            if (exactAllowed) {
-                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-            } else {
-                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-            }
-            prefs.edit().putString(SIGNATURE, signature).putLong(NEXT_AT, at).apply();
-        } catch (SecurityException denied) {
-            if (exactAllowed) {
-                try {
-                    manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
-                    prefs.edit().putString(SIGNATURE, signature).putLong(NEXT_AT, at).apply();
-                } catch (SecurityException fallbackDenied) {
-                    pending.cancel();
-                    prefs.edit().remove(SIGNATURE).remove(NEXT_AT).apply();
-                    Log.e("NoorDhikrAlarm", "Could not schedule timed dhikr", fallbackDenied);
-                }
-            } else {
-                pending.cancel();
-                prefs.edit().remove(SIGNATURE).remove(NEXT_AT).apply();
-                Log.e("NoorDhikrAlarm", "Could not schedule timed dhikr", denied);
-            }
+            manager.set(AlarmManager.RTC_WAKEUP, at, pending);
+            prefs.edit().putString(SIGNATURE, signature).putLong(NEXT_AT, at)
+                    .putString("dhikrAlarmMode", "inexact_non_allow_while_idle").apply();
+            Log.i("NoorDhikrAlarm", "Scheduled inexact timed dhikr at " + at);
+        } catch (RuntimeException failure) {
+            pending.cancel();
+            prefs.edit().remove(SIGNATURE).remove(NEXT_AT)
+                    .putString("dhikrAlarmMode", "schedule_failed").apply();
+            Log.e("NoorDhikrAlarm", "Could not schedule inexact timed dhikr", failure);
         }
     }
 
@@ -100,7 +83,7 @@ final class DhikrAlarmScheduler {
             if (manager != null) manager.cancel(pending);
             pending.cancel();
         }
-        prefs(context).edit().remove(SIGNATURE).remove(NEXT_AT).apply();
+        prefs(context).edit().remove(SIGNATURE).remove(NEXT_AT).remove("dhikrAlarmMode").apply();
     }
 
     private static PendingIntent pendingIntent(Context context, int mode) {
