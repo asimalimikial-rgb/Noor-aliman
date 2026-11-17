@@ -46,6 +46,13 @@ public class PrayerAlarmSchedulerTest {
                         "adhan", "fajr", "الفجر"), now));
     }
 
+    @Test public void consumedOrMissedNextEventForcesScheduleRebuild() {
+        assertTrue(PrayerAlarmScheduler.isEventExpired(1_000L, 1_000L));
+        assertTrue(PrayerAlarmScheduler.isEventExpired(900L, 1_000L));
+        assertFalse(PrayerAlarmScheduler.isEventExpired(1_100L, 1_000L));
+        assertFalse(PrayerAlarmScheduler.isEventExpired(0L, 1_000L));
+    }
+
     @Test public void chainedReminderCarriesActualPrayerTime() {
         PrayerAlarmScheduler.AlarmEvent event = new PrayerAlarmScheduler.AlarmEvent(
                 1_100_000L, 1_700_000L, "reminder", "dhuhr", "الظهر");
