@@ -19,6 +19,8 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
     private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
     private static final String TAG = "NoorPrayerAlarm";
+    private static final long MINUTE = 60_000L;
+    private static final long ADHAN_LATE_GRACE_MS = 5L * MINUTE;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -33,66 +35,108 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             return;
         }
         if (!PrayerAlarmScheduler.ACTION_FIRE.equals(intent.getAction())) return;
-        String type = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_TYPE);
-        String key = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
-        String name = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
-        recordDelivery(context, intent, type, key);
-        SharedPreferences prefs = context.getSharedPreferences(
-                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-        boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
-        AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (Build.VERSION.SDK_INT >= 31
-                && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
-            Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: " + type + "/" + key);
-            if ("adhan".equals(type)) {
-                recordPlaybackFailure(context, "exact-alarm-access-missing",
-                        "Exact-alarm access is required; approximate adhan events are ignored", key);
-                showAdhanFailure(context, "exact-alarm-access-missing", name, key,
-                        "فعّل إذن التنبيهات الدقيقة من إعدادات أندرويد لتشغيل الأذان في موعده.");
+        try {
+            String type = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_TYPE);
+            String key = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
+            String name = intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
+            long expectedAt = expectedAlarmAt(intent);
+            long prayerAt = intent.getLongExtra(PrayerAlarmScheduler.EXTRA_PRAYER_AT,
+                    "reminder".equals(type) ? expectedAt + 10L * MINUTE : expectedAt);
+            recordDelivery(context, intent, type, key, prayerAt);
+            SharedPreferences prefs = context.getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+            boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
+            AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (Build.VERSION.SDK_INT >= 31
+                    && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
+                Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: "
+                        + type + "/" + key);
+                if ("adhan".equals(type)) {
+                    recordPlaybackFailure(context, "exact-alarm-access-missing",
+                            "Exact-alarm access is required; approximate adhan events are ignored", key);
+                    showAdhanFailure(context, "exact-alarm-access-missing", name, key,
+                            "فعّل إذن التنبيهات الدقيقة من إعدادات أندرويد لتشغيل الأذان في موعده.");
+                }
+                return;
             }
-            return;
-        }
-        if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
-            Intent service = new Intent(context, AdhanPlaybackService.class)
-                    .setAction(AdhanPlaybackService.ACTION_PLAY)
-                    .putExtra(PrayerAlarmScheduler.EXTRA_NAME, name)
-                    .putExtra(PrayerAlarmScheduler.EXTRA_KEY, key)
-                    .putExtra(PrayerAlarmScheduler.EXTRA_SOUND,
-                            prefs.getString("adhanSound", "classic"));
-            try {
-                if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
-                else context.startService(service);
-            } catch (RuntimeException startFailure) {
-                // Never let a restricted background-service launch fail silently.
-                Log.e(TAG, "Could not start adhan playback service for " + key, startFailure);
-                recordPlaybackFailure(context, "foreground-service-start-failed",
-                        startFailure.toString(), key);
-                showAdhanStartFailure(context, name, key);
+            if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
+                long receivedAt = System.currentTimeMillis();
+                if (isAdhanTooLate(expectedAt, receivedAt)) {
+                    String detail = "Alarm arrived " + (receivedAt - expectedAt)
+                            + "ms after prayer time; stale adhan skipped";
+                    recordPlaybackFailure(context, "late-alarm-dropped", detail, key);
+                    prefs.edit().putString("lastAlarmDroppedReason", "adhan_late_over_5_minutes").apply();
+                    Log.w(TAG, detail + "; prayer=" + key);
+                    showAdhanFailure(context, "late-alarm-dropped", name, key,
+                            "وصل تنبيه الأذان بعد الموعد بأكثر من خمس دقائق؛ تم تجاهله.");
+                    return;
+                }
+                Intent service = new Intent(context, AdhanPlaybackService.class)
+                        .setAction(AdhanPlaybackService.ACTION_PLAY)
+                        .putExtra(PrayerAlarmScheduler.EXTRA_NAME, name)
+                        .putExtra(PrayerAlarmScheduler.EXTRA_KEY, key)
+                        .putExtra(PrayerAlarmScheduler.EXTRA_SOUND,
+                                prefs.getString("adhanSound", "doha"));
+                try {
+                    if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
+                    else context.startService(service);
+                } catch (RuntimeException startFailure) {
+                    Log.e(TAG, "Could not start adhan playback service for " + key, startFailure);
+                    recordPlaybackFailure(context, "foreground-service-start-failed",
+                            startFailure.toString(), key);
+                    showAdhanStartFailure(context, name, key);
+                }
+            } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
+                int minutesRemaining = remainingReminderMinutes(prayerAt, System.currentTimeMillis());
+                if (minutesRemaining <= 0) {
+                    prefs.edit().putString("lastAlarmDroppedReason", "reminder_after_prayer_time").apply();
+                    Log.i(TAG, "Dropped stale reminder after prayer time: " + key);
+                    return;
+                }
+                showReminder(context, key, name, intent.getDataString(), minutesRemaining);
             }
-        } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
-            showReminder(context, key, name, intent.getDataString());
+        } finally {
+            try { PrayerAlarmScheduler.schedule(context, true); }
+            catch (RuntimeException error) { Log.e(TAG, "Could not chain next prayer event", error); }
+            try { DhikrAlarmScheduler.schedule(context); }
+            catch (RuntimeException error) { Log.e(TAG, "Could not refresh timed dhikr", error); }
         }
     }
 
-    private void recordDelivery(Context context, Intent intent, String type, String key) {
-        long receivedAt = System.currentTimeMillis();
-        long expectedAt = 0L;
+    static long expectedAlarmAt(Intent intent) {
+        if (intent == null) return 0L;
         try {
             Uri data = intent.getData();
             if (data != null && !data.getPathSegments().isEmpty()) {
-                expectedAt = Long.parseLong(data.getPathSegments().get(0));
+                return Long.parseLong(data.getPathSegments().get(0));
             }
         } catch (RuntimeException ignored) { }
+        return 0L;
+    }
+
+    static boolean isAdhanTooLate(long expectedAt, long receivedAt) {
+        return expectedAt > 0L && receivedAt - expectedAt > ADHAN_LATE_GRACE_MS;
+    }
+
+    static int remainingReminderMinutes(long prayerAt, long now) {
+        if (prayerAt <= now) return 0;
+        return (int) Math.max(1L, (prayerAt - now + MINUTE - 1L) / MINUTE);
+    }
+
+    private void recordDelivery(Context context, Intent intent, String type,
+                                String key, long prayerAt) {
+        long receivedAt = System.currentTimeMillis();
+        long expectedAt = expectedAlarmAt(intent);
         long delay = expectedAt == 0L ? 0L : receivedAt - expectedAt;
         context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).edit()
                 .putLong("lastAlarmExpectedAt", expectedAt)
                 .putLong("lastAlarmReceivedAt", receivedAt)
                 .putLong("lastAlarmDelayMs", delay)
+                .putLong("lastAlarmPrayerAt", prayerAt)
                 .putBoolean("lastAlarmWasExact",
                         intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true))
                 .putString("lastAlarmType", type == null ? "" : type)
-                .putString("lastAlarmKey", key == null ? "" : key)
-                .apply();
+                .putString("lastAlarmKey", key == null ? "" : key).apply();
         Log.i(TAG, "Alarm delivered: type=" + type + ", key=" + key
                 + ", exact=" + intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true)
                 + ", delayMs=" + delay);
@@ -160,7 +204,8 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         manager.notify(safeKey.hashCode(), notification);
     }
 
-    private void showReminder(Context context, String key, String name, String data) {
+    private void showReminder(Context context, String key, String name, String data,
+                              int minutesRemaining) {
         if (Build.VERSION.SDK_INT >= 33
                 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
@@ -189,11 +234,20 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         Notification notification = builder
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentTitle("تذكير الصلاة")
-                .setContentText("بقيت عشر دقائق على صلاة " + (name == null ? "" : name))
+                .setContentText(reminderText(minutesRemaining, name))
                 .setCategory(Notification.CATEGORY_REMINDER)
                 .setAutoCancel(true)
                 .setContentIntent(content)
                 .build();
         manager.notify((data + String.valueOf(key)).hashCode(), notification);
+    }
+
+    private static String reminderText(int minutes, String name) {
+        String duration;
+        if (minutes == 1) duration = "دقيقة واحدة";
+        else if (minutes == 2) duration = "دقيقتان";
+        else if (minutes >= 3 && minutes <= 10) duration = minutes + " دقائق";
+        else duration = minutes + " دقيقة";
+        return "بقيت " + duration + " على صلاة " + (name == null ? "" : name);
     }
 }
