@@ -25,9 +25,14 @@ public class DhikrAlarmSchedulerTest {
                 true, 950_000L, 1_000_000L, true));
     }
 
-    @Test public void rebuildsAnAlarmThatIsStaleBeyondDeliveryGrace() {
+    @Test public void keepsInexactDhikrAlarmWithinExtendedDozeDeliveryWindow() {
+        assertTrue(DhikrAlarmScheduler.shouldKeepScheduled(
+                true, 5_000_000L, 10_000_000L, true));
+    }
+
+    @Test public void rebuildsAnAlarmThatIsStaleBeyondNinetyMinuteGrace() {
         assertFalse(DhikrAlarmScheduler.shouldKeepScheduled(
-                true, 800_000L, 1_000_000L, true));
+                true, 1_000_000L, 7_000_001L, true));
     }
 
     @Test public void doesNotKeepMissingOrInvalidScheduleTimestamp() {
