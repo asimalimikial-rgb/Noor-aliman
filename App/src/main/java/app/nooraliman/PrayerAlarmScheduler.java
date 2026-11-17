@@ -128,6 +128,12 @@ final class PrayerAlarmScheduler {
             ids = new JSONArray();
             prefs.edit().putString(IDS, ids.toString()).commit();
         }
+        // A transient setAlarmClock failure must not suppress retries until tomorrow.
+        if (exactAlarmsAllowed && nextEvent != null && !eventScheduled) {
+            refreshAt = Math.min(refreshAt, now + 15L * MINUTE);
+            prefs.edit().putLong(NEXT_REFRESH_AT, refreshAt).apply();
+            Log.w(TAG, "Next exact alarm failed; retry scheduled within 15 minutes");
+        }
         boolean refreshScheduled = scheduleRefresh(context, manager, refreshAt);
         String status = !exactAlarmsAllowed ? "exact_permission_required"
                 : nextEvent == null ? "no_future_alarms"
