@@ -1,4 +1,4 @@
-# v1.19.0 release candidate build: compile, unit tests, signed APK and signature verification
+# v1.20.0 release candidate build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -98,7 +98,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.19.0-signed-apk
+          name: noor-al-iman-v1.20.0-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -251,6 +251,43 @@ jobs:
             - إزالة أربعة ملفات/مجلدات Save/save غير المطلوبة.
 
             اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. لم يُجرَ اختبار شامل على هاتف فعلي؛ لذلك يلزم التحقق من سلوك الخلفية والتنبيهات والأذان على الأجهزة قبل اعتماد الاستقرار ميدانياً.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-20-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.20.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.20.0 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.20.0-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.20.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.20.0
+          name: Noor Al-Iman v1.20.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.20.0 من نور الإيمان.
+
+            - إعادة تنظيم واجهة التطبيق بفصل HTML وCSS وJavaScript إلى وحدات مستقلة.
+            - فصل بيانات التفسير المحلية في ملفات JSON مستقلة.
+            - تحسين جدولة الصلاة باستخدام AlarmClock وإعادة المحاولة عند تعذر إنشاء المنبه الدقيق.
+            - تحسين دورة حياة MediaPlayer ومعالجة فشل التحضير وإتاحة إيقاف الأذان من الإشعار.
+            - إزالة حد المعاينة الثابت وتحسين تحميل الأصول المحلية داخل WebView.
+            - إصلاح تحميل مكرر لأصول الواجهة وإضافة اختبار لإعادة محاولة الجدولة.
+
+            اجتاز APK البناء والاختبارات الآلية والتحقق من التوقيع عبر GitHub Actions. لم يكتمل اختبار شامل على هاتف فعلي؛ يظل اختبار Doze وإدارة البطارية والأذان الكامل مطلوباً على أجهزة Android المختلفة.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256
