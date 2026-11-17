@@ -32,6 +32,7 @@ final class PrayerAlarmScheduler {
     private static final String SCHEDULE_SIGNATURE = "prayer_schedule_signature";
     private static final String NEXT_REFRESH_AT = "prayer_schedule_refresh_at";
     private static final String IN_PROGRESS = "prayer_schedule_in_progress";
+    private static final String NEXT_EVENT_AT = "prayer_next_event_at";
     private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
     private static final double R = Math.PI / 180.0;
@@ -78,7 +79,9 @@ final class PrayerAlarmScheduler {
                 adhanEnabled, reminderEnabled, sound, adjustments, exactAlarmsAllowed);
         long refreshAt = nextRefreshAt(timezone, now);
         boolean interrupted = prefs.getBoolean(IN_PROGRESS, false);
-        if (!shouldReschedule(force || interrupted,
+        long previousEventAt = prefs.getLong(NEXT_EVENT_AT, 0L);
+        boolean eventExpired = isEventExpired(previousEventAt, now);
+        if (!shouldReschedule(force || interrupted || eventExpired,
                 signature.equals(prefs.getString(SCHEDULE_SIGNATURE, "")),
                 prefs.getLong(NEXT_REFRESH_AT, 0L), now)) return;
 
@@ -116,6 +119,7 @@ final class PrayerAlarmScheduler {
         if (nextEvent != null) ids.put(nextEvent.uri());
         boolean stateSaved = prefs.edit().putString(IDS, ids.toString())
                 .putString(SCHEDULE_SIGNATURE, signature).putLong(NEXT_REFRESH_AT, refreshAt)
+                .putLong(NEXT_EVENT_AT, nextEvent == null ? 0L : nextEvent.at)
                 .putBoolean(IN_PROGRESS, true)
                 .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed).commit();
         boolean eventScheduled = stateSaved && exactAlarmsAllowed && nextEvent != null
@@ -146,6 +150,10 @@ final class PrayerAlarmScheduler {
         String uri() {
             return String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
         }
+    }
+
+    static boolean isEventExpired(long scheduledAt, long now) {
+        return scheduledAt > 0L && scheduledAt <= now;
     }
 
     static AlarmEvent earlierFutureEvent(AlarmEvent current, AlarmEvent candidate, long now) {
@@ -228,7 +236,7 @@ final class PrayerAlarmScheduler {
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
         if (show != null) show.cancel();
         prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT)
-                .remove(IN_PROGRESS).apply();
+                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT).apply();
     }
 
     private static boolean scheduleOne(Context context, AlarmManager manager, AlarmEvent event) {
