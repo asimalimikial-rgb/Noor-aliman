@@ -46,6 +46,13 @@ public class PrayerAlarmSchedulerTest {
                         "adhan", "fajr", "الفجر"), now));
     }
 
+    @Test public void failedExactAlarmRetriesBeforeDailyRefresh() {
+        assertEquals(1_900_000L,
+                PrayerAlarmScheduler.retryRefreshAt(5_000_000L, 1_000_000L));
+        assertEquals(1_500_000L,
+                PrayerAlarmScheduler.retryRefreshAt(1_500_000L, 1_000_000L));
+    }
+
     @Test public void consumedOrMissedNextEventForcesScheduleRebuild() {
         assertTrue(PrayerAlarmScheduler.isEventExpired(1_000L, 1_000L));
         assertTrue(PrayerAlarmScheduler.isEventExpired(900L, 1_000L));
