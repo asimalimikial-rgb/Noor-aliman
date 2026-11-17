@@ -134,11 +134,15 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         createChannel();
         prayerName = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
         currentPrayerKey = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
-        currentSound = intent == null ? "classic"
-                : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
+        String configuredSound = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+                .getString("adhanSound", "doha");
+        currentSound = intent == null
+                ? configuredSound : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
+        if (currentSound == null || currentSound.trim().isEmpty()) currentSound = configuredSound;
         preview = intent != null && intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_PREVIEW, false);
         if (preview && (currentPrayerKey == null || currentPrayerKey.isEmpty())) currentPrayerKey = "fajr";
-        if (!isAllowedSound(currentSound)) currentSound = "classic";
+        if (!isAllowedSound(currentSound)) currentSound = configuredSound;
+        if (!isAllowedSound(currentSound)) currentSound = "doha";
         if (!preview) recordPlaybackState("service-started", "");
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
         configureScreenOffStopReceiver();
