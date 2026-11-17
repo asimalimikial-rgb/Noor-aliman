@@ -130,9 +130,9 @@ final class PrayerAlarmScheduler {
         }
         // A transient setAlarmClock failure must not suppress retries until tomorrow.
         if (exactAlarmsAllowed && nextEvent != null && !eventScheduled) {
-            refreshAt = Math.min(refreshAt, now + 15L * MINUTE);
+            refreshAt = retryRefreshAt(refreshAt, now);
             prefs.edit().putLong(NEXT_REFRESH_AT, refreshAt).apply();
-            Log.w(TAG, "Next exact alarm failed; retry scheduled within 15 minutes");
+            Log.w(TAG, "Next exact alarm failed; retry target set to 15 minutes");
         }
         boolean refreshScheduled = scheduleRefresh(context, manager, refreshAt);
         String status = !exactAlarmsAllowed ? "exact_permission_required"
@@ -160,6 +160,10 @@ final class PrayerAlarmScheduler {
 
     static boolean isEventExpired(long scheduledAt, long now) {
         return scheduledAt > 0L && scheduledAt <= now;
+    }
+
+    static long retryRefreshAt(long dailyRefreshAt, long now) {
+        return Math.min(dailyRefreshAt, now + 15L * MINUTE);
     }
 
     static AlarmEvent earlierFutureEvent(AlarmEvent current, AlarmEvent candidate, long now) {
