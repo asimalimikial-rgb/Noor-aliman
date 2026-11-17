@@ -218,7 +218,7 @@ public class MainActivity extends Activity {
                         restoreFailure);
             }
         }
-        if (!restoredWebView) loadApplicationAssets();        if (!restoredWebView) loadApplicationAssets();
+        if (!restoredWebView) loadApplicationAssets();
     }
 
     private void recordRendererExit(android.webkit.RenderProcessGoneDetail detail) {
