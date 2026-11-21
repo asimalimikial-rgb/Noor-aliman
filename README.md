@@ -120,6 +120,7 @@
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
 - الموقع: https://asimalimikial-rgb.github.io/Noor-aliman/
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
+- تقرير تنفيذ توصيات Agent للإصدار 1.21.0: [REPORT-V1.21.0-AGENT-CHANGES-AR.md](REPORT-V1.21.0-AGENT-CHANGES-AR.md)
 - المطوّر: **Asim Ali Mikial**
 - رخصة الشيفرة المصدرية: MIT — [LICENSE](LICENSE)
 
