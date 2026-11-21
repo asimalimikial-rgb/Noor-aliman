@@ -48,7 +48,8 @@ jobs:
           dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
-          assert 'setAlarmClock' in prayer, 'prayer scheduler must use alarm-clock events'
+          assert 'setExactAndAllowWhileIdle' in prayer, 'prayer scheduler must use exact wakeup events'
+          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'daily refresh must wake the device'
           PY
 
       - name: Set up Java 17
