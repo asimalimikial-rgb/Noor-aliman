@@ -509,10 +509,13 @@ public class MainActivity extends Activity {
     private void maybeExplainMissingExactAlarmAccess(
             android.content.SharedPreferences prefs) {
         if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
-        if (!prefs.getBoolean("adhan", false) && !prefs.getBoolean("reminder", false)) return;
+        // Report ADHAN-ROOT-CAUSE-AR.md, cause 1.4: the prompt used to be gated on the
+        // adhan/reminder toggles already being on, so a fresh install never learned that
+        // exact-alarm access was missing. It is now shown whenever the permission is
+        // absent, and the suppression window is shortened from 24h to 6h.
         long now = System.currentTimeMillis();
         long lastPrompt = prefs.getLong("lastExactAlarmInAppPromptAt", 0L);
-        if (now - lastPrompt < 24L * 60L * 60L * 1000L) return;
+        if (now - lastPrompt < 6L * 60L * 60L * 1000L) return;
         prefs.edit().putLong("lastExactAlarmInAppPromptAt", now).apply();
         new AlertDialog.Builder(this)
                 .setTitle("يلزم تفعيل التنبيهات الدقيقة")

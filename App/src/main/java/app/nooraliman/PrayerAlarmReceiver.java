@@ -51,6 +51,11 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                     && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
                 Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: "
                         + type + "/" + key);
+                // Report ADHAN-ROOT-CAUSE-AR.md, cause 3: record why the alert was dropped so
+                // the in-app diagnostics row can surface it, and let the finally block rebuild
+                // the schedule instead of leaving the user with a silent gap.
+                prefs.edit().putString("lastAlarmDroppedReason",
+                        "exact_alarm_access_missing").apply();
                 if ("adhan".equals(type)) {
                     recordPlaybackFailure(context, "exact-alarm-access-missing",
                             "Exact-alarm access is required; approximate adhan events are ignored", key);
