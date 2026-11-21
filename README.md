@@ -4,7 +4,7 @@
 
 **تطبيق أندرويد عربي يجمع مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تجربة واحدة.**
 
-[![Version](https://img.shields.io/badge/version-1.21.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.20.0)
+[![Version](https://img.shields.io/badge/version-1.21.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.21.0)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
