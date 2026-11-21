@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause]
   pull_request:
     branches: [main, fix/v1.19-main-alarm-reliability]
   workflow_dispatch: {}
@@ -48,7 +48,8 @@ jobs:
           dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
-          assert 'setAlarmClock' in prayer, 'prayer scheduler must use alarm-clock events'
+          assert 'setExactAndAllowWhileIdle' in prayer, 'prayer scheduler must use exact wakeup events'
+          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'daily refresh must wake the device'
           PY
 
       - name: Set up Java 17
@@ -98,7 +99,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.20.0-signed-apk
+          name: noor-al-iman-v1.21.0-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -288,6 +289,44 @@ jobs:
             - إصلاح تحميل مكرر لأصول الواجهة وإضافة اختبار لإعادة محاولة الجدولة.
 
             اجتاز APK البناء والاختبارات الآلية والتحقق من التوقيع عبر GitHub Actions. لم يكتمل اختبار شامل على هاتف فعلي؛ يظل اختبار Doze وإدارة البطارية والأذان الكامل مطلوباً على أجهزة Android المختلفة.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-21-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.21.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.21.0 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.21.0-signed-apk
+          path: release-assets
+
+      - name: Publish Noor Al-Iman v1.21.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.21.0
+          name: Noor Al-Iman v1.21.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.21.0 من نور الإيمان.
+
+            - إصلاح جذري لعدم عمل الأذان: جدولة كل الصلوات (15 يوماً × 5 صلوات) بدل منبّه واحد فقط.
+            - استخدام setExactAndAllowWhileIdle لكل تنبيهات الصلاة، مع إلغاء البديل التقريبي الصامت.
+            - تحويل التحديث اليومي إلى RTC_WAKEUP مع setAndAllowWhileIdle حتى يعمل في وضع Doze.
+            - إظهار تنبيه إذن «المنبهات والتذكيرات» عند أول تشغيل حتى لو كان مفتاح الأذان مطفأً.
+            - تفعيل مفتاح «تشغيل الأذان في أوقاته» افتراضياً على التثبيت الجديد.
+            - تسجيل سبب إسقاط التنبيه في صف التشخيص داخل التطبيق.
+            - دمج فرع noor-al-iman-v1.19.1-stability-patch في main وإصلاح خطأ StringBuilder في MainActivity.
+
+            تم بناء APK والتوقيع والتحقق آلياً عبر GitHub Actions. يبقى اختبار الأجهزة الفعلية (Doze، إدارة بطارية سامسونج، تشغيل الأذان الكامل) مطلوباً قبل اعتماد الاستقرار ميدانياً.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256

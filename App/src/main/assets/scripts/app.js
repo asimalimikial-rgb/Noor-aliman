@@ -6,7 +6,7 @@ const SURAH_NAMES=['الفاتحة','البقرة','آل عمران','النسا
 const $=id=>document.getElementById(id);
 const nativeSettings=(()=>{try{return window.NativeAlarms?.loadWebSettings?JSON.parse(NativeAlarms.loadWebSettings()||'{}'):{};}catch(e){return{};}})();
 const store={get(k,d){try{let v=localStorage.getItem('ni_'+k);if(v===null&&Object.prototype.hasOwnProperty.call(nativeSettings,k))v=nativeSettings[k];return v===null||v===undefined?d:JSON.parse(v)}catch(e){return d}},set(k,v){const raw=JSON.stringify(v);try{localStorage.setItem('ni_'+k,raw)}catch(e){}try{window.NativeAlarms?.saveWebSetting?.(k,raw);nativeSettings[k]=raw}catch(e){}}};
-const S={city:store.get('city','dubeiba'),method:store.get('method','auto'),asr:store.get('asr','std'),notify:store.get('notify',false),reminder:store.get('reminder',false),adhanSound:store.get('adhanSound','doha'),cont:store.get('cont',true),dark:store.get('dark',false),page:store.get('page',1),reciter:store.get('reciter','ar.alafasy'),tafsirOn:store.get('tafsirOn',true),speed:1};
+const S={city:store.get('city','dubeiba'),method:store.get('method','auto'),asr:store.get('asr','std'),notify:store.get('notify',true),reminder:store.get('reminder',false),adhanSound:store.get('adhanSound','doha'),cont:store.get('cont',true),dark:store.get('dark',false),page:store.get('page',1),reciter:store.get('reciter','ar.alafasy'),tafsirOn:store.get('tafsirOn',true),speed:1};
 const ADHAN_FILES={doha:'Adhan_Doha_Qatar_01_Fajr_Adhan.mp3',classic:'adhan.ogg',aqib:'adhan-aqib.mp3',short:'adhan-short.ogg',makkah:'adhan-makkah.mp3'};
 if(S.adhanSound==='quseir'){S.adhanSound='classic';store.set('adhanSound','classic');}
 /*CALC*/
