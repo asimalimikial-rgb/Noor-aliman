@@ -90,6 +90,11 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
 
     static boolean isPlaying() { return playing; }
 
+    static float clampAdhanVolume(float volume) {
+        if (Float.isNaN(volume) || Float.isInfinite(volume)) return 1.0f;
+        return Math.max(0.0f, Math.min(1.0f, volume));
+    }
+
     static boolean isPreparationTimedOut(long startedAt, long now) {
         return startedAt > 0L && now >= startedAt && now - startedAt >= PREPARE_TIMEOUT_MS;
     }
@@ -143,6 +148,10 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if (preview && (currentPrayerKey == null || currentPrayerKey.isEmpty())) currentPrayerKey = "fajr";
         if (!isAllowedSound(currentSound)) currentSound = configuredSound;
         if (!isAllowedSound(currentSound)) currentSound = "doha";
+        if ("fajr".equals(currentPrayerKey)) {
+            String fajrSound = AlarmPrefs.get(this).getString("adhanFajrSound", "same");
+            if (!"same".equals(fajrSound) && isAllowedSound(fajrSound)) currentSound = fajrSound;
+        }
         if (!preview) recordPlaybackState("service-started", "");
         startForeground(NOTIFICATION_ID, buildNotification(prayerName, currentSound));
         configureScreenOffStopReceiver();
@@ -264,6 +273,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
             created.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
+            float adhanVolume = clampAdhanVolume(AlarmPrefs.get(this).getFloat("adhanVolume", 1.0f));
+            created.setVolume(adhanVolume, adhanVolume);
             created.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK);
             created.setDataSource(audio.getFileDescriptor(), audio.getStartOffset(), audio.getLength());
             created.setOnPreparedListener(mp -> {
@@ -372,7 +383,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
 
     private boolean isAllowedSound(String sound) {
         return "classic".equals(sound) || "aqib".equals(sound) || "short".equals(sound)
-                || "azemmour".equals(sound) || "makkah".equals(sound) || "doha".equals(sound);
+                || "azemmour".equals(sound) || "makkah".equals(sound) || "doha".equals(sound)
+                || "quseir".equals(sound);
     }
 
     private AssetFileDescriptor openAdhanAsset(String sound, String prayerKey) throws Exception {
@@ -403,6 +415,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if ("short".equals(sound)) return "adhan-short.ogg";
         if ("azemmour".equals(sound)) return "adhan-azemmour.mp3";
         if ("makkah".equals(sound)) return "adhan-makkah.mp3";
+        if ("quseir".equals(sound)) return "adhan-quseir.mp3";
         return "adhan.ogg";
     }
 
@@ -411,6 +424,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if ("short".equals(sound)) return "الأذان المختصر";
         if ("azemmour".equals(sound)) return "أذان أزمور، المغرب";
         if ("makkah".equals(sound)) return "أذان مكة";
+        if ("quseir".equals(sound)) return "أذان القصير، البحر الأحمر";
         if ("doha".equals(sound)) return "أذان الدوحة، قطر";
         return "الأذان الكامل";
     }
