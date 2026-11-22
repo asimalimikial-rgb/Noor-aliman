@@ -21,6 +21,9 @@
 ## Deliberately not implemented
 - Direct Boot (LOCKED_BOOT_COMPLETED) is not enabled. Alarm preferences remain in credential-protected SharedPreferences; registering the event without migrating and validating preferences to device-protected storage would falsely imply pre-unlock scheduling.
 - Timed dhikr remains an inexact non-allow-while-idle alarm by design; frequent allow-while-idle alarms risk Doze quota throttling.
+- The DhikrAlarmScheduler interval-drift and equal start/end boundary behavior were not changed in this release. The equal-time case needs an explicit product rule (disabled interval versus all-day) and regression tests before changing scheduling semantics.
+- An independent Fajr-only audio override and an adhan-specific percentage volume slider were not added. The existing Doha option already selects five separate bundled recordings by prayer key; the visible percentage slider continues to control timed-dhikr audio, not adhan output.
+- The home next-prayer experience and the existing prayer-time adjustment implementation were retained rather than replaced.
 - A separate Fajr-only sound selector was not exposed because Android currently accepts one global sound selection. Doha already selects a different bundled recording for each of the five prayer keys.
 - No new Android permissions were added.
 
