@@ -12,14 +12,34 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.util.Log;
 
 public class DhikrPlaybackService extends Service {
     static final String ACTION_PLAY = "app.nooraliman.action.PLAY_DHIKR";
     static final String ACTION_STOP = "app.nooraliman.action.STOP_DHIKR";
     private static final String CHANNEL = "dhikr_playback";
     private static final int NOTIFICATION_ID = 72;
+    private static final long PREPARE_TIMEOUT_MS = 20_000L;
+    private static final String TAG = "NoorDhikrPlayback";
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private MediaPlayer player;
+    private MediaPlayer preparingPlayer;
+    private long preparationStartedAt;
+    private final Runnable preparationTimeout = () -> {
+        MediaPlayer pending = preparingPlayer;
+        if (pending == null || player != pending
+                || !isPreparationTimedOut(preparationStartedAt, SystemClock.uptimeMillis())) return;
+        Log.e(TAG, "MediaPlayer preparation timed out after " + PREPARE_TIMEOUT_MS + "ms");
+        releasePlayer();
+        stopSelf();
+    };
+    static boolean isPreparationTimedOut(long startedAt, long now) {
+        return startedAt > 0L && now >= startedAt && now - startedAt >= PREPARE_TIMEOUT_MS;
+    }
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
     private boolean hasAudioFocus;
@@ -63,7 +83,8 @@ public class DhikrPlaybackService extends Service {
                 "التسبيح الدوري", NotificationManager.IMPORTANCE_LOW);
         channel.setSound(null, null);
         channel.enableVibration(false);
-        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(channel);
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) manager.createNotificationChannel(channel);
     }
 
     private Notification notification(String type) {
@@ -99,12 +120,37 @@ public class DhikrPlaybackService extends Service {
             created.setVolume(level, level);
             created.setOnPreparedListener(mp -> {
                 if (player != mp) return;
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
                 try { mp.start(); } catch (IllegalStateException error) { stopSelf(); }
             });
-            created.setOnCompletionListener(mp -> stopSelf());
-            created.setOnErrorListener((mp, what, extra) -> { stopSelf(); return true; });
+            created.setOnCompletionListener(mp -> {
+                if (player != mp) return;
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
+                stopSelf();
+            });
+            created.setOnErrorListener((mp, what, extra) -> {
+                if (player != mp) return true;
+                handler.removeCallbacks(preparationTimeout);
+                if (preparingPlayer == mp) preparingPlayer = null;
+                preparationStartedAt = 0L;
+                Log.e(TAG, "MediaPlayer error what=" + what + ", extra=" + extra);
+                stopSelf();
+                return true;
+            });
+            preparingPlayer = created;
+            preparationStartedAt = SystemClock.uptimeMillis();
+            handler.removeCallbacks(preparationTimeout);
+            handler.postDelayed(preparationTimeout, PREPARE_TIMEOUT_MS);
             created.prepareAsync();
         } catch (Exception error) {
+            handler.removeCallbacks(preparationTimeout);
+            preparingPlayer = null;
+            preparationStartedAt = 0L;
+            Log.e(TAG, "Could not prepare dhikr audio", error);
             stopSelf();
         }
     }
@@ -154,6 +200,9 @@ public class DhikrPlaybackService extends Service {
     }
 
     private void releasePlayer() {
+        handler.removeCallbacks(preparationTimeout);
+        preparingPlayer = null;
+        preparationStartedAt = 0L;
         if (player != null) {
             try { player.stop(); } catch (Exception ignored) {}
             player.release();

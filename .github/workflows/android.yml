@@ -1,4 +1,4 @@
-# v1.20.0 release candidate build: compile, unit tests, signed APK and signature verification
+# v1.22.2 maintenance build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause, maintenance/v1.22.2-comprehensive]
   pull_request:
     branches: [main, fix/v1.19-main-alarm-reliability]
   workflow_dispatch: {}
@@ -30,6 +30,27 @@ jobs:
           node --check App/src/main/assets/scripts/app.js
           node --check App/src/main/assets/scripts/tafsir-ui.js
           node --check App/src/main/assets/scripts/compass.js
+          python3 - <<'PY'
+          from pathlib import Path
+          service = Path('App/src/main/java/app/nooraliman/DhikrPlaybackService.java').read_text()
+          compass = Path('App/src/main/java/app/nooraliman/CompassBridge.java').read_text()
+          tafsir = Path('App/src/main/assets/scripts/tafsir-ui.js').read_text()
+          ui = Path('App/src/main/assets/noor-aliman.html').read_text()
+          js = Path('App/src/main/assets/scripts/app.js').read_text()
+          gradle = Path('App/build.gradle').read_text()
+          assert 'PREPARE_TIMEOUT_MS' in service and 'postDelayed(preparationTimeout' in service
+          assert 'manager != null' in service and 'createNotificationChannel(channel)' in service
+          assert 'volatile double heading' in compass and 'activity.getDisplay()' in compass
+          assert 'getDefaultDisplay().getRotation()' not in compass
+          assert 'nth-child(2)' not in tafsir and 'innerHTML' not in tafsir
+          assert "getElementById('aboutOfflineInfo')" in tafsir
+          assert 'compassCalibrate' in ui and 'حرّك الهاتف' in Path('App/src/main/assets/scripts/compass.js').read_text()
+          assert 'sFajrAdhanSound' in ui and 'adhanVolume' in ui
+          assert 'S.adhanFajrSound,S.adhanVolume' in js
+          assert "versionCode 28" in gradle and "versionName '1.22.2'" in gradle
+          assert Path('App/src/main/assets/adhan-quseir.mp3').is_file()
+          assert 'adhan-quseir.mp3' in js
+          PY
           node --check App/src/main/assets/enhancements.js
           python3 - <<'PY'
           from pathlib import Path
@@ -140,7 +161,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.22.1-signed-apk
+          name: noor-al-iman-v1.22.2-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -476,6 +497,43 @@ jobs:
             - الحفاظ على صلاحيات Android وملفات الصوت وإعدادات التوقيع.
 
             اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. يلزم اختبار ميداني على جهاز Android فعلي قبل تأكيد سلوك الإقلاع المباشر وDoze.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-22-2:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.22.2 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.22.2 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.22.2-signed-apk
+          path: release-assets
+      - name: Publish Noor Al-Iman v1.22.2 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.22.2
+          name: Noor Al-Iman v1.22.2
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.22.2 من نور الإيمان — صيانة الاستقرار وتحسين تجربة الأذان.
+
+            - إضافة مهلة تحضير لصوت الذكر ومعالجة آمنة لقناة الإشعارات.
+            - تحديث قراءة دوران الشاشة في البوصلة، وتثبيت زاوية الاتجاه وإضافة إرشادات المعايرة.
+            - تحسين محددات DOM وبناء رابط مصدر التفسير دون innerHTML.
+            - إضافة إرشادات لقيود البطارية على أجهزة الشركات المصنّعة.
+            - إضافة اختيار مستقل لصوت الفجر ومستوى صوت مستقل للأذان.
+            - تفعيل تسجيل Quseir مع الحفاظ على ملفه وتوافق الإعدادات القديمة.
+            - الحفاظ على الأذونات وإعدادات التوقيع الحالية.
+
+            اجتاز الإصدار اختبارات البناء والوحدة والتحقق من توقيع APK عبر GitHub Actions. يظل الاختبار الميداني على أجهزة Android المختلفة ضرورياً للتحقق من سلوك Doze وDirect Boot وإدارة البطارية.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256

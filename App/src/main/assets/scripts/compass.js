@@ -59,7 +59,7 @@
     if(!Number.isFinite(value))return;
     value=normalize(value);
     if(!Number.isFinite(smoothHeading))smoothHeading=value;
-    else smoothHeading+=((((value-normalize(smoothHeading)+540)%360)-180)*0.22);
+    else smoothHeading=normalize(smoothHeading+((((value-normalize(smoothHeading)+540)%360)-180)*0.22));
     window.qiblaHeading=smoothHeading;
     if(Number.isFinite(window.qiblaBearing)){
       const needle=document.getElementById('needle');
@@ -102,6 +102,11 @@
     }
     if(!window.NativeCompass&&typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function')permissionButton.hidden=false;
   };
+  const calibrationButton=document.getElementById('compassCalibrate');
+  if(calibrationButton)calibrationButton.addEventListener('click',()=>{
+    window.resetQiblaHeading();
+    setStatus('لتحسين القراءة، حرّك الهاتف ببطء على شكل الرقم ٨ ثم أعد توجيهه نحو القبلة.');
+  });
   if(permissionButton)permissionButton.addEventListener('click',async()=>{
     try{
       const result=await DeviceOrientationEvent.requestPermission();

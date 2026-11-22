@@ -23,7 +23,7 @@ the existing offline playback paths.
   does not identify a specific muezzin; no claim is made that this is a verified
   official live broadcast from inside Masjid al-Haram.
 
-The Quseir / Red Sea recording (`adhan-quseir.mp3`) remains in repository assets for compatibility, although it is not listed as a selectable sound in the current app. Do not remove it until legacy references and compatibility have been checked.
+The Quseir / Red Sea recording (`adhan-quseir.mp3`) is retained for compatibility and is now exposed as a selectable sound in the Android app. Its existing source and rights notes above remain applicable.
 
 
 ## Subhan Allah, Alhamdulillah, Allahu Akbar

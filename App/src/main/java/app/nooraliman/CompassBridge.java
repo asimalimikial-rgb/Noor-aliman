@@ -8,6 +8,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Build;
+import android.view.Display;
+import android.view.Surface;
 import android.webkit.JavascriptInterface;
 
 public final class CompassBridge implements SensorEventListener {
@@ -119,10 +122,18 @@ public final class CompassBridge implements SensorEventListener {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private int displayRotation() {
+        Display display = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                ? activity.getDisplay()
+                : activity.getWindowManager().getDefaultDisplay();
+        return display == null ? Surface.ROTATION_0 : display.getRotation();
+    }
+
     private void updateHeading() {
         int axisX = SensorManager.AXIS_X;
         int axisY = SensorManager.AXIS_Y;
-        switch (activity.getWindowManager().getDefaultDisplay().getRotation()) {
+        switch (displayRotation()) {
             case android.view.Surface.ROTATION_90:
                 axisX = SensorManager.AXIS_Y;
                 axisY = SensorManager.AXIS_MINUS_X;
