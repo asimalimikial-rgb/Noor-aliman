@@ -626,7 +626,7 @@ public class MainActivity extends Activity {
                 result.put("prayerAlarmScheduleStatus",
                         prefs.getString("prayerAlarmScheduleStatus", "unknown"));
                 result.put("lastAlarmDroppedReason", prefs.getString("lastAlarmDroppedReason", "none"));
-                android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+                android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
                 result.put("batteryOptimizationExempt", Build.VERSION.SDK_INT < 23
                         || (power != null && power.isIgnoringBatteryOptimizations(getPackageName())));
                 result.put("notificationPermission", hasNotificationPermission());
@@ -791,7 +791,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isIgnoringBatteryOptimizations() {
             if (Build.VERSION.SDK_INT < 23) return true;
-            android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+            android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
             return power != null && power.isIgnoringBatteryOptimizations(getPackageName());
         }
         @JavascriptInterface
