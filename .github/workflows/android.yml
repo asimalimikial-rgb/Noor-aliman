@@ -30,6 +30,27 @@ jobs:
           node --check App/src/main/assets/scripts/app.js
           node --check App/src/main/assets/scripts/tafsir-ui.js
           node --check App/src/main/assets/scripts/compass.js
+          python3 - <<'PY'
+          from pathlib import Path
+          service = Path('App/src/main/java/app/nooraliman/DhikrPlaybackService.java').read_text()
+          compass = Path('App/src/main/java/app/nooraliman/CompassBridge.java').read_text()
+          tafsir = Path('App/src/main/assets/scripts/tafsir-ui.js').read_text()
+          ui = Path('App/src/main/assets/noor-aliman.html').read_text()
+          js = Path('App/src/main/assets/scripts/app.js').read_text()
+          gradle = Path('App/build.gradle').read_text()
+          assert 'PREPARE_TIMEOUT_MS' in service and 'postDelayed(preparationTimeout' in service
+          assert 'manager != null' in service and 'createNotificationChannel(channel)' in service
+          assert 'volatile double heading' in compass and 'activity.getDisplay()' in compass
+          assert 'getDefaultDisplay().getRotation()' not in compass
+          assert 'nth-child(2)' not in tafsir and 'innerHTML' not in tafsir
+          assert "getElementById('aboutOfflineInfo')" in tafsir
+          assert 'compassCalibrate' in ui and 'حرّك الهاتف' in Path('App/src/main/assets/scripts/compass.js').read_text()
+          assert 'sFajrAdhanSound' in ui and 'adhanVolume' in ui
+          assert 'S.adhanFajrSound,S.adhanVolume' in js
+          assert "versionCode 28" in gradle and "versionName '1.22.2'" in gradle
+          assert Path('App/src/main/assets/adhan-quseir.mp3').is_file()
+          assert 'adhan-quseir.mp3' in js
+          PY
           node --check App/src/main/assets/enhancements.js
           python3 - <<'PY'
           from pathlib import Path
