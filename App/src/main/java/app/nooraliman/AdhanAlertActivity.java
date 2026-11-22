@@ -25,9 +25,10 @@ import android.widget.TextView;
 
 public class AdhanAlertActivity extends Activity {
     private boolean receiverRegistered;
+    private TextView prayerTitleView;
     private final BroadcastReceiver playbackFinishedReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
-            if (AdhanPlaybackService.ACTION_FINISHED.equals(intent.getAction())) finish();
+            if (intent != null && AdhanPlaybackService.ACTION_FINISHED.equals(intent.getAction())) finish();
         }
     };
     private static final int GREEN = Color.rgb(16, 44, 38);
@@ -85,7 +86,8 @@ public class AdhanAlertActivity extends Activity {
         eyebrow.setGravity(Gravity.CENTER);
         root.addView(eyebrow, new LinearLayout.LayoutParams(-1, dp(34)));
 
-        TextView title = new TextView(this);
+        prayerTitleView = new TextView(this);
+        TextView title = prayerTitleView;
         title.setText("أذان " + (prayer == null || prayer.trim().isEmpty() ? "الصلاة" : prayer));
         title.setTextColor(CREAM);
         title.setTextSize(31);
@@ -126,6 +128,14 @@ public class AdhanAlertActivity extends Activity {
         finish();
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent); setIntent(intent);
+        String prayer = intent == null ? null : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
+        if (prayerTitleView != null) prayerTitleView.setText("أذان " + (prayer == null || prayer.trim().isEmpty() ? "الصلاة" : prayer));
+        if (!AdhanPlaybackService.isPlaybackActive()) finish();
+    }
+    @Override public void onBackPressed() { stopAdhanAndClose(); }
     @Override
     protected void onDestroy() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -175,6 +185,7 @@ public class AdhanAlertActivity extends Activity {
 
     private static final class MosqueArtwork extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path reusablePath = new Path();
         MosqueArtwork(Activity activity) { super(activity); setLayerType(View.LAYER_TYPE_SOFTWARE, null); }
 
         @Override protected void onDraw(Canvas canvas) {
@@ -192,7 +203,8 @@ public class AdhanAlertActivity extends Activity {
             canvas.drawRoundRect(new RectF(w * .19f, base - h * .23f, w * .81f, base),
                     dp(10), dp(10), paint);
             paint.setColor(GOLD);
-            Path dome = new Path();
+            Path dome = reusablePath;
+            dome.reset();
             dome.moveTo(w * .31f, base - h * .22f);
             dome.cubicTo(w * .32f, base - h * .52f, w * .68f, base - h * .52f, w * .69f, base - h * .22f);
             dome.close();
@@ -223,7 +235,8 @@ public class AdhanAlertActivity extends Activity {
                     dp(5), dp(5), paint);
             paint.setColor(GOLD);
             canvas.drawRect(x - dp(12), base - h * .42f, x + dp(12), base - h * .39f, paint);
-            Path roof = new Path();
+            Path roof = reusablePath;
+            roof.reset();
             roof.moveTo(x - dp(9), base - h * .42f);
             roof.lineTo(x, base - h * .49f);
             roof.lineTo(x + dp(9), base - h * .42f);
