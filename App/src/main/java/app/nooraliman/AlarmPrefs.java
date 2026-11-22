@@ -39,17 +39,23 @@ final class AlarmPrefs {
         if (userManager == null || !userManager.isUserUnlocked()) return;
 
         synchronized (MIGRATION_LOCK) {
+            if (migrationChecked) return;
             Context credentialContext = context.createCredentialProtectedStorageContext();
+            SharedPreferences device = deviceContext.getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+            Map<String, ?> deviceValues = device.getAll();
 
-            // Prefer Android's native move when the destination does not yet exist.
-            try {
-                if (deviceContext.moveSharedPreferencesFrom(
-                        credentialContext, PrayerAlarmScheduler.PREFS)) {
-                    migrationChecked = true;
-                    return;
+            // Use the native move only when it cannot overwrite any Direct Boot values.
+            if (deviceValues.isEmpty()) {
+                try {
+                    if (deviceContext.moveSharedPreferencesFrom(
+                            credentialContext, PrayerAlarmScheduler.PREFS)) {
+                        migrationChecked = true;
+                        return;
+                    }
+                } catch (RuntimeException ignored) {
+                    // Fall through to a key-preserving merge.
                 }
-            } catch (RuntimeException ignored) {
-                // Fall through to a key-preserving merge for existing destinations.
             }
 
             SharedPreferences legacy = credentialContext.getSharedPreferences(
@@ -60,9 +66,7 @@ final class AlarmPrefs {
                 return;
             }
 
-            SharedPreferences device = deviceContext.getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-            Map<String, ?> deviceValues = device.getAll();
+            deviceValues = device.getAll();
             SharedPreferences.Editor editor = device.edit();
             boolean complete = true;
 
