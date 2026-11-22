@@ -4,12 +4,14 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PrayerAlarmReceiverTest {
-    @Test public void adhanWithinFifteenMinuteGraceIsNotDropped() {
-        assertFalse(PrayerAlarmReceiver.isAdhanTooLate(1_000_000L, 1_899_999L));
+    @Test public void adhanAtFiveMinuteBoundaryIsNotDropped() {
+        long expected = 1_000_000L;
+        assertFalse(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 5L * 60_000L));
     }
 
-    @Test public void adhanBeyondFifteenMinuteGraceIsDropped() {
-        assertTrue(PrayerAlarmReceiver.isAdhanTooLate(1_000_000L, 1_900_001L));
+    @Test public void adhanBeyondFiveMinuteBoundaryIsDropped() {
+        long expected = 1_000_000L;
+        assertTrue(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 5L * 60_000L + 1L));
     }
 
     @Test public void reminderCountdownReflectsActualRemainingTime() {
