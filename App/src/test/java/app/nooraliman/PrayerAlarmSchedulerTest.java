@@ -24,10 +24,10 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.isFutureAlarm(999L, 1_000L));
     }
 
-    @Test public void adhanLateGraceAllowsUpToFifteenMinutes() {
+    @Test public void adhanLateGraceAllowsExactlyFiveMinutes() {
         long expected = 1_000_000L;
-        assertFalse(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 15L * 60_000L));
-        assertTrue(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 15L * 60_000L + 1L));
+        assertFalse(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 5L * 60_000L));
+        assertTrue(PrayerAlarmReceiver.isAdhanTooLate(expected, expected + 5L * 60_000L + 1L));
     }
 
     @Test public void exactAlarmPermissionSelectsAlarmPrecision() {
