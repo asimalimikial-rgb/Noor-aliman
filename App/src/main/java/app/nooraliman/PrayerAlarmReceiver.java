@@ -20,7 +20,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
     private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
-    private static final long ADHAN_LATE_GRACE_MS = 5L * MINUTE;
+    private static final long ADHAN_LATE_GRACE_MS = 15L * MINUTE;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -49,20 +49,9 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (Build.VERSION.SDK_INT >= 31
                     && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
-                Log.w(TAG, "Dropped prayer alert because exact-alarm access is unavailable or event is inexact: "
-                        + type + "/" + key);
-                // Report ADHAN-ROOT-CAUSE-AR.md, cause 3: record why the alert was dropped so
-                // the in-app diagnostics row can surface it, and let the finally block rebuild
-                // the schedule instead of leaving the user with a silent gap.
+                Log.w(TAG, "Prayer alert fired via inexact fallback: " + type + "/" + key);
                 prefs.edit().putString("lastAlarmDroppedReason",
-                        "exact_alarm_access_missing").apply();
-                if ("adhan".equals(type)) {
-                    recordPlaybackFailure(context, "exact-alarm-access-missing",
-                            "Exact-alarm access is required; approximate adhan events are ignored", key);
-                    showAdhanFailure(context, "exact-alarm-access-missing", name, key,
-                            "فعّل إذن التنبيهات الدقيقة من إعدادات أندرويد لتشغيل الأذان في موعده.");
-                }
-                return;
+                        "inexact_fallback_used").apply();
             }
             if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
                 long receivedAt = System.currentTimeMillis();
@@ -70,10 +59,10 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                     String detail = "Alarm arrived " + (receivedAt - expectedAt)
                             + "ms after prayer time; stale adhan skipped";
                     recordPlaybackFailure(context, "late-alarm-dropped", detail, key);
-                    prefs.edit().putString("lastAlarmDroppedReason", "adhan_late_over_5_minutes").apply();
+                    prefs.edit().putString("lastAlarmDroppedReason", "adhan_late_over_15_minutes").apply();
                     Log.w(TAG, detail + "; prayer=" + key);
                     showAdhanFailure(context, "late-alarm-dropped", name, key,
-                            "وصل تنبيه الأذان بعد الموعد بأكثر من خمس دقائق؛ تم تجاهله.");
+                            "وصل تنبيه الأذان بعد الموعد بأكثر من 15 دقيقة؛ تم تجاهله.");
                     return;
                 }
                 Intent service = new Intent(context, AdhanPlaybackService.class)
