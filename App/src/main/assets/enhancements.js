@@ -282,9 +282,9 @@
   const settingsList = document.querySelector('#settings .settings-list');
   if (languageRow && settingsList && !$('compassToggle')) {
     const row = document.createElement('div');
-    row.className = 'setting';
+    row.className = 'setting pro-only';
     row.innerHTML = '<div><strong>بوصلة الهاتف</strong><small>تعمل فقط عند فتح صفحة القبلة؛ أوقفها لتقليل استخدام المستشعر والبطارية.</small></div><input class="toggle" id="compassToggle" type="checkbox" aria-label="تفعيل البوصلة">';
-    settingsList.insertBefore(row, languageRow);
+    languageRow.parentElement.insertBefore(row, languageRow);
   }
 
   const compassToggle = $('compassToggle');
@@ -316,9 +316,9 @@
   const audioAnchor = $('sCont')?.closest('.setting') || languageRow;
   if (settingsList && audioAnchor && !$('quranAudioToggle')) {
     const row = document.createElement('label');
-    row.className = 'setting';
+    row.className = 'setting pro-only';
     row.innerHTML = '<div><strong>تشغيل تلاوة القرآن</strong><small>إظهار أدوات الصوت وتشغيل التلاوة عند الطلب</small></div><input class="toggle" id="quranAudioToggle" type="checkbox" aria-label="تشغيل تلاوة القرآن">';
-    settingsList.insertBefore(row, audioAnchor);
+    audioAnchor.parentElement.insertBefore(row, audioAnchor);
   }
 
   const adhanSelect = $('sAdhanSound');
@@ -729,7 +729,7 @@
   };
 
   const prayerEnhancements = document.createElement('section');
-  prayerEnhancements.className = 'prayer-enhancements';
+  prayerEnhancements.className = 'prayer-enhancements pro-only';
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
     <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
@@ -1243,17 +1243,9 @@ document.head.append(settingsHubStyle);
       background: #fff;
     }
     .adjustment-value { min-width: 84px; text-align: center; font-weight: 700; }
-    .adhan-stop-bar {
-      position: fixed; z-index: 1000; inset-inline: 14px; bottom: max(14px, env(safe-area-inset-bottom));
-      width: min(520px, calc(100% - 28px)); margin-inline: auto;
-      padding: 10px; border: 1px solid rgba(255,255,255,.16);
-      border-radius: 18px; background: var(--noor-forest-deep);
-      box-shadow: 0 16px 44px rgba(0,0,0,.25);
-    }
-    .adhan-stop-bar button {
-      width: 100%; min-height: 48px; border: 0; border-radius: 12px;
-      background: #f5e8ce; color: #2e281c; font-weight: 800;
-    }
+    .adhan-stop-bar {position:fixed;z-index:1000;left:50%;right:auto;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));width:min(520px,calc(100vw - 28px));box-sizing:border-box;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:var(--noor-forest-deep);box-shadow:0 16px 44px rgba(0,0,0,.25)}
+    .adhan-stop-bar button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border:0;border-radius:12px;background:#f5e8ce;color:#2e281c;font-weight:800;text-align:center}
+    @media(max-width:650px){.adhan-stop-bar{bottom:calc(76px + env(safe-area-inset-bottom))}}
     .dark {
       --noor-paper: #101b17;
       --noor-surface: #192720;
