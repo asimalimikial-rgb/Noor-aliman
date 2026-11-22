@@ -116,7 +116,7 @@
 
 ## التثبيت
 
-1. افتح [صفحة الإصدار 1.22.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.0).
+1. افتح [صفحة الإصدار 1.22.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.1).
 2. نزّل ملف `app-release.apk` بعد نشره.
 3. افتح الملف على هاتف Android وأكمل التثبيت. قد يطلب النظام السماح بالتثبيت من مصدر خارجي.
 
