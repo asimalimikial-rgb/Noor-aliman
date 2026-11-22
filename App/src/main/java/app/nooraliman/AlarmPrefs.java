@@ -40,7 +40,7 @@ final class AlarmPrefs {
 
         synchronized (MIGRATION_LOCK) {
             if (migrationChecked) return;
-            Context credentialContext = context.createCredentialProtectedStorageContext();
+            Context credentialContext = context;
             SharedPreferences device = deviceContext.getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
             Map<String, ?> deviceValues = device.getAll();
@@ -68,9 +68,7 @@ final class AlarmPrefs {
                 return;
             }
 
-            SharedPreferences device = deviceContext.getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-            Map<String, ?> deviceValues = device.getAll();
+            deviceValues = device.getAll();
             SharedPreferences.Editor editor = device.edit();
             boolean complete = true;
 
