@@ -625,6 +625,10 @@ public class MainActivity extends Activity {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
                 result.put("prayerAlarmScheduleStatus",
                         prefs.getString("prayerAlarmScheduleStatus", "unknown"));
+                result.put("lastAlarmDroppedReason", prefs.getString("lastAlarmDroppedReason", "none"));
+                android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+                result.put("batteryOptimizationExempt", Build.VERSION.SDK_INT < 23
+                        || (power != null && power.isIgnoringBatteryOptimizations(getPackageName())));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
@@ -780,19 +784,48 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean canUseFullScreenIntent() {
-            return Build.VERSION.SDK_INT < 34
-                    || ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-                    .canUseFullScreenIntent();
+            if (Build.VERSION.SDK_INT < 34) return true;
+            android.app.NotificationManager manager = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            return manager != null && manager.canUseFullScreenIntent();
         }
-
+        @JavascriptInterface
+        public boolean isIgnoringBatteryOptimizations() {
+            if (Build.VERSION.SDK_INT < 23) return true;
+            android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+            return power != null && power.isIgnoringBatteryOptimizations(getPackageName());
+        }
+        @JavascriptInterface
+        public void openBatteryOptimizationSettings() {
+            runOnUiThread(() -> {
+                try { Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                    if (intent.resolveActivity(getPackageManager()) != null) { startActivity(intent); return; }
+                } catch (Exception error) { Log.w("NoorPrayerAlarm", "Battery settings unavailable", error); }
+                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
+                catch (Exception error) { Log.e("NoorPrayerAlarm", "Could not open app settings", error); }
+            });
+        }
         @JavascriptInterface
         public void requestFullScreenIntentAccess() {
-            if (Build.VERSION.SDK_INT < 34 || canUseFullScreenIntent()) return;
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT < 34 || canUseFullScreenIntent()) {
+                    if (webView != null && !webViewRendererGone) webView.evaluateJavascript("if(window.refreshAlarmPermissionStatus)window.refreshAlarmPermissionStatus();", null);
+                    return;
+                }
+                new AlertDialog.Builder(MainActivity.this).setTitle("تفعيل شاشة الأذان على القفل")
+                        .setMessage("سيتم نقلك إلى إعدادات النظام؛ فعّل إشعارات ملء الشاشة أو الظهور على شاشة القفل، ثم ارجع إلى التطبيق.")
+                        .setPositiveButton("فتح الإعدادات", (dialog, which) -> openFullScreenOrAppSettings())
+                        .setNegativeButton("إلغاء", null).show();
+            });
+        }
+        private void openFullScreenOrAppSettings() {
             try {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                        Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-            } catch (Exception ignored) { }
+                if (Build.VERSION.SDK_INT >= 34) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + getPackageName()));
+                    if (intent.resolveActivity(getPackageManager()) != null) { startActivity(intent); return; }
+                }
+            } catch (Exception error) { Log.w("NoorPrayerAlarm", "Full-screen settings unavailable; opening app details", error); }
+            try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
+            catch (Exception error) { Log.e("NoorPrayerAlarm", "Could not open app details", error); }
         }
 
         @JavascriptInterface
