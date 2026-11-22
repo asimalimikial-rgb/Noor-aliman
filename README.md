@@ -104,7 +104,7 @@
 
 ## التثبيت
 
-1. افتح [صفحة الإصدار 1.21.1](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.21.1).
+1. افتح [صفحة الإصدار 1.22.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.0).
 2. نزّل ملف `app-release.apk` بعد نشره.
 3. افتح الملف على هاتف Android وأكمل التثبيت. قد يطلب النظام السماح بالتثبيت من مصدر خارجي.
 
@@ -137,6 +137,7 @@
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
 - الموقع: https://asimalimikial-rgb.github.io/Noor-aliman/
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
+- تقرير تنفيذ الإصدار 1.22.0: [IMPLEMENTATION-REPORT-v1.22.0.md](IMPLEMENTATION-REPORT-v1.22.0.md)
 - تقرير تنفيذ توصيات Agent للإصدار 1.21.1: [REPORT-V1.21.1-AGENT-CHANGES-AR.md](REPORT-V1.21.1-AGENT-CHANGES-AR.md)
 - المطوّر: **Asim Ali Mikial**
 - رخصة الشيفرة المصدرية: MIT — [LICENSE](LICENSE)
