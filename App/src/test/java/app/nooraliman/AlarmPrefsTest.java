@@ -56,7 +56,7 @@ public class AlarmPrefsTest {
                 (UserManager) context.getSystemService(Context.USER_SERVICE);
         Shadows.shadowOf(userManager).setUserUnlocked(false);
 
-        Context credentialContext = context.createCredentialProtectedStorageContext();
+        Context credentialContext = context;
         credentialContext.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE)
                 .edit().putBoolean("adhan", true).putInt("dhikrEvery", 30)
