@@ -72,11 +72,14 @@ final class PrayerAlarmScheduler {
         String method = prefs.getString("method", "umm");
         String asr = prefs.getString("asr", "std");
         String sound = prefs.getString("adhanSound", "doha");
+        String fajrSound = prefs.getString("adhanFajrSound", "same");
+        float adhanVolume = prefs.getFloat("adhanVolume", 1.0f);
         String adjustments = prefs.getString("prayerAdjustments", "{}");
         TimeZone timezone = TimeZone.getTimeZone(timezoneId);
         long now = System.currentTimeMillis();
         String signature = scheduleSignature(lat, lng, timezoneId, method, asr,
-                adhanEnabled, reminderEnabled, sound, adjustments, exactAlarmsAllowed);
+                adhanEnabled, reminderEnabled, sound, fajrSound, adhanVolume,
+                adjustments, exactAlarmsAllowed);
         long refreshAt = nextRefreshAt(timezone, now);
         boolean interrupted = prefs.getBoolean(IN_PROGRESS, false);
         long previousEventAt = prefs.getLong(NEXT_EVENT_AT, 0L);
@@ -196,11 +199,11 @@ final class PrayerAlarmScheduler {
 
     private static String scheduleSignature(double lat, double lng, String timezone,
                                             String method, String asr, boolean adhan,
-                                            boolean reminder, String sound, String adjustments,
-                                            boolean exactAllowed) {
-        return String.format(Locale.US, "%.6f|%.6f|%s|%s|%s|%s|%s|%s|%s|%s",
-                lat, lng, timezone, method, asr, adhan, reminder, sound,
-                adjustments, exactAllowed);
+                                            boolean reminder, String sound, String fajrSound,
+                                            float adhanVolume, String adjustments, boolean exactAllowed) {
+        return String.format(Locale.US, "%.6f|%.6f|%s|%s|%s|%s|%s|%s|%s|%.3f|%s|%s",
+                lat, lng, timezone, method, asr, adhan, reminder, sound, fajrSound,
+                adhanVolume, adjustments, exactAllowed);
     }
 
     private static long nextRefreshAt(TimeZone timezone, long now) {
