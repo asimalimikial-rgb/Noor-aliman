@@ -46,12 +46,10 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         if (pending == null || player != pending || playing
                 || !isPreparationTimedOut(preparationStartedAt,
                         android.os.SystemClock.uptimeMillis())) return;
-        preparingPlayer = null;
-        preparationStartedAt = 0L;
         recordPlaybackState("prepare-timeout", "MediaPlayer.prepareAsync() did not complete within 20 seconds");
         Log.e(TAG, "MediaPlayer preparation timed out after " + PREPARE_TIMEOUT_MS + "ms");
         notifyPlaybackFailure("prepare-timeout", "استغرق تجهيز ملف الأذان وقتاً أطول من المتوقع.");
-        stopSelf();
+        releasePlayer(); stopSelf();
     };
     private AssetFileDescriptor activeAudioDescriptor;
     private boolean preview;
@@ -61,6 +59,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
     private boolean hasAudioFocus;
+    private boolean playerPrepared;
     private SensorManager sensorManager;
     private Sensor faceDownSensor;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -84,7 +83,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
             try { if (active.isPlaying()) active.pause(); } catch (IllegalStateException ignored) { }
         } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
-            try { if (!active.isPlaying()) active.start(); } catch (IllegalStateException ignored) { }
+            if (active != player || !playerPrepared || preparingPlayer == active) return;
+            try { if (!active.isPlaying()) active.start(); } catch (IllegalStateException error) { Log.w(TAG, "Could not resume prepared adhan after audio-focus gain", error); }
         }
     };
 
@@ -208,8 +208,9 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                         .putExtra(PrayerAlarmScheduler.EXTRA_NAME, prayer)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         boolean canUseFullScreen = Build.VERSION.SDK_INT < 34
-                || ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).canUseFullScreenIntent();
+                || (notificationManager != null && notificationManager.canUseFullScreenIntent());
         if (!preview && canUseFullScreen) builder.setFullScreenIntent(fullScreen, true);
         return builder.build();
     }
@@ -271,6 +272,8 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
                 preparationStartedAt = 0L;
                 closeAudioDescriptor();
                 if (player != mp) return;
+                playerPrepared = true;
+                if (!hasAudioFocus) { recordPlaybackState("audio-focus-lost-before-prepare", "Audio focus was lost before MediaPlayer preparation completed"); notifyPlaybackFailure("audio-focus-lost-before-prepare", "فُقدت أولوية الصوت قبل اكتمال تجهيز الأذان."); stopSelf(); return; }
                 try {
                     mp.start();
                     playing = true;
@@ -427,6 +430,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         handler.removeCallbacks(preparationTimeout);
         preparingPlayer = null;
         preparationStartedAt = 0L;
+        playerPrepared = false;
         if (sensorManager != null) sensorManager.unregisterListener(this);
         handler.removeCallbacks(stopIfStillFaceDown);
         faceDownStopPending = false;
