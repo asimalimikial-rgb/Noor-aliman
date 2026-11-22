@@ -36,6 +36,19 @@ public class AlarmPrefsTest {
         assertTrue(actual.getBoolean("directBootTestValue", false));
     }
 
+
+    @Test
+    @Config(sdk = 23)
+    public void api23KeepsCredentialProtectedPreferences() {
+        Context context = RuntimeEnvironment.getApplication();
+        SharedPreferences expected = context.getSharedPreferences(
+                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+        expected.edit().putBoolean("api23Value", true).commit();
+
+        SharedPreferences actual = AlarmPrefs.get(context);
+        assertTrue(actual.getBoolean("api23Value", false));
+    }
+
     @Test
     public void getMigratesLegacyPreferencesAfterUnlock() {
         Context context = RuntimeEnvironment.getApplication();
