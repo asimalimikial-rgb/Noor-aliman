@@ -99,9 +99,9 @@ final class PrayerAlarmScheduler {
         int scheduledAlarms = 0;
         prefs.edit().putBoolean(IN_PROGRESS, true).commit();
         if (!exactAlarmsAllowed) {
-            Log.w(TAG, "Exact-alarm access is missing; user-facing prayer alerts are not scheduled");
-        } else {
-            for (int day = 0; day < DAYS_AHEAD; day++) {
+            Log.w(TAG, "Exact-alarm access is missing; scheduling inexact fallback prayer alerts");
+        }
+        for (int day = 0; day < DAYS_AHEAD; day++) {
                 Calendar date = (Calendar) localDay.clone();
                 date.add(Calendar.DAY_OF_MONTH, day);
                 long[] prayerTimes = calculate(date, timezone, lat, lng, method, asr);
@@ -112,7 +112,7 @@ final class PrayerAlarmScheduler {
                     if (adhanEnabled && isFutureAlarm(prayerAt, now)) {
                         requestedAlarms++;
                         if (scheduleOne(context, manager, ids, prayerAt, prayerAt,
-                                "adhan", key, name)) {
+                                "adhan", key, name, exactAlarmsAllowed)) {
                             scheduledAlarms++;
                             nextEvent = earlierFutureEvent(nextEvent,
                                     new AlarmEvent(prayerAt, prayerAt, "adhan", key, name), now);
@@ -122,7 +122,7 @@ final class PrayerAlarmScheduler {
                     if (reminderEnabled && isFutureAlarm(reminderAt, now)) {
                         requestedAlarms++;
                         if (scheduleOne(context, manager, ids, reminderAt, prayerAt,
-                                "reminder", key, name)) {
+                                "reminder", key, name, exactAlarmsAllowed)) {
                             scheduledAlarms++;
                             nextEvent = earlierFutureEvent(nextEvent,
                                     new AlarmEvent(reminderAt, prayerAt, "reminder", key, name), now);
@@ -131,14 +131,13 @@ final class PrayerAlarmScheduler {
                 }
             }
         }
-        String status = !exactAlarmsAllowed ? "exact_permission_required"
-                : requestedAlarms == 0 ? "no_future_alarms"
-                : scheduledAlarms == requestedAlarms ? "scheduled_exact"
+        String status = requestedAlarms == 0 ? "no_future_alarms"
+                : scheduledAlarms == requestedAlarms
+                    ? (exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback")
                 : scheduledAlarms == 0 ? "schedule_failed" : "partial_schedule_failure";
-        // A transient setExactAndAllowWhileIdle failure must not suppress retries until tomorrow.
-        if (exactAlarmsAllowed && requestedAlarms > 0 && scheduledAlarms < requestedAlarms) {
+        if (requestedAlarms > 0 && scheduledAlarms < requestedAlarms) {
             refreshAt = retryRefreshAt(refreshAt, now);
-            Log.w(TAG, "Some exact prayer alarms failed; retry target set to 15 minutes");
+            Log.w(TAG, "Some prayer alarms failed; retry target set to 15 minutes");
         }
         boolean refreshScheduled = scheduleRefresh(context, manager, refreshAt);
         prefs.edit().putString(IDS, ids.toString())
@@ -184,7 +183,7 @@ final class PrayerAlarmScheduler {
     }
 
     static boolean shouldSchedulePrayerAlerts(boolean exactAlarmsAllowed) {
-        return exactAlarmsAllowed;
+        return true;
     }
 
     static boolean isFutureAlarm(long alarmAt, long now) {
@@ -257,8 +256,8 @@ final class PrayerAlarmScheduler {
     }
 
     private static boolean scheduleOne(Context context, AlarmManager manager, JSONArray ids,
-                                        long at, long prayerAt, String type, String key,
-                                        String name) {
+                                       long at, long prayerAt, String type, String key,
+                                       String name, boolean exactAlarmsAllowed) {
         String uri = String.format(Locale.US, "noor://alarm/%d/%s/%s", at, key, type);
         Intent intent = new Intent(context, PrayerAlarmReceiver.class)
                 .setAction(ACTION_FIRE)
@@ -267,21 +266,38 @@ final class PrayerAlarmScheduler {
                 .putExtra(EXTRA_KEY, key)
                 .putExtra(EXTRA_NAME, name)
                 .putExtra(EXTRA_PRAYER_AT, prayerAt)
-                .putExtra(EXTRA_EXACT, true);
+                .putExtra(EXTRA_EXACT, exactAlarmsAllowed);
         PendingIntent pending = PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        if (exactAlarmsAllowed) {
+            try {
+                Intent launchIntent = new Intent(context, MainActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                PendingIntent showIntent = PendingIntent.getActivity(context, 0, launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                manager.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showIntent), pending);
+                ids.put(uri);
+                return true;
+            } catch (SecurityException denied) {
+                Log.w(TAG, "Exact alarm rejected; falling back to inexact alarm: " + uri, denied);
+            } catch (RuntimeException failure) {
+                pending.cancel();
+                Log.e(TAG, "Could not schedule exact prayer alarm: " + uri, failure);
+                return false;
+            }
+        }
+
         try {
-            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            Intent fallbackIntent = new Intent(intent).putExtra(EXTRA_EXACT, false);
+            PendingIntent fallbackPending = PendingIntent.getBroadcast(context, 0, fallbackIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, fallbackPending);
             ids.put(uri);
             return true;
-        } catch (SecurityException denied) {
-            pending.cancel();
-            Log.e(TAG, "Exact prayer alarm rejected; no inexact fallback will be used: "
-                    + uri, denied);
-            return false;
         } catch (RuntimeException failure) {
             pending.cancel();
-            Log.e(TAG, "Could not schedule exact prayer alarm: " + uri, failure);
+            Log.e(TAG, "Could not schedule fallback prayer alarm: " + uri, failure);
             return false;
         }
     }
