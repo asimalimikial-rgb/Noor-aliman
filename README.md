@@ -108,7 +108,7 @@
 | اسم التطبيق | Noor Al-Iman — نور الإيمان |
 | Package ID | `app.nooraliman` |
 | الإصدار | `1.22.2` |
-| Version Code | `27` |
+| Version Code | `28` |
 | Minimum Android | Android 6.0 (API 23) |
 | Target / Compile SDK | 36 |
 | Java | 17 |
