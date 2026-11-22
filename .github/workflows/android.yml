@@ -70,6 +70,13 @@ jobs:
           receiver_decl = re.search(r'<receiver\s+android:name="\.DeviceEventReceiver"([^>]*)>', manifest)
           assert receiver_decl and 'android:permission' not in receiver_decl.group(1), 'DeviceEventReceiver must not restrict BOOT_COMPLETED sender permission'
           assert 'String safeMethod' in main and 'String safeAsr' in main and 'String safeSound' in main, 'NativeAlarms.configure must normalize invalid settings'
+          assert 'catch (RuntimeException startFailure)' in receiver, 'receiver must catch foreground-service start failures'
+          assert 'ForegroundServiceStartNotAllowedException' in receiver, 'background FGS restriction must be diagnosed'
+          assert 'NotificationManager.IMPORTANCE_HIGH' in receiver, 'adhan failure fallback channel must be high priority'
+          assert 'فعّل إذن المنبهات الدقيقة' in receiver, 'fallback notification must direct users to exact-alarm access'
+          assert 'showAdhanStartFailure(context, name, key, backgroundStartBlocked)' in receiver, 'service start failure must notify the user'
+          finally_block = receiver[receiver.index('        } finally {'):]
+          assert 'PrayerAlarmScheduler.schedule(context, true)' in finally_block and 'DhikrAlarmScheduler.schedule(context)' in finally_block, 'prayer and dhikr chaining must remain in finally'
           PY
 
       - name: Set up Java 17
