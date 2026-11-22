@@ -59,7 +59,9 @@ jobs:
           manifest = Path('App/src/main/AndroidManifest.xml').read_text()
           alarm_prefs = Path('App/src/main/java/app/nooraliman/AlarmPrefs.java').read_text()
           dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
-          assert 'ACTION_LOCKED_BOOT_COMPLETED' in Path('App/src/main/java/app/nooraliman/DeviceEventReceiver.java').read_text(), 'locked-boot rescheduling must be implemented'
+          device_receiver = Path('App/src/main/java/app/nooraliman/DeviceEventReceiver.java').read_text()
+          assert 'LOCKED_BOOT_COMPLETED' in device_receiver, 'locked-boot rescheduling must be implemented'
+          assert 'Intent.ACTION_LOCKED_BOOT_COMPLETED' not in device_receiver, 'API 23 boot receiver must not resolve the API 24 constant'
           assert 'android.intent.action.LOCKED_BOOT_COMPLETED' in manifest, 'locked-boot broadcast must be registered'
           assert manifest.count('android:directBootAware="true"') >= 5, 'alarm dispatch and playback components must be Direct Boot aware'
           assert 'createDeviceProtectedStorageContext' in alarm_prefs and 'isUserUnlocked()' in alarm_prefs, 'alarm preferences must migrate safely after unlock'
