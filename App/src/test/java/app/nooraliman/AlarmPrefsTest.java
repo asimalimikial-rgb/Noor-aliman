@@ -68,10 +68,10 @@ public class AlarmPrefsTest {
         // Seed both stores while unlocked, then simulate the reboot lock state.
         Shadows.shadowOf(userManager).setUserUnlocked(false);
         AlarmPrefs.get(context);
-        assertTrue(credentialContext.getSharedPreferences(
-                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).contains("adhan"));
 
         Shadows.shadowOf(userManager).setUserUnlocked(true);
+        assertTrue(credentialContext.getSharedPreferences(
+                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).contains("adhan"));
         SharedPreferences migrated = AlarmPrefs.get(context);
         assertTrue(migrated.getBoolean("adhan", false));
         assertEquals(30, migrated.getInt("dhikrEvery", 0));
