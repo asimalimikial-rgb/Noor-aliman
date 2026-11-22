@@ -54,8 +54,6 @@ public class AlarmPrefsTest {
         Context context = RuntimeEnvironment.getApplication();
         UserManager userManager =
                 (UserManager) context.getSystemService(Context.USER_SERVICE);
-        Shadows.shadowOf(userManager).setUserUnlocked(false);
-
         Context credentialContext = context;
         credentialContext.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE)
@@ -67,6 +65,8 @@ public class AlarmPrefsTest {
                 .edit().putBoolean("directBootValue", true)
                 .putBoolean("sharedKey", false).commit();
 
+        // Seed both stores while unlocked, then simulate the reboot lock state.
+        Shadows.shadowOf(userManager).setUserUnlocked(false);
         AlarmPrefs.get(context);
         assertTrue(credentialContext.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).contains("adhan"));
