@@ -443,9 +443,9 @@ public class MainActivity extends Activity {
     }
 
     private boolean alertsEnabled() {
-        return getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).getBoolean("adhan", false)
-                || getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).getBoolean("reminder", false)
-                || getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).getBoolean("dhikrOn", false);
+        return AlarmPrefs.get(MainActivity.this).getBoolean("adhan", false)
+                || AlarmPrefs.get(MainActivity.this).getBoolean("reminder", false)
+                || AlarmPrefs.get(MainActivity.this).getBoolean("dhikrOn", false);
     }
 
     private boolean hasNotificationPermission() {
@@ -488,8 +488,7 @@ public class MainActivity extends Activity {
             stopService(new Intent(this, DhikrPlaybackService.class));
             return;
         }
-        android.content.SharedPreferences prefs = getSharedPreferences(
-                PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+        android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
 
         // Schedule first. Missing notification permission must not prevent an
         // exact adhan from firing; Android may hide its foreground notification.
@@ -536,8 +535,7 @@ public class MainActivity extends Activity {
         super.onResume();
         if (webView != null && !webViewRendererGone) webView.onResume();
         if (alertsEnabled()) {
-            android.content.SharedPreferences prefs = getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
             maybeExplainMissingExactAlarmAccess(prefs);
             boolean exactAllowed = hasExactAlarmPermission();
             boolean known = prefs.contains("exactAlarmPermissionGranted");
@@ -618,8 +616,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAlarmDiagnostics() {
-            android.content.SharedPreferences prefs = getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, MODE_PRIVATE);
+            android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
@@ -696,7 +693,7 @@ public class MainActivity extends Activity {
             String safeSound = oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")
                     ? adhanSound : "doha";
 
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putFloat("latitude", (float) lat)
                     .putFloat("longitude", (float) lng)
                     .putString("timezone", timezone)
@@ -746,7 +743,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void configurePlaybackOptions(boolean showAdhanNotification) {
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putBoolean("showAdhanNotification", showAdhanNotification)
                     .apply();
             runOnUiThread(() -> startService(new Intent(MainActivity.this,
@@ -830,7 +827,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void configureFaceDownStop(boolean enabled) {
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putBoolean("stopAdhanFaceDown", enabled).apply();
             if (AdhanPlaybackService.isPlaybackActive()) {
                 runOnUiThread(() -> startService(new Intent(MainActivity.this,
@@ -841,13 +838,13 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void configureVolumeKeyStop(boolean enabled) {
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putBoolean("stopAdhanVolumeKeys", enabled).apply();
         }
 
         @JavascriptInterface
         public void configureScreenOffStop(boolean enabled) {
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putBoolean("stopAdhanScreenOff", enabled).apply();
             if (AdhanPlaybackService.isPlaybackActive()) {
                 runOnUiThread(() -> startService(new Intent(MainActivity.this,
@@ -868,7 +865,7 @@ public class MainActivity extends Activity {
                 safeOffsets = parsed.toString();
             } catch (Exception ignored) {
             }
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putString("prayerAdjustments", safeOffsets)
                     .apply();
             runOnUiThread(() -> syncAlarmSchedule());
@@ -896,7 +893,7 @@ public class MainActivity extends Activity {
                     || !isValidClock(from) || !isValidClock(to)) return;
             int safeEvery = Math.max(5, Math.min(120, every));
             float safeVolume = (float) Math.max(0d, Math.min(1d, volume));
-            getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+            AlarmPrefs.get(MainActivity.this).edit()
                     .putBoolean("dhikrOn", enabled)
                     .putInt("dhikrEvery", safeEvery)
                     .putString("dhikrType", type)
