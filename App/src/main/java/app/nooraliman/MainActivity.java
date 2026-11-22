@@ -682,19 +682,22 @@ public class MainActivity extends Activity {
                               String asr, boolean adhan, boolean reminder, String adhanSound) {
             if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
                     || Double.isNaN(lng) || Double.isInfinite(lng) || lng < -180 || lng > 180
-                    || !isValidTimezone(timezone)
-                    || !oneOf(method, "mwl", "umm", "egypt", "karachi")
-                    || !oneOf(asr, "std", "hanafi")
-                    || !oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")) return;
+                    || !isValidTimezone(timezone)) return;
+
+            String safeMethod = oneOf(method, "mwl", "umm", "egypt", "karachi") ? method : "mwl";
+            String safeAsr = oneOf(asr, "std", "hanafi") ? asr : "std";
+            String safeSound = oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")
+                    ? adhanSound : "doha";
+
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putFloat("latitude", (float) lat)
                     .putFloat("longitude", (float) lng)
                     .putString("timezone", timezone)
-                    .putString("method", method)
-                    .putString("asr", asr)
+                    .putString("method", safeMethod)
+                    .putString("asr", safeAsr)
                     .putBoolean("adhan", adhan)
                     .putBoolean("reminder", reminder)
-                    .putString("adhanSound", adhanSound)
+                    .putString("adhanSound", safeSound)
                     .apply();
             runOnUiThread(() -> syncAlarmSchedule());
         }
