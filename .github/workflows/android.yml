@@ -398,3 +398,5 @@ jobs:
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
+
+# Release trigger commit: rebuild the final website and documentation state before publishing v1.21.1.
