@@ -113,17 +113,52 @@ final class DhikrAlarmScheduler {
         schedule(context);
     }
 
-    private static long nextAt(long now, android.content.SharedPreferences prefs) {
+    static long nextAt(long now, android.content.SharedPreferences prefs) {
         int every = Math.max(5, Math.min(120, prefs.getInt("dhikrEvery", 15)));
-        long candidate = now + every * MINUTE;
+        long intervalMs = every * MINUTE;
         int start = clockMinutes(prefs.getString("dhikrFrom", "06:00"));
         int end = clockMinutes(prefs.getString("dhikrTo", "22:00"));
+
+        // Equal boundaries explicitly mean an all-day window, anchored at midnight.
+        if (start == end) {
+            Calendar midnight = Calendar.getInstance();
+            midnight.setTimeInMillis(now);
+            midnight.set(Calendar.HOUR_OF_DAY, 0);
+            midnight.set(Calendar.MINUTE, 0);
+            midnight.set(Calendar.SECOND, 0);
+            midnight.set(Calendar.MILLISECOND, 0);
+            long elapsed = Math.max(0L, now - midnight.getTimeInMillis());
+            long steps = (elapsed / intervalMs) + 1L;
+            return midnight.getTimeInMillis() + steps * intervalMs;
+        }
+
+        // Anchor every interval to the configured start time, not to delivery time.
+        Calendar anchor = Calendar.getInstance();
+        anchor.setTimeInMillis(now);
+        anchor.set(Calendar.HOUR_OF_DAY, start / 60);
+        anchor.set(Calendar.MINUTE, start % 60);
+        anchor.set(Calendar.SECOND, 0);
+        anchor.set(Calendar.MILLISECOND, 0);
+
+        if (anchor.getTimeInMillis() > now && start > end) {
+            anchor.add(Calendar.DAY_OF_MONTH, -1);
+        }
+
+        long anchorMs = anchor.getTimeInMillis();
+        long candidate;
+        if (now < anchorMs) {
+            candidate = anchorMs;
+        } else {
+            long steps = ((now - anchorMs) / intervalMs) + 1L;
+            candidate = anchorMs + steps * intervalMs;
+        }
+
         for (int i = 0; i < 3; i++) {
             Calendar date = Calendar.getInstance();
             date.setTimeInMillis(candidate);
             int minute = date.get(Calendar.HOUR_OF_DAY) * 60 + date.get(Calendar.MINUTE);
             if (inside(minute, start, end)) return candidate;
-            if (start <= end ? minute < start : minute > end && minute < start) {
+            if (start < end && minute < start) {
                 date.set(Calendar.HOUR_OF_DAY, start / 60);
                 date.set(Calendar.MINUTE, start % 60);
             } else {
@@ -146,8 +181,10 @@ final class DhikrAlarmScheduler {
                 clockMinutes(prefs.getString("dhikrTo", "22:00")));
     }
 
-    private static boolean inside(int minute, int start, int end) {
-        return start <= end ? minute >= start && minute <= end : minute >= start || minute <= end;
+    static boolean inside(int minute, int start, int end) {
+        if (start == end) return true;
+        return start < end ? minute >= start && minute <= end
+                : minute >= start || minute <= end;
     }
 
     private static int clockMinutes(String value) {
@@ -162,6 +199,6 @@ final class DhikrAlarmScheduler {
     }
 
     private static android.content.SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+        return AlarmPrefs.get(context);
     }
 }
