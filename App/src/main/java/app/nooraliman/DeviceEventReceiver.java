@@ -25,7 +25,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             return;
         }
 
-        if (Intent.ACTION_LOCKED_BOOT_COMPLETED.equals(action)
+        if ("android.intent.action.LOCKED_BOOT_COMPLETED".equals(action)
                 || Intent.ACTION_BOOT_COMPLETED.equals(action)
                 || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)
                 || Intent.ACTION_TIME_CHANGED.equals(action)
