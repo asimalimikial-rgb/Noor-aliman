@@ -161,7 +161,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.22.1-signed-apk
+          name: noor-al-iman-v1.22.2-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -479,7 +479,7 @@ jobs:
       - name: Download signed v1.22.1 APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: noor-al-iman-v1.22.1-signed-apk
+          name: noor-al-iman-v1.22.2-signed-apk
           path: release-assets
       - name: Publish Noor Al-Iman v1.22.1 GitHub Release
         uses: softprops/action-gh-release@v2
