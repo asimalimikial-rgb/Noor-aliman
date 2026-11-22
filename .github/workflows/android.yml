@@ -479,7 +479,7 @@ jobs:
       - name: Download signed v1.22.1 APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: noor-al-iman-v1.22.2-signed-apk
+          name: noor-al-iman-v1.22.1-signed-apk
           path: release-assets
       - name: Publish Noor Al-Iman v1.22.1 GitHub Release
         uses: softprops/action-gh-release@v2
@@ -497,6 +497,43 @@ jobs:
             - الحفاظ على صلاحيات Android وملفات الصوت وإعدادات التوقيع.
 
             اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. يلزم اختبار ميداني على جهاز Android فعلي قبل تأكيد سلوك الإقلاع المباشر وDoze.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+  publish-v1-22-2:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.22.2 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.22.2 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.22.2-signed-apk
+          path: release-assets
+      - name: Publish Noor Al-Iman v1.22.2 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.22.2
+          name: Noor Al-Iman v1.22.2
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.22.2 من نور الإيمان — صيانة الاستقرار وتحسين تجربة الأذان.
+
+            - إضافة مهلة تحضير لصوت الذكر ومعالجة آمنة لقناة الإشعارات.
+            - تحديث قراءة دوران الشاشة في البوصلة، وتثبيت زاوية الاتجاه وإضافة إرشادات المعايرة.
+            - تحسين محددات DOM وبناء رابط مصدر التفسير دون innerHTML.
+            - إضافة إرشادات لقيود البطارية على أجهزة الشركات المصنّعة.
+            - إضافة اختيار مستقل لصوت الفجر ومستوى صوت مستقل للأذان.
+            - تفعيل تسجيل Quseir مع الحفاظ على ملفه وتوافق الإعدادات القديمة.
+            - الحفاظ على الأذونات وإعدادات التوقيع الحالية.
+
+            اجتاز الإصدار اختبارات البناء والوحدة والتحقق من توقيع APK عبر GitHub Actions. يظل الاختبار الميداني على أجهزة Android المختلفة ضرورياً للتحقق من سلوك Doze وDirect Boot وإدارة البطارية.
           files: |
             release-assets/app-release.apk
             release-assets/app-release.apk.sha256
