@@ -38,14 +38,16 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         PendingResult pendingResult = goAsync();
         Thread worker = new Thread(() -> {
             try {
-                PrayerAlarmScheduler.schedule(context, true);
-            } catch (RuntimeException error) {
-                Log.e(TAG, "Prayer alarm reschedule failed after " + reason, error);
-            }
-            try {
-                DhikrAlarmScheduler.schedule(context);
-            } catch (RuntimeException error) {
-                Log.e(TAG, "Dhikr alarm reschedule failed after " + reason, error);
+                try {
+                    PrayerAlarmScheduler.schedule(context, true);
+                } catch (RuntimeException error) {
+                    Log.e(TAG, "Prayer alarm reschedule failed after " + reason, error);
+                }
+                try {
+                    DhikrAlarmScheduler.schedule(context);
+                } catch (RuntimeException error) {
+                    Log.e(TAG, "Dhikr alarm reschedule failed after " + reason, error);
+                }
             } finally {
                 pendingResult.finish();
             }
