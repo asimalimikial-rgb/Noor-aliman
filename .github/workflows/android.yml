@@ -57,6 +57,20 @@ jobs:
           service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
           main = Path('App/src/main/java/app/nooraliman/MainActivity.java').read_text()
           manifest = Path('App/src/main/AndroidManifest.xml').read_text()
+          alarm_prefs = Path('App/src/main/java/app/nooraliman/AlarmPrefs.java').read_text()
+          dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
+          device_receiver = Path('App/src/main/java/app/nooraliman/DeviceEventReceiver.java').read_text()
+          assert 'LOCKED_BOOT_COMPLETED' in device_receiver, 'locked-boot rescheduling must be implemented'
+          assert 'Intent.ACTION_LOCKED_BOOT_COMPLETED' not in device_receiver, 'API 23 boot receiver must not resolve the API 24 constant'
+          assert 'android.intent.action.LOCKED_BOOT_COMPLETED' in manifest, 'locked-boot broadcast must be registered'
+          assert manifest.count('android:directBootAware="true"') >= 5, 'alarm dispatch and playback components must be Direct Boot aware'
+          assert 'createDeviceProtectedStorageContext' in alarm_prefs and 'isUserUnlocked()' in alarm_prefs, 'alarm preferences must migrate safely after unlock'
+          assert 'if (start == end) return true;' in dhikr, 'equal dhikr window boundaries must mean all-day'
+          assert '((now - anchorMs) / intervalMs) + 1L' in dhikr, 'dhikr intervals must remain anchored to the configured start time'
+          assert 'AlarmPrefs.get(context)' in Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text(), 'prayer scheduler must use Direct Boot preferences'
+          assert 'AlarmPrefs.get(context)' in Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text(), 'prayer receiver must use Direct Boot preferences'
+          assert Path('App/src/test/java/app/nooraliman/DhikrAlarmSchedulerTest.java').is_file(), 'dhikr regression tests must exist'
+          assert Path('App/src/test/java/app/nooraliman/AlarmPrefsTest.java').is_file(), 'Direct Boot preference tests must exist'
           assert 'ADHAN_LATE_GRACE_MS = 5L * MINUTE' in receiver, 'adhan late grace must remain exactly five minutes'
           assert '5L * 60_000L' in Path('App/src/test/java/app/nooraliman/PrayerAlarmReceiverTest.java').read_text(), 'five-minute cutoff tests are required'
           assert 'android.permission.USE_EXACT_ALARM' in manifest, 'Android 13+ exact-alarm permission is required'
@@ -126,7 +140,7 @@ jobs:
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.22.0-signed-apk
+          name: noor-al-iman-v1.22.1-signed-apk
           path: |
             App/build/outputs/apk/release/app-release.apk
             App/build/outputs/apk/release/app-release.apk.sha256
@@ -433,3 +447,38 @@ jobs:
           prerelease: false
 
 # Release trigger commit: rebuild the final website and documentation state before publishing v1.21.1.
+
+  publish-v1-22-1:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.22.1 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.22.1 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.22.1-signed-apk
+          path: release-assets
+      - name: Publish Noor Al-Iman v1.22.1 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.22.1
+          name: Noor Al-Iman v1.22.1
+          target_commitish: ${{ github.sha }}
+          body: |
+            الإصدار 1.22.1 من نور الإيمان.
+
+            - دعم Direct Boot عبر تخزين إعدادات المنبهات في Device Protected Storage مع ترحيل آمن للإعدادات القديمة بعد فتح القفل.
+            - إعادة جدولة تنبيهات الصلاة والذكر بعد LOCKED_BOOT_COMPLETED باستخدام goAsync().
+            - تثبيت شبكة مواعيد الذكر لمنع تراكم الانزياح الزمني، واعتماد تساوي البداية والنهاية كنافذة تشغيل طوال اليوم.
+            - إضافة اختبارات Regression للتخزين قبل فتح القفل، وترحيل الإعدادات، ومحاذاة الفواصل الزمنية، والنافذة الليلية.
+            - الحفاظ على صلاحيات Android وملفات الصوت وإعدادات التوقيع.
+
+            اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. يلزم اختبار ميداني على جهاز Android فعلي قبل تأكيد سلوك الإقلاع المباشر وDoze.
+          files: |
+            release-assets/app-release.apk
+            release-assets/app-release.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false

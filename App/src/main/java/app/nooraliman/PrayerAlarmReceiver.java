@@ -44,8 +44,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             long prayerAt = intent.getLongExtra(PrayerAlarmScheduler.EXTRA_PRAYER_AT,
                     "reminder".equals(type) ? expectedAt + 10L * MINUTE : expectedAt);
             recordDelivery(context, intent, type, key, prayerAt);
-            SharedPreferences prefs = context.getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+            SharedPreferences prefs = AlarmPrefs.get(context);
             boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (Build.VERSION.SDK_INT >= 31
@@ -129,7 +128,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         long receivedAt = System.currentTimeMillis();
         long expectedAt = expectedAlarmAt(intent);
         long delay = expectedAt == 0L ? 0L : receivedAt - expectedAt;
-        context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).edit()
+        AlarmPrefs.get(context).edit()
                 .putLong("lastAlarmExpectedAt", expectedAt)
                 .putLong("lastAlarmReceivedAt", receivedAt)
                 .putLong("lastAlarmDelayMs", delay)
@@ -145,7 +144,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
 
     private void recordPlaybackFailure(Context context, String state,
                                        String detail, String prayerKey) {
-        context.getSharedPreferences(PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE).edit()
+        AlarmPrefs.get(context).edit()
                 .putLong("lastAdhanPlaybackEventAt", System.currentTimeMillis())
                 .putString("lastAdhanPlaybackState", state)
                 .putString("lastAdhanPlaybackDetail", detail == null ? "" : detail)
@@ -192,8 +191,7 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                     == NotificationManager.IMPORTANCE_NONE) return;
         }
         String safeKey = failureState + "|" + (prayerKey == null ? "" : prayerKey);
-        SharedPreferences prefs = context.getSharedPreferences(
-                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+        SharedPreferences prefs = AlarmPrefs.get(context);
         long now = System.currentTimeMillis();
         String debounceKey = "lastAdhanFailureNoticeAt_" + Integer.toHexString(safeKey.hashCode());
         if (now - prefs.getLong(debounceKey, 0L) < 5000L) return;

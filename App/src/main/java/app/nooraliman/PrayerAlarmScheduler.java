@@ -49,7 +49,7 @@ final class PrayerAlarmScheduler {
     }
 
     static synchronized void schedule(Context context, boolean force) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences prefs = AlarmPrefs.get(context);
         boolean adhanEnabled = prefs.getBoolean("adhan", false);
         boolean reminderEnabled = prefs.getBoolean("reminder", false);
         if (!adhanEnabled && !reminderEnabled) {
@@ -215,7 +215,7 @@ final class PrayerAlarmScheduler {
     }
 
     static synchronized void cancel(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences prefs = AlarmPrefs.get(context);
         AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         cancelScheduled(context, manager, prefs);
     }

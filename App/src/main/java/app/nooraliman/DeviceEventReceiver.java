@@ -8,31 +8,55 @@ import android.os.Build;
 import android.util.Log;
 
 public class DeviceEventReceiver extends BroadcastReceiver {
+    private static final String TAG = "NoorPrayerAlarm";
+
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent == null) return;
+        if (intent == null || intent.getAction() == null) return;
         String action = intent.getAction();
+
         if ("android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED".equals(action)) {
-            AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            AlarmManager manager =
+                    (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             boolean exactAllowed = Build.VERSION.SDK_INT < 31
                     || (manager != null && manager.canScheduleExactAlarms());
-            // Android sends this broadcast when exact-alarm access is granted.
-            // Prayer alarms are rebuilt as one next alarm-clock event; timed dhikr
-            // uses a normal inexact alarm and does not consume the idle quota.
-            PrayerAlarmScheduler.schedule(context, true);
-            DhikrAlarmScheduler.schedule(context);
-            Log.i("NoorPrayerAlarm", "Exact-alarm grant broadcast received; exact=" + exactAllowed
-                    + "; schedules rebuilt according to each scheduler's policy");
+            Log.i(TAG, "Exact-alarm grant broadcast received; exact=" + exactAllowed);
+            scheduleAsync(context, "exact-alarm-permission");
             return;
         }
-        if (Intent.ACTION_BOOT_COMPLETED.equals(action)
+
+        if ("android.intent.action.LOCKED_BOOT_COMPLETED".equals(action)
+                || Intent.ACTION_BOOT_COMPLETED.equals(action)
                 || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)
                 || Intent.ACTION_TIME_CHANGED.equals(action)
                 || Intent.ACTION_TIMEZONE_CHANGED.equals(action)) {
-            // The schedulers read saved preferences and no-op if disabled.
-            // Prayer alerts require exact-alarm access; timed dhikr is inexact.
-            PrayerAlarmScheduler.schedule(context, true);
-            DhikrAlarmScheduler.schedule(context);
+            scheduleAsync(context, action);
+        }
+    }
+
+    private void scheduleAsync(Context context, String reason) {
+        PendingResult pendingResult = goAsync();
+        Thread worker = new Thread(() -> {
+            try {
+                try {
+                    PrayerAlarmScheduler.schedule(context, true);
+                } catch (RuntimeException error) {
+                    Log.e(TAG, "Prayer alarm reschedule failed after " + reason, error);
+                }
+                try {
+                    DhikrAlarmScheduler.schedule(context);
+                } catch (RuntimeException error) {
+                    Log.e(TAG, "Dhikr alarm reschedule failed after " + reason, error);
+                }
+            } finally {
+                pendingResult.finish();
+            }
+        }, "NoorAlarmReschedule");
+        try {
+            worker.start();
+        } catch (RuntimeException startFailure) {
+            pendingResult.finish();
+            Log.e(TAG, "Could not start alarm reschedule worker", startFailure);
         }
     }
 }

@@ -35,6 +35,7 @@
         </activity>
         <activity
             android:name=".AdhanAlertActivity"
+            android:directBootAware="true"
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
@@ -43,11 +44,14 @@
             android:theme="@style/AppTheme" />
         <receiver
             android:name=".PrayerAlarmReceiver"
+            android:directBootAware="true"
             android:exported="false" />
         <receiver
             android:name=".DeviceEventReceiver"
+            android:directBootAware="true"
             android:exported="true">
             <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
@@ -57,10 +61,12 @@
         </receiver>
         <service
             android:name=".AdhanPlaybackService"
+            android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <service
             android:name=".DhikrPlaybackService"
+            android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
     </application>

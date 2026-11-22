@@ -134,7 +134,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         createChannel();
         prayerName = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_NAME);
         currentPrayerKey = intent == null ? "" : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_KEY);
-        String configuredSound = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+        String configuredSound = AlarmPrefs.get(this)
                 .getString("adhanSound", "doha");
         currentSound = intent == null
                 ? configuredSound : intent.getStringExtra(PrayerAlarmScheduler.EXTRA_SOUND);
@@ -151,7 +151,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private void configureScreenOffStopReceiver() {
-        boolean enabled = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+        boolean enabled = AlarmPrefs.get(this)
                 .getBoolean("stopAdhanScreenOff", false);
         if (enabled && !screenOffReceiverRegistered) {
             IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
@@ -179,7 +179,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
     }
 
     private Notification buildNotification(String prayer, String sound) {
-        boolean showControls = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+        boolean showControls = AlarmPrefs.get(this)
                 .getBoolean("showAdhanNotification", true);
         Intent stop = new Intent(this, AdhanPlaybackService.class).setAction(ACTION_STOP);
         PendingIntent stopPending = PendingIntent.getService(this, 72, stop,
@@ -341,7 +341,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
         sensorManager.unregisterListener(this);
         handler.removeCallbacks(stopIfStillFaceDown);
         faceDownStopPending = false;
-        boolean enabled = getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+        boolean enabled = AlarmPrefs.get(this)
                 .getBoolean("stopAdhanFaceDown", false);
         if (enabled && faceDownSensor != null) {
             sensorManager.registerListener(this, faceDownSensor, SensorManager.SENSOR_DELAY_GAME);
@@ -417,7 +417,7 @@ public class AdhanPlaybackService extends Service implements SensorEventListener
 
     private void recordPlaybackState(String state, String detail) {
         if (preview) return;
-        getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
+        AlarmPrefs.get(this).edit()
                 .putLong("lastAdhanPlaybackEventAt", System.currentTimeMillis())
                 .putString("lastAdhanPlaybackState", state == null ? "" : state)
                 .putString("lastAdhanPlaybackDetail", detail == null ? "" : detail)
