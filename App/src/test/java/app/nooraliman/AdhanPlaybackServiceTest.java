@@ -18,6 +18,17 @@ public class AdhanPlaybackServiceTest {
         assertTrue(AdhanPlaybackService.isPreparationTimedOut(1_000L, 21_000L));
     }
 
+    @Test public void adhanVolumeIsClampedToSupportedRange() {
+        assertEquals(0.0f, AdhanPlaybackService.clampAdhanVolume(-0.5f), 0.0f);
+        assertEquals(1.0f, AdhanPlaybackService.clampAdhanVolume(1.5f), 0.0f);
+        assertEquals(0.35f, AdhanPlaybackService.clampAdhanVolume(0.35f), 0.0f);
+    }
+
+    @Test public void invalidAdhanVolumeDefaultsToFullVolume() {
+        assertEquals(1.0f, AdhanPlaybackService.clampAdhanVolume(Float.NaN), 0.0f);
+        assertEquals(1.0f, AdhanPlaybackService.clampAdhanVolume(Float.POSITIVE_INFINITY), 0.0f);
+    }
+
     @Test public void invalidPreparationStartDoesNotTimeout() {
         assertFalse(AdhanPlaybackService.isPreparationTimedOut(0L, 50_000L));
         assertFalse(AdhanPlaybackService.isPreparationTimedOut(2_000L, 1_000L));
