@@ -15,6 +15,7 @@ import java.util.Set;
  */
 final class AlarmPrefs {
     private static final Object MIGRATION_LOCK = new Object();
+    private static volatile boolean migrationChecked;
 
     private AlarmPrefs() {}
 
@@ -32,6 +33,7 @@ final class AlarmPrefs {
     }
 
     private static void migrateAfterUnlock(Context context, Context deviceContext) {
+        if (migrationChecked) return;
         UserManager userManager =
                 (UserManager) context.getSystemService(Context.USER_SERVICE);
         if (userManager == null || !userManager.isUserUnlocked()) return;
@@ -43,6 +45,7 @@ final class AlarmPrefs {
             try {
                 if (deviceContext.moveSharedPreferencesFrom(
                         credentialContext, PrayerAlarmScheduler.PREFS)) {
+                    migrationChecked = true;
                     return;
                 }
             } catch (RuntimeException ignored) {
@@ -52,7 +55,10 @@ final class AlarmPrefs {
             SharedPreferences legacy = credentialContext.getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
             Map<String, ?> legacyValues = legacy.getAll();
-            if (legacyValues.isEmpty()) return;
+            if (legacyValues.isEmpty()) {
+                migrationChecked = true;
+                return;
+            }
 
             SharedPreferences device = deviceContext.getSharedPreferences(
                     PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
@@ -72,6 +78,7 @@ final class AlarmPrefs {
 
             if (complete && editor.commit()) {
                 credentialContext.deleteSharedPreferences(PrayerAlarmScheduler.PREFS);
+                migrationChecked = true;
             }
         }
     }
