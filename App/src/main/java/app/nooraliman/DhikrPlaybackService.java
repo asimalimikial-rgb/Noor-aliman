@@ -119,6 +119,7 @@ public class DhikrPlaybackService extends Service {
             float level = Math.max(0f, Math.min(1f, volume));
             created.setVolume(level, level);
             created.setOnPreparedListener(mp -> {
+                if (player != mp) return;
                 handler.removeCallbacks(preparationTimeout);
                 if (preparingPlayer == mp) preparingPlayer = null;
                 preparationStartedAt = 0L;
@@ -126,12 +127,14 @@ public class DhikrPlaybackService extends Service {
                 try { mp.start(); } catch (IllegalStateException error) { stopSelf(); }
             });
             created.setOnCompletionListener(mp -> {
+                if (player != mp) return;
                 handler.removeCallbacks(preparationTimeout);
                 if (preparingPlayer == mp) preparingPlayer = null;
                 preparationStartedAt = 0L;
                 stopSelf();
             });
             created.setOnErrorListener((mp, what, extra) -> {
+                if (player != mp) return true;
                 handler.removeCallbacks(preparationTimeout);
                 if (preparingPlayer == mp) preparingPlayer = null;
                 preparationStartedAt = 0L;
