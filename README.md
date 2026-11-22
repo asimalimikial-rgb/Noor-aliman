@@ -4,11 +4,11 @@
 
 **تطبيق أندرويد عربي يجمع مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تجربة واحدة.**
 
-[![Version](https://img.shields.io/badge/version-1.22.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.0)
+[![Version](https://img.shields.io/badge/version-1.22.1-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.1)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تنزيل الإصدار 1.22.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.0/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تنزيل الإصدار 1.22.1](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.1/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
@@ -76,6 +76,18 @@
 - يستخدم الذكر الصوتي الدوري منبهاً غير دقيق، ولا يستخدم واجهات Allow-While-Idle الدقيقة حتى لا ينافس تنبيهات الصلاة على نافذة التنفيذ أثناء Doze. قد يتأخر الذكر الدوري وفق قيود النظام وتوفير الطاقة.
 - تسمح واجهات Allow-While-Idle بالتنفيذ أثناء Doze، لكنها لا تلغي كل قيود النظام أو سياسات توفير الطاقة المصنّعة؛ لا يمكن اعتبارها ضماناً مطلقاً لوصول الصوت في كل ظرف.
 - ملفات التفسير المختصر والسراج محلية، وتُحمّل عند فتح التفسير دون اتصال. تخزين صفحات القرآن في IndexedDB تحسين اختياري؛ فشل التخزين لا يمنع عرض الصفحة التي جُلبت بنجاح.
+## الجديد في 1.22.1
+
+- **Direct Boot:** تخزين إعدادات المنبهات في Device Protected Storage على Android 7+، مع إبقاء Android 6.0 على التخزين المعتاد.
+- **ترحيل الإعدادات القديمة:** عند أول تشغيل للتطبيق بعد التحديث، تُنقل تفضيلات noor_alarm_settings إلى التخزين المحمي من القفل مع دمج المفاتيح دون الكتابة فوق القيم الموجودة بالفعل.
+- **إعادة الجدولة قبل فتح القفل:** استقبال LOCKED_BOOT_COMPLETED وإعادة بناء منبهات الصلاة والذكر باستخدام goAsync() في خيط خلفي.
+- **خدمات شاشة القفل:** إتاحة مستقبلات التنبيه وخدمات تشغيل الأذان والذكر وشاشة تنبيه الأذان أثناء Direct Boot.
+- **منع انزياح الذكر:** محاذاة مواعيد الذكر إلى شبكة ثابتة من وقت بداية النافذة، بدلاً من حساب كل موعد من وقت وصول التنبيه السابق.
+- **نافذة طوال اليوم:** إذا تساوت ساعة البداية والنهاية، تعمل نافذة الذكر طوال 24 ساعة، وتكون الشبكة الزمنية محاذاة إلى منتصف الليل.
+- **اختبارات Regression:** إضافة اختبارات لحالة التخزين قبل فتح القفل، وترحيل التفضيلات، وتأخر التنفيذ إلى 06:19 مع توقع 06:30، والنافذة الليلية.
+
+> **ملاحظة للمستخدمين الحاليين:** لا يمكن قراءة إعدادات الإصدار السابق من التخزين المحمي من القفل قبل أول فتح للقفل بعد التحديث. لذلك تُرحّل الإعدادات عند أول تشغيل للتطبيق بعد التحديث؛ وبعد اكتمال الترحيل تكون متاحة في عمليات الإقلاع التالية قبل فتح القفل.
+
 ## الجديد في 1.22.0
 
 - وضع بسيط افتراضي للضبط، مع وضع احترافي اختياري يعرض الخيارات الفقهية والتعديلات اليدوية وإعدادات الذكر المتقدمة.
@@ -95,8 +107,8 @@
 |---|---|
 | اسم التطبيق | Noor Al-Iman — نور الإيمان |
 | Package ID | `app.nooraliman` |
-| الإصدار | `1.22.0` |
-| Version Code | `26` |
+| الإصدار | `1.22.1` |
+| Version Code | `27` |
 | Minimum Android | Android 6.0 (API 23) |
 | Target / Compile SDK | 36 |
 | Java | 17 |
@@ -137,6 +149,7 @@
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
 - الموقع: https://asimalimikial-rgb.github.io/Noor-aliman/
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
+- تقرير تنفيذ الإصدار 1.22.1: [IMPLEMENTATION-REPORT-v1.22.1.md](IMPLEMENTATION-REPORT-v1.22.1.md)
 - تقرير تنفيذ الإصدار 1.22.0: [IMPLEMENTATION-REPORT-v1.22.0.md](IMPLEMENTATION-REPORT-v1.22.0.md)
 - تقرير تنفيذ توصيات Agent للإصدار 1.21.1: [REPORT-V1.21.1-AGENT-CHANGES-AR.md](REPORT-V1.21.1-AGENT-CHANGES-AR.md)
 - المطوّر: **Asim Ali Mikial**
