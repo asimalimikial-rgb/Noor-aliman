@@ -35,7 +35,6 @@
         </activity>
         <activity
             android:name=".AdhanAlertActivity"
-            android:launchMode="singleTop"
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
