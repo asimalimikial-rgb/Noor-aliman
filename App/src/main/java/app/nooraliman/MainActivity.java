@@ -716,7 +716,8 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void preview(String sound, String prayerKey) {
             if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah", "doha", "quseir")
-                    || (prayerKey != null && !prayerKey.isEmpty() && !"fajr".equals(prayerKey))) return;
+                    || (prayerKey != null && !prayerKey.isEmpty()
+                            && !"fajr".equals(prayerKey) && !"general".equals(prayerKey))) return;
             runOnUiThread(() -> {
                 Intent service = new Intent(MainActivity.this, AdhanPlaybackService.class)
                         .setAction(AdhanPlaybackService.ACTION_PLAY)
