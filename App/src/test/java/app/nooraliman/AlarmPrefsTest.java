@@ -46,7 +46,13 @@ public class AlarmPrefsTest {
         Context credentialContext = context.createCredentialProtectedStorageContext();
         credentialContext.getSharedPreferences(
                 PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE)
-                .edit().putBoolean("adhan", true).putInt("dhikrEvery", 30).commit();
+                .edit().putBoolean("adhan", true).putInt("dhikrEvery", 30)
+                .putBoolean("sharedKey", true).commit();
+        Context deviceContext = context.createDeviceProtectedStorageContext();
+        deviceContext.getSharedPreferences(
+                PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE)
+                .edit().putBoolean("directBootValue", true)
+                .putBoolean("sharedKey", false).commit();
 
         AlarmPrefs.get(context);
         assertTrue(credentialContext.getSharedPreferences(
@@ -56,5 +62,7 @@ public class AlarmPrefsTest {
         SharedPreferences migrated = AlarmPrefs.get(context);
         assertTrue(migrated.getBoolean("adhan", false));
         assertEquals(30, migrated.getInt("dhikrEvery", 0));
+        assertTrue(migrated.getBoolean("directBootValue", false));
+        assertFalse(migrated.getBoolean("sharedKey", true));
     }
 }
