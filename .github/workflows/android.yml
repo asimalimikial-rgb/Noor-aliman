@@ -51,6 +51,23 @@ jobs:
           assert 'setAlarmClock' in prayer, 'prayer scheduler must use exact alarm-clock events when permitted'
           assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'prayer scheduler must provide an inexact wakeup fallback and daily refresh'
           assert 'EXTRA_EXACT, false' in prayer, 'inexact fallback must be marked for receiver diagnostics'
+          receiver = Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text()
+          activity = Path('App/src/main/java/app/nooraliman/AdhanAlertActivity.java').read_text()
+          service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
+          main = Path('App/src/main/java/app/nooraliman/MainActivity.java').read_text()
+          manifest = Path('App/src/main/AndroidManifest.xml').read_text()
+          assert 'ADHAN_LATE_GRACE_MS = 5L * MINUTE' in receiver, 'adhan late grace must remain exactly five minutes'
+          assert '5L * 60_000L' in Path('App/src/test/java/app/nooraliman/PrayerAlarmReceiverTest.java').read_text(), 'five-minute cutoff tests are required'
+          assert 'android.permission.USE_EXACT_ALARM' in manifest, 'Android 13+ exact-alarm permission is required'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' in manifest, 'SCHEDULE_EXACT_ALARM must be limited to API 32 and below'
+          assert 'android:foregroundServiceType="mediaPlayback"' in manifest, 'adhan service must declare mediaPlayback FGS type'
+          assert 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' in manifest, 'mediaPlayback FGS permission is required'
+          assert 'android:name=".AdhanAlertActivity"' in manifest, 'lock-screen adhan activity must be declared'
+          assert 'setFullScreenIntent(fullScreen, true)' in service and 'AdhanAlertActivity.class' in service, 'full-screen alert must be launched from the playback service notification'
+          assert 'AdhanAlertActivity' not in receiver, 'receiver must not launch the lock-screen activity directly'
+          receiver_decl = re.search(r'<receiver\\s+android:name="\\.DeviceEventReceiver"([^>]*)>', manifest)
+          assert receiver_decl and 'android:permission' not in receiver_decl.group(1), 'DeviceEventReceiver must not restrict BOOT_COMPLETED sender permission'
+          assert 'String safeMethod' in main and 'String safeAsr' in main and 'String safeSound' in main, 'NativeAlarms.configure must normalize invalid settings'
           PY
 
       - name: Set up Java 17
