@@ -76,10 +76,16 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                     if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
                     else context.startService(service);
                 } catch (RuntimeException startFailure) {
-                    Log.e(TAG, "Could not start adhan playback service for " + key, startFailure);
-                    recordPlaybackFailure(context, "foreground-service-start-failed",
-                            startFailure.toString(), key);
-                    showAdhanStartFailure(context, name, key);
+                    String exceptionType = startFailure.getClass().getSimpleName();
+                    boolean backgroundStartBlocked = Build.VERSION.SDK_INT >= 31
+                            && "ForegroundServiceStartNotAllowedException".equals(exceptionType);
+                    String failureState = backgroundStartBlocked
+                            ? "foreground-service-start-not-allowed"
+                            : "foreground-service-start-failed";
+                    Log.e(TAG, "Could not start adhan playback service for " + key
+                            + "; exception=" + exceptionType, startFailure);
+                    recordPlaybackFailure(context, failureState, startFailure.toString(), key);
+                    showAdhanStartFailure(context, name, key, backgroundStartBlocked);
                 }
             } else if ("reminder".equals(type) && prefs.getBoolean("reminder", false)) {
                 int minutesRemaining = remainingReminderMinutes(prayerAt, System.currentTimeMillis());
@@ -147,9 +153,14 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .apply();
     }
 
-    private void showAdhanStartFailure(Context context, String name, String prayerKey) {
-        showAdhanFailure(context, "service-start-failed", name, prayerKey,
-                "تعذّر بدء خدمة تشغيل الأذان. تحقق من إعدادات البطارية والتنبيهات.");
+    private void showAdhanStartFailure(Context context, String name, String prayerKey,
+                                        boolean backgroundStartBlocked) {
+        String message = backgroundStartBlocked
+                ? "تعذّر تشغيل الأذان في الخلفية بسبب قيود النظام. فعّل إذن المنبهات الدقيقة من إعدادات التطبيق لضمان وصول الأذان في موعده."
+                : "تعذّر بدء خدمة تشغيل الأذان. افتح التطبيق للتحقق من أذونات التنبيهات وإعدادات البطارية.";
+        showAdhanFailure(context,
+                backgroundStartBlocked ? "foreground-service-start-not-allowed" : "service-start-failed",
+                name, prayerKey, message);
     }
 
     /** Shared failure surface for alarm dispatch and failures occurring inside the playback service. */
@@ -158,14 +169,23 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
         if (context == null || failureState == null) return;
         if (Build.VERSION.SDK_INT >= 33
                 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Cannot show adhan fallback notification: POST_NOTIFICATIONS is not granted");
+            return;
+        }
         NotificationManager manager = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel channel = new NotificationChannel(ADHAN_FAILURE_CHANNEL,
-                    "حالة تشغيل الأذان", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("تنبيهات عند تعذّر تشغيل الأذان");
+                    "تنبيه تعذّر الأذان", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("تنبيهات عالية الأولوية عند تعذّر تشغيل الأذان");
+            channel.enableVibration(true);
+            channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build());
             manager.createNotificationChannel(channel);
             if (manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL) != null
                     && manager.getNotificationChannel(ADHAN_FAILURE_CHANNEL).getImportance()
@@ -192,7 +212,9 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                 .setContentTitle(title)
                 .setContentText(message == null || message.isEmpty()
                         ? "افتح نور الإيمان للتحقق من حالة تشغيل الأذان." : message)
-                .setCategory(Notification.CATEGORY_ERROR)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setCategory(Notification.CATEGORY_ALARM)
                 .setAutoCancel(true)
                 .setContentIntent(content)
                 .build();
