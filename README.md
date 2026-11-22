@@ -4,11 +4,11 @@
 
 **تطبيق أندرويد عربي يجمع مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تجربة واحدة.**
 
-[![Version](https://img.shields.io/badge/version-1.21.1-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.21.1)
+[![Version](https://img.shields.io/badge/version-1.22.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.22.0)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تنزيل الإصدار 1.21.1](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.21.1/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تنزيل الإصدار 1.22.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.0/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
@@ -54,7 +54,7 @@
 4. **إظهار متطلبات الصلاحية بوضوح:** يظهر شرح صلاحية «المنبهات والتذكيرات» على Android 12+ حتى لو كانت مفاتيح الأذان والتذكير مطفأة، مع تقليل فترة كتم تكرار الشرح من 24 إلى 6 ساعات.
 5. **تفعيل الأذان افتراضياً للتثبيت الجديد:** أصبحت قيمة `notify` الافتراضية `true`؛ وتظل اختيارات المستخدم المحفوظة هي المعتمدة.
 6. **تشخيص إسقاط التنبيه:** يُسجّل `lastAlarmDroppedReason` عند إسقاط حدث بسبب غياب صلاحية Exact Alarm، مع الاحتفاظ بحالة الجدولة وأعداد الأحداث المطلوبة والمنفذة.
-7. **تحديث الإصدار وسير العمل:** `versionCode 25` و`versionName 1.21.1`، مع تحديث اسم Artifact وإعداد نشر GitHub Release بعد نجاح البناء.
+7. **تحديث الإصدار وسير العمل:** `versionCode 26` و`versionName 1.22.0`، مع تحديث اسم Artifact وإعداد نشر GitHub Release بعد نجاح البناء.
 
 > **حدود التحقق:** اجتاز commit الإصلاح GitHub Actions (فحوص الأصول، Unit Tests، بناء Release APK والتحقق من توقيعه). لم يُثبت ذلك وصول الأذان ميدانياً؛ يلزم اختبار الشاشة المطفأة وDoze وإدارة بطارية Samsung وتشغيل الصوت على جهاز فعلي.
 ## العمل دون إنترنت
@@ -76,6 +76,16 @@
 - يستخدم الذكر الصوتي الدوري منبهاً غير دقيق، ولا يستخدم واجهات Allow-While-Idle الدقيقة حتى لا ينافس تنبيهات الصلاة على نافذة التنفيذ أثناء Doze. قد يتأخر الذكر الدوري وفق قيود النظام وتوفير الطاقة.
 - تسمح واجهات Allow-While-Idle بالتنفيذ أثناء Doze، لكنها لا تلغي كل قيود النظام أو سياسات توفير الطاقة المصنّعة؛ لا يمكن اعتبارها ضماناً مطلقاً لوصول الصوت في كل ظرف.
 - ملفات التفسير المختصر والسراج محلية، وتُحمّل عند فتح التفسير دون اتصال. تخزين صفحات القرآن في IndexedDB تحسين اختياري؛ فشل التخزين لا يمنع عرض الصفحة التي جُلبت بنجاح.
+## الجديد في 1.22.0
+
+- وضع بسيط افتراضي للضبط، مع وضع احترافي اختياري يعرض الخيارات الفقهية والتعديلات اليدوية وإعدادات الذكر المتقدمة.
+- بحث سريع في إعدادات الوضع الاحترافي.
+- لوحة تشخيص لحالة Exact Alarm والإشعارات وFull Screen Intent وتحسينات البطارية، مع روابط إعدادات النظام واختبار تشغيل الأذان.
+- استعادة صفحة الإعدادات بعد الرجوع من إعدادات أندرويد.
+- تحسين معالجة مهلة تجهيز MediaPlayer واستعادة Audio Focus وشاشة الأذان.
+- شريط تنقل سفلي بخمس وجهات، مع فتح المسبحة من صفحة الأذكار.
+- تحسين تمركز زر إيقاف الأذان على شاشات RTL والجوال.
+
 ## حالة الاختبار
 
 نجح فحص GitHub Actions للـ commit الخاص بإصلاحات 1.21.1، بما في ذلك فحص ملفات الويب، واختبارات الوحدة المتاحة، وبناء Release APK الموقّع والتحقق من توقيعه ورفع Artifact. هذا تحقق آلي من البناء وليس اختباراً ميدانياً لوصول الأذان. يلزم اختبار هاتف فعلي، خصوصاً الشاشة المطفأة وDoze وإدارة بطارية Samsung وقياس تأخر التنبيه وتشغيل ملف الأذان كاملاً.
@@ -85,8 +95,8 @@
 |---|---|
 | اسم التطبيق | Noor Al-Iman — نور الإيمان |
 | Package ID | `app.nooraliman` |
-| الإصدار | `1.21.1` |
-| Version Code | `25` |
+| الإصدار | `1.22.0` |
+| Version Code | `26` |
 | Minimum Android | Android 6.0 (API 23) |
 | Target / Compile SDK | 36 |
 | Java | 17 |
@@ -102,7 +112,7 @@
 
 ## الخصوصية والأذونات
 
-تُستخدم أذونات الموقع والإشعارات والصوت والكاميرا بحسب الوظيفة التي يختارها المستخدم. لم تُضف أو تُحذف صلاحيات Android في تحديث 1.21.1، ولم تتغير ملفات الصوت. راجع [PRIVACY.md](PRIVACY.md).
+تُستخدم أذونات الموقع والإشعارات والصوت والكاميرا بحسب الوظيفة التي يختارها المستخدم. لم تُضف أو تُحذف صلاحيات Android في تحديث 1.22.0، ولم تتغير ملفات الصوت. راجع [PRIVACY.md](PRIVACY.md).
 
 ## تراخيص التسجيلات الصوتية
 
