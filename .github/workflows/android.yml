@@ -45,6 +45,7 @@ jobs:
           PY
           python3 - <<'PY'
           from pathlib import Path
+          import re
           dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
