@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.UserManager;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,12 +42,13 @@ final class AlarmPrefs {
         synchronized (MIGRATION_LOCK) {
             if (migrationChecked) return;
             Context credentialContext = context.createCredentialProtectedStorageContext();
-            SharedPreferences device = deviceContext.getSharedPreferences(
-                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
-            Map<String, ?> deviceValues = device.getAll();
+            File devicePrefsFile =
+                    deviceContext.getSharedPreferencesPath(PrayerAlarmScheduler.PREFS);
 
-            // Use the native move only when it cannot overwrite any Direct Boot values.
-            if (deviceValues.isEmpty()) {
+            // Use the native move only when no Direct Boot preference file exists.
+            // Do not open the destination SharedPreferences before moving: Android may
+            // otherwise keep a cached empty instance after the file has been moved.
+            if (!devicePrefsFile.exists()) {
                 try {
                     if (deviceContext.moveSharedPreferencesFrom(
                             credentialContext, PrayerAlarmScheduler.PREFS)) {
@@ -66,7 +68,9 @@ final class AlarmPrefs {
                 return;
             }
 
-            deviceValues = device.getAll();
+            SharedPreferences device = deviceContext.getSharedPreferences(
+                    PrayerAlarmScheduler.PREFS, Context.MODE_PRIVATE);
+            Map<String, ?> deviceValues = device.getAll();
             SharedPreferences.Editor editor = device.edit();
             boolean complete = true;
 
