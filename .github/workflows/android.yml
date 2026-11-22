@@ -1,4 +1,4 @@
-# v1.20.0 release candidate build: compile, unit tests, signed APK and signature verification
+# v1.22.2 maintenance build: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause, maintenance/v1.22.2-comprehensive]
   pull_request:
     branches: [main, fix/v1.19-main-alarm-reliability]
   workflow_dispatch: {}
