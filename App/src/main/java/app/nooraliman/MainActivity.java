@@ -683,15 +683,20 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void configure(double lat, double lng, String timezone, String method,
-                              String asr, boolean adhan, boolean reminder, String adhanSound) {
+                              String asr, boolean adhan, boolean reminder, String adhanSound,
+                              String fajrSound, double adhanVolume) {
             if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
                     || Double.isNaN(lng) || Double.isInfinite(lng) || lng < -180 || lng > 180
                     || !isValidTimezone(timezone)) return;
 
             String safeMethod = oneOf(method, "mwl", "umm", "egypt", "karachi") ? method : "mwl";
             String safeAsr = oneOf(asr, "std", "hanafi") ? asr : "std";
-            String safeSound = oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")
+            String safeSound = oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha", "quseir")
                     ? adhanSound : "doha";
+            String safeFajrSound = oneOf(fajrSound, "same", "classic", "aqib", "short", "azemmour", "makkah", "doha", "quseir")
+                    ? fajrSound : "same";
+            float safeAdhanVolume = Double.isNaN(adhanVolume) || Double.isInfinite(adhanVolume)
+                    ? 1.0f : (float) Math.max(0d, Math.min(1d, adhanVolume));
 
             AlarmPrefs.get(MainActivity.this).edit()
                     .putFloat("latitude", (float) lat)
@@ -702,17 +707,21 @@ public class MainActivity extends Activity {
                     .putBoolean("adhan", adhan)
                     .putBoolean("reminder", reminder)
                     .putString("adhanSound", safeSound)
+                    .putString("adhanFajrSound", safeFajrSound)
+                    .putFloat("adhanVolume", safeAdhanVolume)
                     .apply();
             runOnUiThread(() -> syncAlarmSchedule());
         }
 
         @JavascriptInterface
-        public void preview(String sound) {
-            if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah", "doha")) return;
+        public void preview(String sound, String prayerKey) {
+            if (!oneOf(sound, "classic", "aqib", "short", "azemmour", "makkah", "doha", "quseir")
+                    || (prayerKey != null && !prayerKey.isEmpty() && !"fajr".equals(prayerKey))) return;
             runOnUiThread(() -> {
                 Intent service = new Intent(MainActivity.this, AdhanPlaybackService.class)
                         .setAction(AdhanPlaybackService.ACTION_PLAY)
                         .putExtra(PrayerAlarmScheduler.EXTRA_SOUND, sound)
+                        .putExtra(PrayerAlarmScheduler.EXTRA_KEY, prayerKey == null ? "" : prayerKey)
                         .putExtra(PrayerAlarmScheduler.EXTRA_PREVIEW, true);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(service);
                 else startService(service);
