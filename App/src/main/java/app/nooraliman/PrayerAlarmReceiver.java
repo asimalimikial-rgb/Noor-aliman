@@ -20,7 +20,8 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
     private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
-    private static final long ADHAN_LATE_GRACE_MS = 15L * MINUTE;
+    // Adhan is time-critical: never play it more than five minutes after prayer time.
+    private static final long ADHAN_LATE_GRACE_MS = 5L * MINUTE;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -59,10 +60,10 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
                     String detail = "Alarm arrived " + (receivedAt - expectedAt)
                             + "ms after prayer time; stale adhan skipped";
                     recordPlaybackFailure(context, "late-alarm-dropped", detail, key);
-                    prefs.edit().putString("lastAlarmDroppedReason", "adhan_late_over_15_minutes").apply();
+                    prefs.edit().putString("lastAlarmDroppedReason", "adhan_late_over_5_minutes").apply();
                     Log.w(TAG, detail + "; prayer=" + key);
                     showAdhanFailure(context, "late-alarm-dropped", name, key,
-                            "وصل تنبيه الأذان بعد الموعد بأكثر من 15 دقيقة؛ تم تجاهله.");
+                            "وصل تنبيه الأذان بعد الموعد بأكثر من خمس دقائق؛ تم تجاهله.");
                     return;
                 }
                 Intent service = new Intent(context, AdhanPlaybackService.class)
