@@ -149,7 +149,7 @@ public class AdhanAlertActivity extends Activity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP)
-                && getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE)
+                && AlarmPrefs.get(this)
                 .getBoolean("stopAdhanVolumeKeys", false)) {
             stopAdhanAndClose();
             return true;
