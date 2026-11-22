@@ -67,7 +67,7 @@ $('sAdhanSound').onchange=e=>{if(previewOn){if(window.NativeAlarms)NativeAlarms.
 $('sFajrAdhanSound').onchange=e=>{if(previewOn){if(window.NativeAlarms)NativeAlarms.stopPreview();if(previewAudio)previewAudio.pause();resetPreview()}S.adhanFajrSound=e.target.value;store.set('adhanFajrSound',S.adhanFajrSound);renderAll();notify('تم حفظ صوت الفجر المستقل')};
 $('adhanVolume').oninput=e=>{S.adhanVolume=Math.max(0,Math.min(1,Number(e.target.value)));$('adhanVolumePct').textContent=Math.round(S.adhanVolume*100)+'%'};
 $('adhanVolume').onchange=e=>{S.adhanVolume=Math.max(0,Math.min(1,Number(e.target.value)));store.set('adhanVolume',S.adhanVolume);renderAll();notify('تم حفظ مستوى صوت الأذان')};
-previewButton.onclick=()=>startAdhanPreview(S.adhanSound,'',previewButton);
+previewButton.onclick=()=>startAdhanPreview(S.adhanSound,'general',previewButton);
 fajrPreviewButton.onclick=()=>startAdhanPreview(S.adhanFajrSound==='same'?S.adhanSound:S.adhanFajrSound,'fajr',fajrPreviewButton);
 
 /* ===== المصحف (ترقيم مصحف المدينة: 604 صفحة × 15 سطرًا) ===== */
