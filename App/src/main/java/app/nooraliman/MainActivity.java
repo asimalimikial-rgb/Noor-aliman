@@ -461,7 +461,10 @@ public class MainActivity extends Activity {
     }
 
     private void openExactAlarmSettings() {
-        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
+        // Android 13+ uses USE_EXACT_ALARM (normal install-time permission).
+        // The user-facing special-access screen applies only to SCHEDULE_EXACT_ALARM on API 31-32.
+        if (Build.VERSION.SDK_INT < 31 || Build.VERSION.SDK_INT >= 33
+                || hasExactAlarmPermission()) return;
         try {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                     Uri.parse("package:" + getPackageName()));
@@ -682,19 +685,22 @@ public class MainActivity extends Activity {
                               String asr, boolean adhan, boolean reminder, String adhanSound) {
             if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
                     || Double.isNaN(lng) || Double.isInfinite(lng) || lng < -180 || lng > 180
-                    || !isValidTimezone(timezone)
-                    || !oneOf(method, "mwl", "umm", "egypt", "karachi")
-                    || !oneOf(asr, "std", "hanafi")
-                    || !oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")) return;
+                    || !isValidTimezone(timezone)) return;
+
+            String safeMethod = oneOf(method, "mwl", "umm", "egypt", "karachi") ? method : "mwl";
+            String safeAsr = oneOf(asr, "std", "hanafi") ? asr : "std";
+            String safeSound = oneOf(adhanSound, "classic", "aqib", "short", "azemmour", "makkah", "doha")
+                    ? adhanSound : "doha";
+
             getSharedPreferences(PrayerAlarmScheduler.PREFS, MODE_PRIVATE).edit()
                     .putFloat("latitude", (float) lat)
                     .putFloat("longitude", (float) lng)
                     .putString("timezone", timezone)
-                    .putString("method", method)
-                    .putString("asr", asr)
+                    .putString("method", safeMethod)
+                    .putString("asr", safeAsr)
                     .putBoolean("adhan", adhan)
                     .putBoolean("reminder", reminder)
-                    .putString("adhanSound", adhanSound)
+                    .putString("adhanSound", safeSound)
                     .apply();
             runOnUiThread(() -> syncAlarmSchedule());
         }

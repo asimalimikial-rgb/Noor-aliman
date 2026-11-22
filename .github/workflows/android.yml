@@ -45,11 +45,38 @@ jobs:
           PY
           python3 - <<'PY'
           from pathlib import Path
+          import re
           dhikr = Path('App/src/main/java/app/nooraliman/DhikrAlarmScheduler.java').read_text()
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
-          assert 'setExactAndAllowWhileIdle' in prayer, 'prayer scheduler must use exact wakeup events'
-          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'daily refresh must wake the device'
+          assert 'setAlarmClock' in prayer, 'prayer scheduler must use exact alarm-clock events when permitted'
+          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'prayer scheduler must provide an inexact wakeup fallback and daily refresh'
+          assert 'EXTRA_EXACT, false' in prayer, 'inexact fallback must be marked for receiver diagnostics'
+          receiver = Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text()
+          activity = Path('App/src/main/java/app/nooraliman/AdhanAlertActivity.java').read_text()
+          service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
+          main = Path('App/src/main/java/app/nooraliman/MainActivity.java').read_text()
+          manifest = Path('App/src/main/AndroidManifest.xml').read_text()
+          assert 'ADHAN_LATE_GRACE_MS = 5L * MINUTE' in receiver, 'adhan late grace must remain exactly five minutes'
+          assert '5L * 60_000L' in Path('App/src/test/java/app/nooraliman/PrayerAlarmReceiverTest.java').read_text(), 'five-minute cutoff tests are required'
+          assert 'android.permission.USE_EXACT_ALARM' in manifest, 'Android 13+ exact-alarm permission is required'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' in manifest, 'SCHEDULE_EXACT_ALARM must be limited to API 32 and below'
+          assert 'android:foregroundServiceType="mediaPlayback"' in manifest, 'adhan service must declare mediaPlayback FGS type'
+          assert 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' in manifest, 'mediaPlayback FGS permission is required'
+          assert 'android:name=".AdhanAlertActivity"' in manifest, 'lock-screen adhan activity must be declared'
+          assert 'class AdhanAlertActivity extends Activity' in activity, 'lock-screen adhan activity implementation must exist'
+          assert 'setFullScreenIntent(fullScreen, true)' in service and 'AdhanAlertActivity.class' in service, 'full-screen alert must be launched from the playback service notification'
+          assert 'AdhanAlertActivity' not in receiver, 'receiver must not launch the lock-screen activity directly'
+          receiver_decl = re.search(r'<receiver\s+android:name="\.DeviceEventReceiver"([^>]*)>', manifest)
+          assert receiver_decl and 'android:permission' not in receiver_decl.group(1), 'DeviceEventReceiver must not restrict BOOT_COMPLETED sender permission'
+          assert 'String safeMethod' in main and 'String safeAsr' in main and 'String safeSound' in main, 'NativeAlarms.configure must normalize invalid settings'
+          assert 'catch (RuntimeException startFailure)' in receiver, 'receiver must catch foreground-service start failures'
+          assert 'ForegroundServiceStartNotAllowedException' in receiver, 'background FGS restriction must be diagnosed'
+          assert 'NotificationManager.IMPORTANCE_HIGH' in receiver, 'adhan failure fallback channel must be high priority'
+          assert 'فعّل إذن المنبهات الدقيقة' in receiver, 'fallback notification must direct users to exact-alarm access'
+          assert 'showAdhanStartFailure(context, name, key, backgroundStartBlocked)' in receiver, 'service start failure must notify the user'
+          finally_block = receiver[receiver.index('        } finally {'):]
+          assert 'PrayerAlarmScheduler.schedule(context, true)' in finally_block and 'DhikrAlarmScheduler.schedule(context)' in finally_block, 'prayer and dhikr chaining must remain in finally'
           PY
 
       - name: Set up Java 17
