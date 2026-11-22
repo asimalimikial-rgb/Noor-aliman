@@ -123,7 +123,6 @@ public class DhikrPlaybackService extends Service {
                 handler.removeCallbacks(preparationTimeout);
                 if (preparingPlayer == mp) preparingPlayer = null;
                 preparationStartedAt = 0L;
-                if (player != mp) return;
                 try { mp.start(); } catch (IllegalStateException error) { stopSelf(); }
             });
             created.setOnCompletionListener(mp -> {
