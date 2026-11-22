@@ -130,7 +130,6 @@ final class PrayerAlarmScheduler {
                     }
                 }
             }
-        }
         String status = requestedAlarms == 0 ? "no_future_alarms"
                 : scheduledAlarms == requestedAlarms
                     ? (exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback")
