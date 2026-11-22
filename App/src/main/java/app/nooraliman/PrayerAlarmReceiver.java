@@ -17,7 +17,7 @@ import android.net.Uri;
 
 public class PrayerAlarmReceiver extends BroadcastReceiver {
     private static final String REMINDER_CHANNEL = "prayer_reminders_v2";
-    private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v1";
+    private static final String ADHAN_FAILURE_CHANNEL = "adhan_failure_v2";
     private static final String TAG = "NoorPrayerAlarm";
     private static final long MINUTE = 60_000L;
     // Adhan is time-critical: never play it more than five minutes after prayer time.
