@@ -63,9 +63,10 @@ jobs:
           assert 'android:foregroundServiceType="mediaPlayback"' in manifest, 'adhan service must declare mediaPlayback FGS type'
           assert 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' in manifest, 'mediaPlayback FGS permission is required'
           assert 'android:name=".AdhanAlertActivity"' in manifest, 'lock-screen adhan activity must be declared'
+          assert 'class AdhanAlertActivity extends Activity' in activity, 'lock-screen adhan activity implementation must exist'
           assert 'setFullScreenIntent(fullScreen, true)' in service and 'AdhanAlertActivity.class' in service, 'full-screen alert must be launched from the playback service notification'
           assert 'AdhanAlertActivity' not in receiver, 'receiver must not launch the lock-screen activity directly'
-          receiver_decl = re.search(r'<receiver\\s+android:name="\\.DeviceEventReceiver"([^>]*)>', manifest)
+          receiver_decl = re.search(r'<receiver\s+android:name="\.DeviceEventReceiver"([^>]*)>', manifest)
           assert receiver_decl and 'android:permission' not in receiver_decl.group(1), 'DeviceEventReceiver must not restrict BOOT_COMPLETED sender permission'
           assert 'String safeMethod' in main and 'String safeAsr' in main and 'String safeSound' in main, 'NativeAlarms.configure must normalize invalid settings'
           PY
