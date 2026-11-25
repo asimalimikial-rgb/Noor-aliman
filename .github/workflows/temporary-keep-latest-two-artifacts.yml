@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   cleanup:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: always()
     name: Keep only the two newest artifacts and remove this temporary workflow
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -53,7 +53,7 @@ jobs:
               github.rest.actions.listArtifactsForRepo,
               { owner, repo, per_page: 100 }
             );
-            if (remaining.length !== 2 && remaining.length > 2) {
+            if (remaining.length > 2) {
               core.setFailed(`Verification failed: ${remaining.length} artifacts remain.`);
             } else {
               core.info(`Verification passed: ${remaining.length} artifact(s) remain.`);
