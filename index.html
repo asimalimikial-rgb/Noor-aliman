@@ -78,7 +78,7 @@ h2{font:700 36px/1.4 Amiri,serif;margin:0 0 8px}
 .big b{display:block;font:700 92px/1.1 Amiri,serif;color:var(--gold)}
 .big span{color:#d3e0d8;font-size:15px}
 .cols{display:grid;gap:18px}
-.cols h3{font-size:17px;margin:0 0 4px;color:var(--gold)}
+.cols h3{font-size:17px;margin:0 0 4px;color:var(--gold);display:flex;align-items:center;gap:8px}.cols h3 .section-icon{font-size:15px;line-height:1;display:inline-grid;place-items:center;width:25px;height:25px;border:1px solid #d8bd8055;border-radius:8px;background:#d8bd8012;flex:none}
 .cols ul{margin:0;padding-inline-start:20px;color:#e3ece6;font-size:15px}
 .note{font-size:13px;color:#a9bfb3;margin-top:16px}
 .rows{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -201,12 +201,12 @@ h2{font-size:30px}
 <div class="a11g">
 <div class="big"><b>DIRECT BOOT</b><span>جدولة الصلاة والذكر قبل فتح قفل الهاتف بعد اكتمال ترحيل إعدادات الإصدار السابق.</span></div>
 <div class="cols">
-<div><h3>الإقلاع المباشر والجدولة</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">📲</span>الإقلاع المباشر والجدولة</h3><ul>
 <li>تخزين تفضيلات التنبيهات في Device Protected Storage على Android 7+.</li>
 <li>استعادة جدولة الصلاة والذكر بعد LOCKED_BOOT_COMPLETED عبر goAsync() دون إبطاء خيط الإقلاع.</li>
 <li>ترحيل إعدادات المستخدمين الحاليين عند أول تشغيل بعد التحديث؛ ثم تصبح متاحة قبل فتح القفل في عمليات الإقلاع التالية.</li>
 </ul></div>
-<div><h3>صيانة الصوت والبوصلة</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">🧭</span>صيانة الصوت والبوصلة</h3><ul>
 <li>مهلة آمنة لتحضير صوت الذكر، وحماية قناة الإشعارات من خدمة نظام غير متاحة.</li>
 <li>صوت مستقل للفجر ومستوى صوت للأذان منفصل عن مستوى الوسائط العام.</li>
 <li>قراءة آمنة لاتجاه البوصلة وتجنب واجهة Display المهملة على Android 11+.</li>
@@ -214,23 +214,23 @@ h2{font-size:30px}
 <li>تشخيص أوضح لقيود البطارية على أجهزة Samsung وXiaomi وOppo.</li>
 <li>تثبيت محددات DOM وتفعيل ملف Quseir الصوتي الذي كان غير ظاهر في قائمة الاختيار.</li>
 </ul></div>
-<div><h3>دقة مواعيد الذكر</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">⏱️</span>دقة مواعيد الذكر</h3><ul>
 <li>محاذاة كل فاصل إلى شبكة ثابتة تبدأ من ساعة بداية نافذة الذكر، بدلاً من تراكم تأخير كل تنبيه.</li>
 <li>اعتبار تساوي البداية والنهاية نافذة تشغيل طوال اليوم بمحاذاة منتصف الليل.</li>
 <li>اختبارات Regression للنافذة الليلية والتأخير الزمني وحالة Direct Boot.</li>
 </ul></div>
-<div><h3>استمرار تجربة التطبيق</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">♾️</span>استمرار تجربة التطبيق</h3><ul>
 <li>الحفاظ على إعدادات الوضع البسيط والاحترافي التي أضيفت في الإصدار السابق.</li>
 <li>توحيد الوصول إلى ملف إعدادات المنبهات في الواجهة والمجدولات والخدمات.</li>
 <li>إتاحة مستقبلات التنبيه وخدمات التشغيل وشاشة تنبيه الأذان أثناء Direct Boot.</li>
 </ul></div>
-<div><h3>استقرار الأذان وشاشة القفل</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">🔔</span>استقرار الأذان وشاشة القفل</h3><ul>
 <li>حفظ صفحة الضبط واستعادتها عند الرجوع من إعدادات النظام.</li>
 <li>فتح إعداد Full Screen Intent بعد توضيح المطلوب، مع بديل إلى تفاصيل التطبيق إذا تعذر المسار المباشر.</li>
 <li>تحرير MediaPlayer عند انتهاء مهلة التحضير، وعدم استئناف الصوت قبل اكتمال التحضير واستعادة Audio Focus.</li>
 <li>تحديث اسم الصلاة عند وصول تنبيه جديد، وإيقاف الأذان بزر الرجوع.</li>
 </ul></div>
-<div><h3>واجهة الجوال والتحقق</h3><ul>
+<div><h3><span class="section-icon" aria-hidden="true">📱</span>واجهة الجوال والتحقق</h3><ul>
 <li>شريط تنقل سفلي بخمس وجهات؛ المسبحة متاحة من صفحة الأذكار، وصفحة «عن التطبيق» داخل الضبط.</li>
 <li>توسيط زر إيقاف الأذان على شاشات RTL ورفعه فوق شريط التنقل مع مراعاة Safe Area.</li>
 <li>اختبارات Regression تغطي التخزين قبل فتح القفل، وترحيل التفضيلات، وثبات شبكة مواعيد الذكر.</li>
