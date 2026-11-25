@@ -8,7 +8,7 @@
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي على Vercel](https://noor-aliman-psi.vercel.app) · [نسخة GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي على Netlify](https://nooraliman.netlify.app/) · [نسخة Vercel الاحتياطية](https://noor-aliman-psi.vercel.app) · [نسخة GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
@@ -144,12 +144,20 @@
 
 قائمة فحص الجهاز: [TEST-CHECKLIST.md](TEST-CHECKLIST.md).
 
+## الموقع والنشر التلقائي
+
+النطاق المعتمد للموقع في هذا المشروع هو **https://nooraliman.netlify.app/**. هذا عنوان Netlify الافتراضي الثابت للموقع؛ لا يتغير مع كل تحديث، بل تبقى وصلة الموقع نفسها ويُستبدل المحتوى المنشور بعد نجاح النشر.
+
+لضمان تحديث الموقع تلقائياً مع تعديلات التطبيق، يجب أن يكون مشروع Netlify مربوطاً بمستودع `asimalimikial-rgb/Noor-aliman`، وأن يكون **Production branch = `main`** مع تفعيل النشر التلقائي (Auto publishing). عندها يؤدي كل `push` ناجح إلى `main` إلى إنشاء Production deploy جديد على النطاق نفسه. أما Deploy Previews الخاصة بطلبات الدمج فلا تُعدّ تحديثاً للموقع الإنتاجي.
+
+> **حالة الربط:** تم اعتماد رابط Netlify في README، لكن يلزم تأكيد إعداد Repository وProduction branch داخل لوحة Netlify؛ لا يمكن إثباتهما من الرابط العام وحده.
+
 ## روابط المشروع
 
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
-- الموقع الرسمي (Vercel): https://noor-aliman-psi.vercel.app
+- النطاق الأساسي للموقع (Netlify): https://nooraliman.netlify.app/
+- نسخة Vercel الاحتياطية: https://noor-aliman-psi.vercel.app
 - نسخة GitHub Pages: https://asimalimikial-rgb.github.io/Noor-aliman/
-- معاينة Netlify لطلب الدمج #18 (ليست موقع الإنتاج): https://deploy-preview-18--heroic-biscotti-905b1d.netlify.app
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
 - تقرير تنفيذ الإصدار 1.22.2: [IMPLEMENTATION-REPORT-v1.22.2.md](IMPLEMENTATION-REPORT-v1.22.2.md)
 - تقرير تنفيذ الإصدار 1.22.0: [IMPLEMENTATION-REPORT-v1.22.0.md](IMPLEMENTATION-REPORT-v1.22.0.md)
