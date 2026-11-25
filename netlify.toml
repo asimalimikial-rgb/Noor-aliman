@@ -1,0 +1,5 @@
+# Netlify configuration for the Noor Al-Iman static website.
+# The website entry point (index.html) is in the repository root.
+
+[build]
+  publish = "."
