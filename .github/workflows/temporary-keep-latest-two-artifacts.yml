@@ -1,23 +1,26 @@
 name: Temporary keep latest two Actions artifacts
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - "Build and Release Noor Al Iman Android APK"
+    types:
+      - completed
     branches:
       - main
-    paths:
-      - ".github/workflows/temporary-keep-latest-two-artifacts.yml"
 
 permissions:
   actions: write
-  contents: read
+  contents: write
 
 jobs:
   cleanup:
-    name: Keep only the two newest artifacts
+    if: github.event.workflow_run.conclusion == 'success'
+    name: Keep only the two newest artifacts and remove this temporary workflow
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Retain newest two and delete older artifacts
+      - name: Retain newest two and verify
         uses: actions/github-script@v7
         with:
           script: |
@@ -34,7 +37,6 @@ jobs:
 
             const keep = artifacts.slice(0, 2);
             const remove = artifacts.slice(2);
-
             core.info(`Found ${artifacts.length} artifacts in ${owner}/${repo}.`);
             core.info(`Keeping: ${keep.map(a => `${a.name} (ID ${a.id}, ${a.created_at})`).join("; ") || "none"}`);
 
@@ -51,7 +53,7 @@ jobs:
               github.rest.actions.listArtifactsForRepo,
               { owner, repo, per_page: 100 }
             );
-            if (remaining.length > 2) {
+            if (remaining.length !== 2 && remaining.length > 2) {
               core.setFailed(`Verification failed: ${remaining.length} artifacts remain.`);
             } else {
               core.info(`Verification passed: ${remaining.length} artifact(s) remain.`);
@@ -59,3 +61,22 @@ jobs:
                 core.info(`Retained: ${artifact.name} (ID ${artifact.id}).`);
               }
             }
+
+      - name: Remove this temporary workflow
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const path = ".github/workflows/temporary-keep-latest-two-artifacts.yml";
+            const current = await github.rest.repos.getContent({ owner, repo, path, ref: "main" });
+            await github.rest.repos.deleteFile({
+              owner,
+              repo,
+              path,
+              message: "Remove temporary artifact cleanup workflow",
+              sha: current.data.sha,
+              branch: "main"
+            });
+            core.info("Temporary cleanup workflow removed.");
