@@ -149,6 +149,7 @@
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
 - الموقع الرسمي (Vercel): https://noor-aliman-psi.vercel.app
 - نسخة GitHub Pages: https://asimalimikial-rgb.github.io/Noor-aliman/
+- معاينة Netlify لطلب الدمج #18 (ليست موقع الإنتاج): https://deploy-preview-18--heroic-biscotti-905b1d.netlify.app
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
 - تقرير تنفيذ الإصدار 1.22.2: [IMPLEMENTATION-REPORT-v1.22.2.md](IMPLEMENTATION-REPORT-v1.22.2.md)
 - تقرير تنفيذ الإصدار 1.22.0: [IMPLEMENTATION-REPORT-v1.22.0.md](IMPLEMENTATION-REPORT-v1.22.0.md)
