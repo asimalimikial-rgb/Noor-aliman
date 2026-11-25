@@ -8,7 +8,7 @@
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي على Netlify](https://nooraliman.netlify.app/) · [نسخة Vercel الاحتياطية](https://noor-aliman-psi.vercel.app) · [نسخة GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي على Vercel](https://noor-aliman-psi.vercel.app) · [نسخة Netlify الإضافية](https://nooraliman.netlify.app/) · [نسخة GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
