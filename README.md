@@ -8,7 +8,7 @@
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![License](https://img.shields.io/badge/source-MIT-blue?style=for-the-badge)](LICENSE)
 
-[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي](https://asimalimikial-rgb.github.io/Noor-aliman/)
+[⬇️ تنزيل الإصدار 1.22.2](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [الموقع الرسمي على Vercel](https://noor-aliman-psi.vercel.app) · [نسخة GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
 
 </div>
 
@@ -147,7 +147,8 @@
 ## روابط المشروع
 
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
-- الموقع: https://asimalimikial-rgb.github.io/Noor-aliman/
+- الموقع الرسمي (Vercel): https://noor-aliman-psi.vercel.app
+- نسخة GitHub Pages: https://asimalimikial-rgb.github.io/Noor-aliman/
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
 - تقرير تنفيذ الإصدار 1.22.2: [IMPLEMENTATION-REPORT-v1.22.2.md](IMPLEMENTATION-REPORT-v1.22.2.md)
 - تقرير تنفيذ الإصدار 1.22.0: [IMPLEMENTATION-REPORT-v1.22.0.md](IMPLEMENTATION-REPORT-v1.22.0.md)
