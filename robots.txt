@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://noor-aliman-psi.vercel.app/sitemap.xml
