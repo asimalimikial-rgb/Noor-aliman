@@ -29,7 +29,7 @@
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"نور الإيمان","alternateName":"Noor Al-Iman","applicationCategory":"LifestyleApplication","operatingSystem":"Android 6.0 and later","softwareVersion":"1.22.2","inLanguage":"ar","description":"تطبيق إسلامي يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والقبلة والمسبحة.","downloadUrl":"https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk","author":{"@type":"Person","name":"Asim Ali Mikial"}}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"نور الإيمان","alternateName":"Noor Al-Iman","applicationCategory":"LifestyleApplication","operatingSystem":"Android 6.0 and later","softwareVersion":"1.23.0","inLanguage":"ar","description":"تطبيق إسلامي يجمع مواقيت الصلاة والأذان والقرآن الكريم والتفسير والأذكار والقبلة والمسبحة.","downloadUrl":"https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk","author":{"@type":"Person","name":"Asim Ali Mikial"}}
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Cpath fill='%230f3b31' d='M0 0h108v108H0z'/%3E%3Cpath fill='%23CAA766' d='M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35'/%3E%3Cpath fill='%23F7F5EF' d='M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,12 +152,12 @@ h2{font-size:30px}
 </a>
 <nav aria-label="القائمة الرئيسية">
 <a href="#features">المزايا</a>
-<a href="#a11">الجديد في 1.22.2</a>
+<a href="#a11">الجديد في 1.23.0</a>
 <a href="#adhan">الأذان</a>
 <a href="#experience">دون إنترنت</a>
 <a href="#waqf">الصدقة الجارية</a>
 </nav>
-<a class="btn btn-em sm" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk">تحميل APK</a>
+<a class="btn btn-em sm" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk">تحميل APK</a>
 </div>
 </header>
 
@@ -165,13 +165,13 @@ h2{font-size:30px}
 <div class="hero">
 <div class="wrap hg">
 <div>
-<span class="pill">الإصدار <bdi class="ltr">1.22.2</bdi> · أندرويد</span>
+<span class="pill">الإصدار <bdi class="ltr">1.23.0</bdi> · أندرويد</span>
 <h1>نور الإيمان</h1>
 <div class="en">Noor Al-Iman</div>
 <div class="tag">رفيق يومك إلى الطمأنينة</div>
 <p>مواقيت الصلاة والأذان والقرآن والتفسير والأذكار والقبلة في تطبيق عربي واحد.</p>
 <div class="acts">
-<a class="btn btn-gold" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk">تحميل التطبيق (APK)</a>
+<a class="btn btn-gold" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk">تحميل التطبيق (APK)</a>
 <a class="btn btn-ghost" href="https://github.com/asimalimikial-rgb/Noor-aliman">المستودع على GitHub</a>
 <a class="btn btn-ghost" href="/demo/">جرّب التطبيق مباشرة</a>
 </div>
@@ -205,51 +205,25 @@ h2{font-size:30px}
 </section>
 
 <section class="a11" id="a11">
-<div class="wrap">
-<h2>الجديد في الإصدار <bdi class="ltr">1.22.2</bdi></h2>
-<p class="lead">صيانة استقرار خدمات الصوت والبوصلة، وتخصيص صوت الفجر ومستوى الأذان، وتحسين إرشادات البطارية.</p>
-<div class="a11g">
-<div class="big"><b>DIRECT BOOT</b><span>جدولة الصلاة والذكر قبل فتح قفل الهاتف بعد اكتمال ترحيل إعدادات الإصدار السابق.</span></div>
-<div class="cols">
-<div><h3><span class="section-icon" aria-hidden="true">📲</span>الإقلاع المباشر والجدولة</h3><ul>
-<li>تخزين تفضيلات التنبيهات في Device Protected Storage على Android 7+.</li>
-<li>استعادة جدولة الصلاة والذكر بعد LOCKED_BOOT_COMPLETED عبر goAsync() دون إبطاء خيط الإقلاع.</li>
-<li>ترحيل إعدادات المستخدمين الحاليين عند أول تشغيل بعد التحديث؛ ثم تصبح متاحة قبل فتح القفل في عمليات الإقلاع التالية.</li>
-</ul></div>
-<div><h3><span class="section-icon" aria-hidden="true">🧭</span>صيانة الصوت والبوصلة</h3><ul>
-<li>مهلة آمنة لتحضير صوت الذكر، وحماية قناة الإشعارات من خدمة نظام غير متاحة.</li>
-<li>صوت مستقل للفجر ومستوى صوت للأذان منفصل عن مستوى الوسائط العام.</li>
-<li>قراءة آمنة لاتجاه البوصلة وتجنب واجهة Display المهملة على Android 11+.</li>
-<li>تطبيع الزاوية وإرشاد تفاعلي لمعايرة الحساس بحركة الرقم ٨.</li>
-<li>تشخيص أوضح لقيود البطارية على أجهزة Samsung وXiaomi وOppo.</li>
-<li>تثبيت محددات DOM وتفعيل ملف Quseir الصوتي الذي كان غير ظاهر في قائمة الاختيار.</li>
-</ul></div>
-<div><h3><span class="section-icon" aria-hidden="true">⏱️</span>دقة مواعيد الذكر</h3><ul>
-<li>محاذاة كل فاصل إلى شبكة ثابتة تبدأ من ساعة بداية نافذة الذكر، بدلاً من تراكم تأخير كل تنبيه.</li>
-<li>اعتبار تساوي البداية والنهاية نافذة تشغيل طوال اليوم بمحاذاة منتصف الليل.</li>
-<li>اختبارات Regression للنافذة الليلية والتأخير الزمني وحالة Direct Boot.</li>
-</ul></div>
-<div><h3><span class="section-icon" aria-hidden="true">♾️</span>استمرار تجربة التطبيق</h3><ul>
-<li>الحفاظ على إعدادات الوضع البسيط والاحترافي التي أضيفت في الإصدار السابق.</li>
-<li>توحيد الوصول إلى ملف إعدادات المنبهات في الواجهة والمجدولات والخدمات.</li>
-<li>إتاحة مستقبلات التنبيه وخدمات التشغيل وشاشة تنبيه الأذان أثناء Direct Boot.</li>
-</ul></div>
-<div><h3><span class="section-icon" aria-hidden="true">🔔</span>استقرار الأذان وشاشة القفل</h3><ul>
-<li>حفظ صفحة الضبط واستعادتها عند الرجوع من إعدادات النظام.</li>
-<li>فتح إعداد Full Screen Intent بعد توضيح المطلوب، مع بديل إلى تفاصيل التطبيق إذا تعذر المسار المباشر.</li>
-<li>تحرير MediaPlayer عند انتهاء مهلة التحضير، وعدم استئناف الصوت قبل اكتمال التحضير واستعادة Audio Focus.</li>
-<li>تحديث اسم الصلاة عند وصول تنبيه جديد، وإيقاف الأذان بزر الرجوع.</li>
-</ul></div>
-<div><h3><span class="section-icon" aria-hidden="true">📱</span>واجهة الجوال والتحقق</h3><ul>
-<li>شريط تنقل سفلي بخمس وجهات؛ المسبحة متاحة من صفحة الأذكار، وصفحة «عن التطبيق» داخل الضبط.</li>
-<li>توسيط زر إيقاف الأذان على شاشات RTL ورفعه فوق شريط التنقل مع مراعاة Safe Area.</li>
-<li>اختبارات Regression تغطي التخزين قبل فتح القفل، وترحيل التفضيلات، وثبات شبكة مواعيد الذكر.</li>
-<li>التحقق من البناء والاختبارات وتوقيع APK عبر GitHub Actions مطلوب قبل نشر الإصدار.</li>
-</ul></div>
-</div>
-</div>
-<p class="note">تنبيه: يظل التحقق النهائي من الإصدار مرتبطاً بنجاح GitHub Actions للبناء والاختبارات وتوقيع APK. وحتى بعد ذلك، لا تثبت الاختبارات الآلية وحدها تسليم الأذان على كل جهاز؛ يلزم اختبار فعلي للشاشة المطفأة وDoze وإدارة البطارية وFull Screen Intent وتشغيل الأذان كاملاً.</p>
-</section>
+ <div class="wrap">
+ <h2>الجديد في الإصدار <bdi class="ltr">1.23.0</bdi></h2>
+ <p class="lead">تجربة بصرية أكثر أناقة ووضوحاً، مع تحسين عرض الأقسام والخيارات وراحة القراءة على الهاتف.</p>
+ <div class="a11g">
+ <div class="cols">
+ <div><h3><span class="section-icon" aria-hidden="true">🎨</span>تصميم وتجربة استخدام</h3><ul>
+ <li>لوحة ألوان متوازنة تجمع الأخضر العميق والعاجي والذهبي الهادئ.</li>
+ <li>تحسين البطاقات وعرض مواقيت الصلاة وأقسام القراءة والإعدادات.</li>
+ <li>تنسيق أوضح للعناوين والنصوص العربية وتحسين قابلية القراءة.</li>
+ </ul></div>
+ <div><h3><span class="section-icon" aria-hidden="true">✨</span>تفاصيل الواجهة</h3><ul>
+ <li>تحسين عناصر التنقل والأيقونات والحالات التفاعلية.</li>
+ <li>تطوير المسافات والتخطيط ليتلاءم مع الشاشات الصغيرة والكبيرة.</li>
+ <li>تحسين التباين في الوضعين الفاتح والداكن مع مراعاة تقليل الحركة.</li>
+ </ul></div>
+ </div>
+ </div>
+ <p class="note">قد تختلف تجربة العرض بحسب حجم الشاشة وإصدار Android وإعدادات الجهاز.</p>
+ </section>
 
 <section id="adhan">
 <div class="wrap">
@@ -306,10 +280,10 @@ h2{font-size:30px}
 <div class="dl">
 <div class="id">
 <svg viewBox="0 0 108 108" aria-hidden="true"><path fill="#0f3b31" d="M0 0h108v108H0z"/><path fill="#CAA766" d="M54 19a35 35 0 1 0 35 35 35 35 0 0 0-35-35m0 7a28 28 0 1 1-27 35 28 28 0 0 0 27-35"/><path fill="#F7F5EF" d="M76 27l2.7 7.3 7.3 2.7-7.3 2.7-2.7 7.3-2.7-7.3-7.3-2.7 7.3-2.7z"/></svg>
-<div><h3>نور الإيمان — Android</h3><p>الإصدار <bdi class="ltr">1.22.2</bdi> · يتطلب Android <bdi class="ltr">6.0</bdi> أو أحدث</p></div>
+<div><h3>نور الإيمان — Android</h3><p>الإصدار <bdi class="ltr">1.23.0</bdi> · يتطلب Android <bdi class="ltr">6.0</bdi> أو أحدث</p></div>
 </div>
 <div class="go">
-<a class="btn btn-em" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.22.2/app-release.apk">تحميل APK</a>
+<a class="btn btn-em" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk">تحميل APK</a>
 <a class="t" href="https://github.com/asimalimikial-rgb/Noor-aliman/releases">جميع الإصدارات</a>
 </div>
 </div>
@@ -323,8 +297,8 @@ h2{font-size:30px}
 <div><dt>المنصة</dt><dd>Android</dd></div>
 <div><dt>Minimum SDK</dt><dd class="ltr">23</dd></div>
 <div><dt>Target SDK</dt><dd class="ltr">36</dd></div>
-<div><dt>Version Code</dt><dd class="ltr">28</dd></div>
-<div><dt>الإصدار</dt><dd class="ltr">1.22.2</dd></div>
+<div><dt>Version Code</dt><dd class="ltr">29</dd></div>
+<div><dt>الإصدار</dt><dd class="ltr">1.23.0</dd></div>
 <div><dt>Package</dt><dd class="ltr">app.nooraliman</dd></div>
 </dl>
 </div>
