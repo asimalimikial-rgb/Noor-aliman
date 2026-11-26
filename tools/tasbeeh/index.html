@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f3b31">
+<title>المسبحة الإلكترونية | نور الإيمان</title>
+<meta name="description" content="مسبحة إلكترونية بسيطة تحفظ عدد التسبيح محلياً على جهازك.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f3b31;--green2:#17503f;--gold:#d8bd80;--ivory:#f7f4ec;--paper:#fffdf8;--ink:#1e2a26;--muted:#65716b;--line:#e5dfd1}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--ivory);color:var(--ink);font:16px/1.9 Cairo,Tahoma,sans-serif;display:flex;flex-direction:column}a{color:inherit}.wrap{width:min(720px,calc(100% - 30px));margin:auto}
+header{background:var(--paper);border-bottom:1px solid var(--line)}.bar{height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font:700 23px Amiri,serif;color:var(--green);text-decoration:none}.back{font-size:13px;color:var(--green);text-decoration:none;font-weight:700}
+main{padding:34px 0 46px;flex:1}.eyebrow{font-size:13px;color:#8a6d2f;font-weight:700}h1{font:700 38px Amiri,serif;margin:0 0 4px}.intro{margin:0 0 22px;color:var(--muted);font-size:14px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 16px 44px #1c342508}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:13px;color:var(--muted);font-weight:700;margin-bottom:5px}.field select{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;background:white;color:var(--ink);font:inherit;padding:0 12px}
+.counter-wrap{text-align:center;padding:26px 0 18px}.count{font:700 clamp(64px,17vw,100px)/1.2 Amiri,serif;color:var(--green);font-variant-numeric:tabular-nums;direction:ltr}.phrase{font:700 25px Amiri,serif;color:var(--green2);margin:2px 0 8px}.progress{height:7px;background:#e9e7dc;border-radius:99px;overflow:hidden;max-width:420px;margin:12px auto 4px}.progress span{display:block;height:100%;width:0;background:var(--gold);transition:width .15s}.target-label{font-size:12px;color:var(--muted)}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{border:0;border-radius:13px;padding:12px 22px;font:700 15px Cairo,sans-serif;cursor:pointer}.primary{background:var(--green);color:white;min-width:180px}.secondary{background:#eeeade;color:var(--green)}.tap{width:100%;max-width:360px;height:68px;font-size:21px;box-shadow:0 5px 0 #09281f;touch-action:manipulation}.tap:active{transform:translateY(3px);box-shadow:0 2px 0 #09281f}.subactions{display:flex;justify-content:center;gap:12px;margin-top:18px}.subactions button{background:transparent;border:0;color:var(--muted);font:600 13px Cairo,sans-serif;text-decoration:underline;cursor:pointer}
+.status{text-align:center;color:var(--muted);font-size:12px;margin:16px 0 0;min-height:24px}
+footer{background:#0b2a23;color:#d7e1d9;padding:18px 0;font-size:12px;text-align:center}
+:focus-visible{outline:3px solid #a37b2c;outline-offset:3px}
+@media(max-width:520px){.panel{padding:18px}.controls{grid-template-columns:1fr}.counter-wrap{padding-top:18px}.phrase{font-size:22px}.bar{height:58px}}
+@media(prefers-reduced-motion:reduce){.progress span{transition:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap bar"><a class="brand" href="/tools/">نور الإيمان · الأدوات</a><a class="back" href="/tools/">كل الأدوات ←</a></div></header>
+<main class="wrap">
+<span class="eyebrow">أداة تفاعلية · تعمل دون اتصال بعد تحميل الصفحة</span>
+<h1>المسبحة الإلكترونية</h1><p class="intro">اذكر الله في كل حين. يُحفظ العدّاد تلقائياً على هذا الجهاز داخل المتصفح.</p>
+<section class="panel" aria-label="المسبحة الإلكترونية">
+<div class="controls">
+<div class="field"><label for="phraseSelect">الذكر</label><select id="phraseSelect"><option value="سُبْحَانَ اللَّهِ">سُبْحَانَ اللَّهِ</option><option value="الْحَمْدُ لِلَّهِ">الْحَمْدُ لِلَّهِ</option><option value="اللَّهُ أَكْبَرُ">اللَّهُ أَكْبَرُ</option><option value="لَا إِلَهَ إِلَّا اللَّهُ">لَا إِلَهَ إِلَّا اللَّهُ</option><option value="أَسْتَغْفِرُ اللَّهَ">أَسْتَغْفِرُ اللَّهَ</option><option value="اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ</option></select></div>
+<div class="field"><label for="targetSelect">هدف العدّ</label><select id="targetSelect"><option value="33">٣٣ تسبيحة</option><option value="100">١٠٠ تسبيحة</option><option value="0">بدون هدف</option></select></div>
+</div>
+<div class="counter-wrap"><div class="count" id="count" aria-live="polite" aria-atomic="true">٠</div><div class="phrase" id="phrase">سُبْحَانَ اللَّهِ</div><div class="target-label" id="targetLabel">الهدف: ٣٣</div><div class="progress" role="progressbar" aria-label="التقدم نحو الهدف" aria-valuemin="0" aria-valuemax="33" aria-valuenow="0" id="progress"><span id="progressBar"></span></div></div>
+<div class="actions"><button class="btn primary tap" id="increment" type="button">＋ تسبيحة</button></div>
+<div class="actions"><button class="btn secondary" id="decrement" type="button">تراجع خطوة</button><button class="btn secondary" id="reset" type="button">إعادة ضبط</button></div>
+<div class="status" id="status" role="status">تم الحفظ تلقائياً على هذا الجهاز.</div>
+</section>
+</main>
+<footer><div class="wrap">نور الإيمان · <a href="/">الموقع الرئيسي</a> · Created by Asim Ali Mikial</div></footer>
+<script>
+(()=>{'use strict';
+const KEY='noorAlimanWebTasbeeh.v1';
+const $=id=>document.getElementById(id);
+const state={count:0,phrase:'سُبْحَانَ اللَّهِ',target:33};
+try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved&&Number.isInteger(saved.count)&&saved.count>=0){state.count=saved.count;if(typeof saved.phrase==='string')state.phrase=saved.phrase;if([0,33,100].includes(saved.target))state.target=saved.target;}}catch(_){}
+const toArabic=n=>new Intl.NumberFormat('ar',{useGrouping:false}).format(n);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));$('status').textContent='تم الحفظ تلقائياً على هذا الجهاز.';}catch(_){$('status').textContent='تعذر الحفظ المحلي؛ يمكنك متابعة العدّ ما دامت الصفحة مفتوحة.';}}
+function render(){ $('count').textContent=toArabic(state.count);$('phrase').textContent=state.phrase;$('phraseSelect').value=state.phrase;$('targetSelect').value=String(state.target);$('targetLabel').textContent=state.target?'الهدف: '+toArabic(state.target):'العدّ مفتوح دون هدف';const pct=state.target?Math.min(100,state.count/state.target*100):0;$('progressBar').style.width=pct+'%';$('progress').setAttribute('aria-valuemax',String(state.target||state.count||1));$('progress').setAttribute('aria-valuenow',String(state.count));}
+$('increment').addEventListener('click',()=>{state.count++;if(state.target&&state.count===state.target){$('status').textContent='أحسنت، اكتمل الهدف. تقبّل الله ذكرك.';try{if(navigator.vibrate)navigator.vibrate(80);}catch(_){}}else save();render();});
+$('decrement').addEventListener('click',()=>{state.count=Math.max(0,state.count-1);save();render();});
+$('reset').addEventListener('click',()=>{if(state.count===0)return;if(!confirm('هل تريد تصفير العدّاد؟'))return;state.count=0;save();render();});
+$('phraseSelect').addEventListener('change',e=>{state.phrase=e.target.value;save();render();});
+$('targetSelect').addEventListener('change',e=>{state.target=Number(e.target.value);save();render();});
+render();
+})();
+</script>
+</body></html>
