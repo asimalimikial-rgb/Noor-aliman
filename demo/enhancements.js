@@ -1272,6 +1272,95 @@ document.head.append(settingsHubStyle);
       .prayer-adjustment { padding: 10px; }
       .prayer-adjustment-controls { flex-wrap: wrap; }
     }
+    /* Refined surfaces for elements created dynamically by enhancements.js. */
+    .settings-group {
+      background: linear-gradient(145deg, var(--noor-surface), color-mix(in srgb, var(--noor-paper) 76%, var(--noor-gold-soft)));
+      border-color: color-mix(in srgb, var(--noor-line) 72%, var(--noor-gold) 28%);
+    }
+    .settings-accordion-summary {
+      display: flex; align-items: center; gap: 12px; min-height: 48px;
+      cursor: pointer; list-style: none; color: var(--noor-ink);
+      font: 700 17px/1.5 Amiri, serif;
+    }
+    .settings-accordion-summary::-webkit-details-marker { display: none; }
+    .settings-accordion-summary::after {
+      content: "⌄"; margin-inline-start: auto; color: var(--noor-gold);
+      font: 22px/1 system-ui; transition: transform .2s ease;
+    }
+    .settings-accordion[open] > .settings-accordion-summary::after { transform: rotate(180deg); }
+    .settings-group-icon {
+      flex: 0 0 42px; display: grid; place-items: center;
+      border: 1px solid color-mix(in srgb, var(--noor-gold) 28%, transparent);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+      font-size: 19px;
+    }
+    .settings-accordion-panel { padding-top: 10px; }
+    .quran-mode button, .mushaf-page-controls button {
+      border-color: color-mix(in srgb, var(--noor-line) 65%, var(--noor-gold) 35%);
+      box-shadow: 0 4px 14px rgba(22,48,38,.045);
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .quran-mode button[aria-pressed="true"] {
+      background: linear-gradient(135deg, var(--noor-forest), #28614f);
+      border-color: var(--noor-gold); box-shadow: 0 7px 18px rgba(18,60,50,.18);
+    }
+    .mushaf-page-controls button:not(:disabled):hover {
+      transform: translateY(-2px); box-shadow: 0 8px 20px rgba(22,48,38,.09);
+    }
+    .memorial-card {
+      background: radial-gradient(circle at 50% 0, rgba(202,167,102,.12), transparent 58%), var(--noor-surface);
+      border-color: color-mix(in srgb, var(--noor-gold) 58%, var(--noor-line));
+    }
+    .memorial-card .mark {
+      display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 12px;
+      border: 1px solid rgba(202,167,102,.42); border-radius: 18px;
+      background: linear-gradient(145deg, var(--noor-gold-soft), transparent);
+    }
+    .memorial-card button {
+      background: linear-gradient(135deg, var(--noor-forest), #28614f);
+      box-shadow: 0 8px 18px rgba(18,60,50,.16);
+    }
+    .prayer-adjustment {
+      background: linear-gradient(145deg, var(--noor-surface), var(--noor-paper));
+      border-color: color-mix(in srgb, var(--noor-line) 70%, var(--noor-gold) 30%);
+    }
+    .prayer-adjustment-controls button:not(:disabled):hover {
+      border-color: var(--noor-gold); box-shadow: 0 5px 12px rgba(22,48,38,.08);
+    }
+    .tafsir-source-choice .select { max-width: 100%; }
+    .adhan-stop-bar {
+      background: linear-gradient(120deg, #102c26, #1d4a3c);
+      border-color: rgba(202,167,102,.55);
+    }
+    .adhan-stop-bar button {
+      background: linear-gradient(120deg, #f5e8ce, #dfc58d);
+      color: #2e281c; letter-spacing: .01em;
+    }
+    .dark .settings-group {
+      background: linear-gradient(145deg, #20342b, #192720);
+      border-color: #405448;
+    }
+    .dark .settings-group-icon {
+      background: linear-gradient(145deg, #3b4030, #293b31);
+      color: #e0c58d; border-color: #665b3c;
+    }
+    .dark .quran-mode button, .dark .mushaf-page-controls button {
+      background: #20342a; color: var(--noor-ink); border-color: #43574a;
+    }
+    .dark .quran-mode button[aria-pressed="true"] {
+      background: linear-gradient(135deg, #315b48, #244334); color: #fffefa;
+    }
+    .dark .prayer-adjustment { background: linear-gradient(145deg, #22372d, #1b2b23); }
+    .dark .memorial-card { background: radial-gradient(circle at 50% 0, rgba(202,167,102,.12), transparent 58%), #1b2b23; }
+    @media (max-width: 650px) {
+      .settings-accordion-summary { min-height: 46px; font-size: 16px; }
+      .settings-group-icon { flex-basis: 38px; width: 38px; height: 38px; }
+      .settings-accordion-panel { padding-top: 7px; }
+      .memorial-card { padding: 24px 18px; }
+      .tafsir-source-choice { flex-wrap: wrap; }
+      .tafsir-source-choice .select { flex: 1 1 100%; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
