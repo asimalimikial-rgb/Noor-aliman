@@ -1,0 +1,12 @@
+
+$('tafsirHint').textContent='التفسير ومعاني الكلمات مدمجان ويعملان دون إنترنت.';
+const tafsirCredit=document.createElement('p');tafsirCredit.className='tafsir-source';
+const tafsirSourceLink=document.createElement('a');tafsirSourceLink.href='https://quranenc.com';tafsirSourceLink.target='_blank';tafsirSourceLink.rel='noopener';tafsirSourceLink.textContent='QuranEnc';
+tafsirCredit.append(document.createTextNode('مصدر النصوص: '),tafsirSourceLink,document.createTextNode(' · التفسير المختصر والسراج في بيان غريب القرآن'));
+$('tafsirView').append(tafsirCredit);
+const aboutOffline=document.getElementById('aboutOfflineInfo');if(aboutOffline)aboutOffline.textContent='لا يتطلب التطبيق حسابًا. التفسير ومعاني الكلمات مدمجان ويعملان دون اتصال من أول تشغيل. تُحفظ إعداداتك وموقعك والتنزيلات على هذا الجهاز. يلزم الاتصال لتنزيل صفحات القرآن والتلاوات أول مرة.';
+let floatingPlayerActive=false;const floatingPlayer=$('floatingPlayer');
+function syncFloatingPlayer(){const audio=P.cura(),playing=!!(audio&&!audio.paused),verse=P.page&&P.page.verses[P.i];$('pPlay').textContent=playing?'⏸':'▶';$('pPlay').setAttribute('aria-label',playing?'إيقاف مؤقت':'استمرار التلاوة');$('fpPlay').textContent=playing?'⏸':'▶';$('fpPlay').setAttribute('aria-label',playing?'إيقاف مؤقت':'استمرار التلاوة');if(verse){$('fpTitle').textContent='سورة '+SURAH_NAMES[verse.surah-1]+' · الآية '+arNum(verse.ayah);$('fpReciter').textContent=$('reciterSelect').selectedOptions[0]?.text||''}if(playing&&$('quranStatus').classList.contains('error'))status('التلاوة تعمل الآن. يمكنك إيقافها واستئنافها من الشريط السفلي.');floatingPlayer.hidden=!floatingPlayerActive}
+const playOriginal=P.play.bind(P),stopOriginal=P.stop.bind(P);P.play=function(i){floatingPlayerActive=true;$('fpBar').style.width='0';const r=playOriginal(i);if(S.tafsirOn&&P.page&&P.page.verses[i])showTafsir(P.page.verses[i]);syncFloatingPlayer();return r};P.stop=function(){stopOriginal();$('fpBar').style.width='0';floatingPlayerActive=false;syncFloatingPlayer()};
+P.a.forEach(a=>{a.addEventListener('play',syncFloatingPlayer);a.addEventListener('pause',syncFloatingPlayer);a.addEventListener('timeupdate',()=>{if(P.cura()===a&&a.duration>0)$('fpBar').style.width=Math.min(100,a.currentTime/a.duration*100)+'%'})});
+$('fpPlay').onclick=()=>P.toggle();$('fpPrev').onclick=()=>P.step(-1);$('fpNext').onclick=()=>P.step(1);syncFloatingPlayer();
