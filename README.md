@@ -87,7 +87,8 @@
 ## روابط نور الإيمان
 
 - [الموقع الرسمي](https://noor-aliman-psi.vercel.app/)
-- [النسخة التفاعلية](https://noor-aliman-psi.vercel.app/demo/)
+- [النسخة التفاعلية — Vercel](https://noor-aliman-psi.vercel.app/demo/)
+- [النسخة التفاعلية — GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/demo/)
 - [نسخة الموقع الإضافية على Netlify](https://nooraliman.netlify.app/)
 - [الموقع على GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
 - [سجل إصدارات Android](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
