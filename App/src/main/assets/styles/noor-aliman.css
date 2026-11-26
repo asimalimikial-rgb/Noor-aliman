@@ -410,3 +410,150 @@ input,select,textarea{accent-color:#9c814d}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* ── Signature interface pass: iconography, Arabic typography, hierarchy ── */
+:root{
+  --noor-forest:#102f27;
+  --noor-forest-2:#1c4a3b;
+  --noor-gold:#b99555;
+  --noor-gold-light:#dfc58d;
+  --noor-radius-card:22px;
+  --noor-ease:cubic-bezier(.2,.75,.25,1);
+}
+body{font-family:"Noto Sans Arabic","DM Sans",Amiri,sans-serif;letter-spacing:0}
+h1,h2,h3,h4,.brand strong,.side-bottom p,.eyebrow,.prayer .pname,.daily-verse blockquote,
+.settings-group-title,.setting strong,.dhikr-text,.mushaf-verses,.mushaf-surah-title{
+  font-family:"Amiri","Noto Sans Arabic",serif;
+}
+.nav button,.mobile-nav button{font-family:"Noto Sans Arabic",sans-serif}
+.nav-icon{
+  display:block;flex:0 0 21px;width:21px;height:21px;
+  fill:none;stroke:currentColor;stroke-width:1.65;
+  stroke-linecap:round;stroke-linejoin:round;
+  opacity:.88;transition:transform .24s var(--noor-ease),color .24s ease,opacity .24s ease;
+}
+.nav button:hover .nav-icon,.nav button.active .nav-icon{color:var(--noor-gold-light);opacity:1;transform:scale(1.08)}
+.nav button span{line-height:1.7}
+.brand-mark{position:relative;overflow:hidden}
+.brand-mark:after{
+  content:"";position:absolute;inset:5px;border:1px solid rgba(223,197,141,.22);
+  border-radius:11px;transform:rotate(45deg);pointer-events:none;
+}
+.sidebar{isolation:isolate}
+.sidebar:after{
+  content:"";position:absolute;z-index:-1;inset:auto -100px -120px auto;width:300px;height:300px;
+  border:1px solid rgba(223,197,141,.09);border-radius:50%;
+  box-shadow:0 0 0 22px rgba(223,197,141,.018),0 0 0 46px rgba(223,197,141,.015),0 0 0 70px rgba(223,197,141,.012);
+  pointer-events:none;
+}
+.settings-shortcut span svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
+.avatar{border:1px solid rgba(185,149,85,.35);box-shadow:inset 0 0 0 4px rgba(255,255,255,.25)}
+.title-row h1{font-family:"Amiri","Noto Sans Arabic",serif;font-weight:700}
+.eyebrow{letter-spacing:.04em;text-transform:none;font-size:12px}
+.hero{isolation:isolate}
+.hero:before{animation:noor-orbit 24s linear infinite}
+.hero:after{pointer-events:none}
+@keyframes noor-orbit{to{transform:rotate(360deg)}}
+.prayer{
+  position:relative;overflow:hidden;
+  transition:transform .28s var(--noor-ease),box-shadow .28s ease,border-color .28s ease;
+}
+.prayer:before{
+  content:"";position:absolute;inset:0 0 auto;height:2px;
+  background:linear-gradient(90deg,transparent,var(--noor-gold),transparent);
+  opacity:0;transition:opacity .2s ease;
+}
+.prayer:hover:before,.prayer.next:before{opacity:.8}
+.prayer.next{position:relative}
+.prayer.next:after{
+  content:"";position:absolute;inset:auto -24px -40px auto;width:100px;height:100px;
+  border:1px solid rgba(185,149,85,.16);border-radius:50%;
+  box-shadow:0 0 0 12px rgba(185,149,85,.035),0 0 0 24px rgba(185,149,85,.025);
+}
+.card{border-radius:var(--noor-radius-card)}
+.location-card .edit,.compass-enable,.camera-cta,.sound-preview,.page-navigation button,
+.player2 button:not(.play),.diag-status-grid button,.settings-close,.reset{
+  transition:transform .2s var(--noor-ease),border-color .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.location-card .edit:hover,.compass-enable:hover,.camera-cta:hover,.sound-preview:hover,
+.page-navigation button:hover,.player2 button:not(.play):hover,.diag-status-grid button:hover,
+.settings-close:hover{transform:translateY(-1px);border-color:var(--noor-gold);box-shadow:0 6px 16px rgba(23,53,46,.08)}
+.select{
+  appearance:none;-webkit-appearance:none;
+  padding-inline:12px 34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23967b49' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;
+}
+.city-select{appearance:none;-webkit-appearance:none;padding-inline:12px 30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23967b49' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 10px center}
+.settings-group{position:relative;overflow:hidden}
+.settings-group:before{
+  content:"";position:absolute;inset:0 auto 0 0;width:3px;
+  background:linear-gradient(180deg,transparent,var(--noor-gold),transparent);opacity:.55;
+}
+.settings-group-title{font-size:19px}
+.settings-group .setting{gap:18px}
+.settings-group .setting>div:first-child{min-width:0}
+.settings-group .setting strong{font-size:18px}
+.settings-group .setting small{display:block;line-height:1.8;margin-top:3px}
+.toggle{flex:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
+.toggle:checked{background:linear-gradient(90deg,#47785e,#6c9b78)}
+.toggle:focus-visible{outline:3px solid rgba(185,149,85,.55);outline-offset:3px}
+.ad-tab{position:relative;overflow:hidden}
+.ad-tab.active{box-shadow:0 7px 18px rgba(23,70,56,.15)}
+.ad-tab.active:after{content:"";position:absolute;inset:auto 22% 4px;height:2px;border-radius:9px;background:var(--noor-gold-light)}
+.dhikr{position:relative;overflow:hidden}
+.dhikr:before{content:"۞";position:absolute;top:9px;inset-inline-start:13px;color:rgba(185,149,85,.16);font:24px Amiri;pointer-events:none}
+.dhikr-btn{transition:transform .2s var(--noor-ease),box-shadow .2s ease,background .2s ease}
+.dhikr-btn:active{transform:scale(.985)}
+.dhikr.done{border-color:#b8cdb8}
+.mushaf-sheet{background-image:radial-gradient(ellipse at 50% 0,rgba(185,149,85,.08),transparent 55%)}
+.mushaf-topline{font-family:"Amiri","Noto Sans Arabic",serif}
+.mushaf-page-number{box-shadow:0 2px 7px rgba(90,70,34,.08)}
+.quran-panel,.surah-browser{min-width:0}
+.surah-option{min-height:43px;transition:background .18s ease,transform .18s var(--noor-ease)}
+.surah-option:hover{transform:translateX(-2px)}
+.surah-option.active{box-shadow:inset -2px 0 var(--noor-gold)}
+.tafsir-card{border:1px solid rgba(185,149,85,.2)}
+.tafsir-card summary{display:flex;align-items:center;justify-content:center;gap:10px}
+.tafsir-card summary:after{margin-inline-start:auto}
+.mobile-nav button{position:relative;align-content:center;gap:3px}
+.mobile-nav .nav-icon{width:20px;height:20px;flex-basis:20px}
+.mobile-nav button.active .nav-icon{color:var(--noor-gold)}
+.mobile-nav button.active:before{
+  content:"";position:absolute;top:0;left:28%;right:28%;height:2px;
+  border-radius:0 0 4px 4px;background:var(--noor-gold);
+}
+.creator{font-family:"DM Sans",sans-serif}
+.dark .select,.dark .city-select{background-color:#20342a;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23dfc58d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+.dark .prayer.next{background:linear-gradient(145deg,#293d30,#22372c);border-color:#756b4b}
+.dark .prayer.next:after{border-color:rgba(223,197,141,.15)}
+.dark .mushaf-sheet{background-image:radial-gradient(ellipse at 50% 0,rgba(223,197,141,.07),transparent 55%)}
+.dark .dhikr.done{border-color:#506b56}
+@media(max-width:900px){
+  .main{padding-inline:26px}
+  .nav button{padding-inline:11px}
+}
+@media(max-width:650px){
+  body{font-family:"Noto Sans Arabic",Amiri,sans-serif}
+  .main{padding:17px 14px 28px}
+  .topbar{gap:8px}
+  .profile{gap:7px}
+  .hero{padding:22px 18px;min-height:190px}
+  .hero h2{font-size:29px}
+  .countdown strong{font-size:28px}
+  .prayer-strip{gap:8px}
+  .prayer{min-height:92px}
+  .mobile-nav{height:calc(68px + env(safe-area-inset-bottom));padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  .mobile-nav button{font-size:10px}
+  .mobile-nav .nav-icon{width:21px;height:21px}
+  .settings-group .setting{gap:8px}
+  .settings-group .setting strong{font-size:17px}
+  .settings-group .setting small{font-size:10px}
+  .qibla-info{text-align:center}
+  .info-card h3{font-family:"Amiri","Noto Sans Arabic",serif}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero:before{animation:none}
+  .prayer,.nav-icon,.card,.surah-option{transition:none}
+}
