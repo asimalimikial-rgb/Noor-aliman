@@ -14,8 +14,8 @@ android {
         applicationId 'app.nooraliman'
         minSdk 23
         targetSdk 36
-        versionCode 28
-        versionName '1.22.2'
+        versionCode 29
+        versionName '1.23.0'
     }
 
     signingConfigs {
