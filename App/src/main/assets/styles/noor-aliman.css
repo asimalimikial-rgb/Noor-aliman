@@ -479,7 +479,7 @@ h1,h2,h3,h4,.brand strong,.side-bottom p,.eyebrow,.prayer .pname,.daily-verse bl
 .location-card .edit:hover,.compass-enable:hover,.camera-cta:hover,.sound-preview:hover,
 .page-navigation button:hover,.player2 button:not(.play):hover,.diag-status-grid button:hover,
 .settings-close:hover{transform:translateY(-1px);border-color:var(--noor-gold);box-shadow:0 6px 16px rgba(23,53,46,.08)}
-.select{
+select.select{
   appearance:none;-webkit-appearance:none;
   padding-inline:12px 34px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23967b49' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -525,7 +525,7 @@ h1,h2,h3,h4,.brand strong,.side-bottom p,.eyebrow,.prayer .pname,.daily-verse bl
   border-radius:0 0 4px 4px;background:var(--noor-gold);
 }
 .creator{font-family:"DM Sans",sans-serif}
-.dark .select,.dark .city-select{background-color:#20342a;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23dfc58d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+.dark select.select,.dark .city-select{background-color:#20342a;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23dfc58d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
 .dark .prayer.next{background:linear-gradient(145deg,#293d30,#22372c);border-color:#756b4b}
 .dark .prayer.next:after{border-color:rgba(223,197,141,.15)}
 .dark .mushaf-sheet{background-image:radial-gradient(ellipse at 50% 0,rgba(223,197,141,.07),transparent 55%)}
