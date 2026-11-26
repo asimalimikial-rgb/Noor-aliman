@@ -146,17 +146,35 @@
 
 ## الموقع والنشر التلقائي
 
-النطاق المعتمد للموقع في هذا المشروع هو **https://nooraliman.netlify.app/**. هذا عنوان Netlify الافتراضي الثابت للموقع؛ لا يتغير مع كل تحديث، بل تبقى وصلة الموقع نفسها ويُستبدل المحتوى المنشور بعد نجاح النشر.
+**Vercel هو منصة النشر الأساسية والرسمية للموقع**، ويُستخدم GitHub كمصدر وحيد للكود. النطاق الأساسي الثابت هو [https://noor-aliman-psi.vercel.app](https://noor-aliman-psi.vercel.app/).
 
-لضمان تحديث الموقع تلقائياً مع تعديلات التطبيق، يجب أن يكون مشروع Netlify مربوطاً بمستودع `asimalimikial-rgb/Noor-aliman`، وأن يكون **Production branch = `main`** مع تفعيل النشر التلقائي (Auto publishing). عندها يؤدي كل `push` ناجح إلى `main` إلى إنشاء Production deploy جديد على النطاق نفسه. أما Deploy Previews الخاصة بطلبات الدمج فلا تُعدّ تحديثاً للموقع الإنتاجي.
+### مسار النشر الأساسي: GitHub → Vercel
 
-> **حالة الربط:** تم اعتماد رابط Netlify في README، لكن يلزم تأكيد إعداد Repository وProduction branch داخل لوحة Netlify؛ لا يمكن إثباتهما من الرابط العام وحده.
+- مستودع المصدر: `asimalimikial-rgb/Noor-aliman`.
+- فرع الإنتاج: `main`.
+- مشروع Vercel: [noor-aliman](https://vercel.com/mikial/noor-aliman).
+- عند وصول commit جديد إلى `main)، ينشئ تكامل Vercel المرتبط بالمستودع Production Deployment تلقائياً؛ وبعد نجاح البناء يصبح التحديث متاحاً على النطاق الأساسي نفسه.
+- طلبات الدمج والفروع الأخرى قد تنشئ Preview Deployments، ولا تصبح هي نسخة الإنتاج إلا بعد دمج التغييرات في `main`.
+- لمتابعة حالة البناء والنشر: [Vercel Deployments](https://vercel.com/mikial/noor-aliman).
+
+### Netlify — نسخة احتياطية
+
+- النطاق: [https://nooraliman.netlify.app/](https://nooraliman.netlify.app/).
+- المشروع مربوط بمستودع GitHub، وفرع الإنتاج `main)، وخيار Auto publishing مفعّل.
+- **حالة النشر الحالية:** الموقع المنشور يظل متاحاً للزوار، لكن Netlify أوقف Production Deploys مؤقتاً لأن الحساب يعمل على Operational Credits. أوضحت رسالة Netlify أن هذه الأرصدة مخصصة لإبقاء المواقع المنشورة متاحة ولا تُستخدم لنشر Production Deploys.
+- لذلك لا يُفترض أن تحديثات `main) ستظهر على Netlify حالياً. يستأنف النشر عند تجدد رصيد/دورة الفوترة أو ترقية الفريق وفق رسالة Netlify.
+- إعداد الموقع static: لا يحتاج إلى Build command، وPublish directory هو `.`، كما يحدد ملف `netlify.toml` إعداد مجلد النشر.
+
+### GitHub Pages
+
+توجد نسخة إضافية على [GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)، ولا تُعدّ بديلاً عن نطاق Vercel الأساسي.
 
 ## روابط المشروع
 
 - المستودع: https://github.com/asimalimikial-rgb/Noor-aliman
-- النطاق الأساسي للموقع (Netlify): https://nooraliman.netlify.app/
-- نسخة Vercel الاحتياطية: https://noor-aliman-psi.vercel.app
+- **الموقع الأساسي (Vercel):** https://noor-aliman-psi.vercel.app/
+- لوحة مشروع Vercel: https://vercel.com/mikial/noor-aliman
+- نسخة Netlify الإضافية: https://nooraliman.netlify.app/
 - نسخة GitHub Pages: https://asimalimikial-rgb.github.io/Noor-aliman/
 - الإصدارات: https://github.com/asimalimikial-rgb/Noor-aliman/releases
 - تقرير تنفيذ الإصدار 1.22.2: [IMPLEMENTATION-REPORT-v1.22.2.md](IMPLEMENTATION-REPORT-v1.22.2.md)
