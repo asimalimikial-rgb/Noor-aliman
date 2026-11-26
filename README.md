@@ -160,10 +160,9 @@
 ### Netlify — نسخة احتياطية
 
 - النطاق: [https://nooraliman.netlify.app/](https://nooraliman.netlify.app/).
-- المشروع مربوط بمستودع GitHub، وفرع الإنتاج `main)، وخيار Auto publishing مفعّل.
-- **حالة النشر الحالية:** الموقع المنشور يظل متاحاً للزوار، لكن Netlify أوقف Production Deploys مؤقتاً لأن الحساب يعمل على Operational Credits. أوضحت رسالة Netlify أن هذه الأرصدة مخصصة لإبقاء المواقع المنشورة متاحة ولا تُستخدم لنشر Production Deploys.
-- لذلك لا يُفترض أن تحديثات `main) ستظهر على Netlify حالياً. يستأنف النشر عند تجدد رصيد/دورة الفوترة أو ترقية الفريق وفق رسالة Netlify.
-- إعداد الموقع static: لا يحتاج إلى Build command، وPublish directory هو `.`، كما يحدد ملف `netlify.toml` إعداد مجلد النشر.
+- تُحفظ هذه النسخة كوجهة نشر احتياطية إضافية للموقع، إلى جانب النشر الأساسي على Vercel.
+- المشروع مرتبط بمستودع GitHub `asimalimikial-rgb/Noor-aliman`، وفرع الإنتاج المحدد هو `main`.
+- إعداد الموقع static: لا يحتاج إلى Build command، وPublish directory هو `.`، ويحدد ملف `netlify.toml` مجلد النشر.
 
 ### GitHub Pages
 
