@@ -7,6 +7,8 @@
 [![الإصدار](https://img.shields.io/badge/الإصدار-1.23.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.23.0)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 
+[🌐 الموقع الرسمي](https://noor-aliman-psi.vercel.app/) · [استكشف التطبيق مباشرة](https://noor-aliman-psi.vercel.app/demo/)
+
 [**تنزيل نور الإيمان 1.23.0**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [استكشف التطبيق على الويب](https://noor-aliman-psi.vercel.app/demo/)
 
 </div>
