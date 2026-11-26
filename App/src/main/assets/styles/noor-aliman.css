@@ -557,3 +557,27 @@ select.select{
   .hero:before{animation:none}
   .prayer,.nav-icon,.card,.surah-option{transition:none}
 }
+
+/* Bespoke geometric ornament and compact icon-led tab controls. */
+.hero-ornament{
+  position:absolute;z-index:0;left:4%;top:50%;width:min(31%,250px);
+  aspect-ratio:1;transform:translateY(-50%);opacity:.17;pointer-events:none;
+}
+.hero-ornament svg{
+  display:block;width:100%;height:100%;fill:none;stroke:#e5cc91;stroke-width:.8;
+  stroke-linecap:round;stroke-linejoin:round;
+  animation:noor-ornament-turn 90s linear infinite;
+}
+@keyframes noor-ornament-turn{to{transform:rotate(360deg)}}
+.daily-verse .ornament{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center}
+.daily-verse .ornament svg{width:38px;height:38px;fill:none;stroke:var(--noor-gold);stroke-width:1.3;stroke-linejoin:round;opacity:.9}
+.ad-tab{display:flex;align-items:center;justify-content:center;gap:10px}
+.ad-tab .tab-icon{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ad-tab span{line-height:1.5}
+.dark .hero-ornament{opacity:.2}
+@media(max-width:650px){
+  .hero-ornament{left:-5%;width:38%;opacity:.13}
+  .ad-tab{gap:7px;padding:11px 7px;font-size:12px}
+  .ad-tab .tab-icon{width:17px;height:17px}
+}
+@media(prefers-reduced-motion:reduce){.hero-ornament svg{animation:none}}
