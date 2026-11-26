@@ -9,7 +9,7 @@
 
 [🌐 الموقع الرسمي](https://noor-aliman-psi.vercel.app/) · [استكشف التطبيق مباشرة](https://noor-aliman-psi.vercel.app/demo/)
 
-[**تنزيل نور الإيمان 1.23.0**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [استكشف التطبيق على الويب](https://noor-aliman-psi.vercel.app/demo/)
+[**تنزيل نور الإيمان 1.23.0**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
 
 </div>
 
@@ -70,7 +70,7 @@
 
 ## استكشف التطبيق قبل التثبيت
 
-يمكنك فتح [النسخة التفاعلية على الويب](https://noor-aliman-psi.vercel.app/demo/) للتعرّف على الواجهة والتنقل بين الأقسام قبل تثبيت تطبيق Android. بعض الوظائف المرتبطة بنظام الهاتف، مثل جدولة الأذان والتنبيهات الدقيقة في الخلفية، لا تتوفر بالكامل داخل المتصفح.
+يمكنك استخدام رابط «استكشف التطبيق مباشرة» الموجود في مقدمة هذه الصفحة للتعرّف على الواجهة والتنقل بين الأقسام قبل تثبيت تطبيق Android. بعض الوظائف المرتبطة بنظام الهاتف، مثل جدولة الأذان والتنبيهات الدقيقة في الخلفية، لا تتوفر بالكامل داخل المتصفح.
 
 ## معلومات الإصدار
 
@@ -89,7 +89,6 @@
 ## روابط نور الإيمان
 
 - [الموقع الرسمي](https://noor-aliman-psi.vercel.app/)
-- [النسخة التفاعلية — Vercel](https://noor-aliman-psi.vercel.app/demo/)
 - [النسخة التفاعلية — GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/demo/)
 - [نسخة الموقع الإضافية على Netlify](https://nooraliman.netlify.app/)
 - [الموقع على GitHub Pages](https://asimalimikial-rgb.github.io/Noor-aliman/)
