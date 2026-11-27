@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -25,6 +27,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.net.Uri;
 import android.widget.TextView;
+import java.io.InputStream;
 
 public class AdhanAlertActivity extends Activity {
     private boolean receiverRegistered;
@@ -130,8 +133,11 @@ public class AdhanAlertActivity extends Activity {
         boolean customImageLoaded = false;
         if (selectedImage != null && !selectedImage.isEmpty()) {
             try {
-                backgroundImage.setImageURI(Uri.parse(selectedImage));
-                customImageLoaded = backgroundImage.getDrawable() != null;
+                Bitmap selectedBitmap = decodeAdhanBackground(Uri.parse(selectedImage));
+                if (selectedBitmap != null) {
+                    backgroundImage.setImageBitmap(selectedBitmap);
+                    customImageLoaded = true;
+                }
             } catch (RuntimeException imageError) {
                 android.util.Log.w("NoorAdhanImage", "Could not load the selected adhan image", imageError);
             }
@@ -144,6 +150,35 @@ public class AdhanAlertActivity extends Activity {
         if (customImageLoaded) artwork.setVisibility(View.GONE);
         screen.addView(root, new FrameLayout.LayoutParams(-1, -1));
         setContentView(screen);
+    }
+
+    private Bitmap decodeAdhanBackground(Uri uri) {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        try (InputStream input = getContentResolver().openInputStream(uri)) {
+            if (input == null) return null;
+            BitmapFactory.decodeStream(input, null, bounds);
+        } catch (Exception error) {
+            android.util.Log.w("NoorAdhanImage", "Could not inspect the selected image", error);
+            return null;
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+        int targetWidth = Math.max(1, getResources().getDisplayMetrics().widthPixels);
+        int targetHeight = Math.max(1, getResources().getDisplayMetrics().heightPixels);
+        int sampleSize = 1;
+        while (bounds.outWidth / sampleSize > targetWidth * 2
+                || bounds.outHeight / sampleSize > targetHeight * 2) {
+            sampleSize *= 2;
+        }
+        BitmapFactory.Options decode = new BitmapFactory.Options();
+        decode.inSampleSize = sampleSize;
+        decode.inPreferredConfig = Bitmap.Config.RGB_565;
+        try (InputStream input = getContentResolver().openInputStream(uri)) {
+            return input == null ? null : BitmapFactory.decodeStream(input, null, decode);
+        } catch (Exception error) {
+            android.util.Log.w("NoorAdhanImage", "Could not decode the selected image", error);
+            return null;
+        }
     }
 
     private void stopAdhanAndClose() {
