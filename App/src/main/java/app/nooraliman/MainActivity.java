@@ -449,10 +449,20 @@ public class MainActivity extends Activity {
                 || AlarmPrefs.get(MainActivity.this).getBoolean("dhikrOn", false);
     }
 
-    private boolean hasNotificationPermission() {
+    private boolean hasPostNotificationsRuntimePermission() {
         return Build.VERSION.SDK_INT < 33
                 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasNotificationPermission() {
+        if (!hasPostNotificationsRuntimePermission()) return false;
+        if (Build.VERSION.SDK_INT >= 24) {
+            android.app.NotificationManager manager =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            return manager == null || manager.areNotificationsEnabled();
+        }
+        return true;
     }
 
     private boolean hasExactAlarmPermission() {
@@ -501,7 +511,7 @@ public class MainActivity extends Activity {
                 && prefs.getBoolean("showAdhanNotification", true));
         boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
         if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded
-                && !hasNotificationPermission() && !alreadyAsked) {
+                && !hasPostNotificationsRuntimePermission() && !alreadyAsked) {
             prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
                     NOTIFICATION_REQUEST);
@@ -859,7 +869,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void requestNotificationPermission() {
             runOnUiThread(() -> {
-                if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                if (Build.VERSION.SDK_INT >= 33 && !hasPostNotificationsRuntimePermission()) {
                     android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
                     boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
                     if (alreadyAsked && !shouldShowRequestPermissionRationale(
