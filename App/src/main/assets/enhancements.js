@@ -842,7 +842,7 @@ document.head.append(prayerEnhancementStyle);
     const takeRow = (id, panel) => {
       const target = $(id);
       const row = target?.classList.contains('setting') ? target : target?.closest('.setting');
-      if (!row || !settingsList.contains(row)) return;
+      if (!row) return;
       if (row.closest('.pro-only')) row.classList.add('pro-only');
       panel.append(row);
     };
