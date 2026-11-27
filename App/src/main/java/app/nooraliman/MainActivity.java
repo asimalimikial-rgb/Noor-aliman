@@ -545,10 +545,9 @@ public class MainActivity extends Activity {
         prefs.edit().putLong("lastExactAlarmInAppPromptAt", now).apply();
         new AlertDialog.Builder(this)
                 .setTitle("يلزم تفعيل التنبيهات الدقيقة")
-                .setMessage("لن يستطيع نور الإيمان تشغيل الأذان في موعده عند إغلاق التطبيق "
-                        + "من دون إذن التنبيهات الدقيقة. يمكنك تفعيل الإذن من إعدادات أندرويد. "
-                        + "إذا لم تفعّله، ستظل مواقيت الصلاة ظاهرة داخل التطبيق، لكن التنبيه "
-                        + "الصوتي في الخلفية لن يكون مضموناً.")
+                .setMessage("من دون إذن التنبيهات الدقيقة لن يُجدول تشغيل الأذان الصوتي تلقائياً. "
+                        + "يمكنك منح الإذن من إعدادات أندرويد. ستظل مواقيت الصلاة ظاهرة داخل التطبيق، "
+                        + "وقد تعمل التذكيرات العادية بصورة تقريبية لكنها قد تتأخر.")
                 .setPositiveButton("فتح الإعدادات", (dialog, which) -> openExactAlarmSettings())
                 .setNegativeButton("لاحقاً", null)
                 .show();
