@@ -1066,11 +1066,11 @@ document.head.append(settingsHubStyle);
       const scheduleState = ({
         exact_permission_required: 'لم يُجدول الأذان تلقائياً: يلزم إذن التنبيه الدقيق',
         disabled: 'تنبيهات الصلاة متوقفة',
-        no_future_alarms: 'لا توجد تنبيهات قادمة ضمن فترة الجدولة',
+        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
         scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
+        scheduled_inexact_fallback: 'التذكيرات مجدولة تقريبياً وقد تتأخر',
         partial_schedule_failure: 'بعض تنبيهات الصلاة لم تُجدول؛ راجع سجل النظام',
         schedule_failed: 'فشلت جدولة تنبيهات الصلاة؛ راجع سجل النظام',
-        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
         alarm_manager_unavailable: 'خدمة AlarmManager غير متاحة'
       })[d.prayerAlarmScheduleStatus] || 'حالة الجدولة غير معروفة';
       const adhanCount = Number(d.prayerAdhanScheduledCount || 0) + '/' +
