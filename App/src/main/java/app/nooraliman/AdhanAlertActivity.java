@@ -21,6 +21,9 @@ import android.view.WindowManager;
 import android.graphics.drawable.GradientDrawable;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.net.Uri;
 import android.widget.TextView;
 
 public class AdhanAlertActivity extends Activity {
@@ -119,7 +122,28 @@ public class AdhanAlertActivity extends Activity {
         LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(-1, dp(42));
         hintParams.topMargin = dp(7);
         root.addView(hint, hintParams);
-        setContentView(root);
+        FrameLayout screen = new FrameLayout(this);
+        ImageView backgroundImage = new ImageView(this);
+        backgroundImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        String selectedImage = AlarmPrefs.get(this)
+                .getString("adhanBackgroundImageUri", "");
+        boolean customImageLoaded = false;
+        if (selectedImage != null && !selectedImage.isEmpty()) {
+            try {
+                backgroundImage.setImageURI(Uri.parse(selectedImage));
+                customImageLoaded = backgroundImage.getDrawable() != null;
+            } catch (RuntimeException imageError) {
+                android.util.Log.w("NoorAdhanImage", "Could not load the selected adhan image", imageError);
+            }
+        }
+        screen.addView(backgroundImage, new FrameLayout.LayoutParams(-1, -1));
+        View scrim = new View(this);
+        scrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0xB20D2520, 0x99202D27, 0xD9081B18}));
+        screen.addView(scrim, new FrameLayout.LayoutParams(-1, -1));
+        if (customImageLoaded) artwork.setVisibility(View.GONE);
+        screen.addView(root, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(screen);
     }
 
     private void stopAdhanAndClose() {
