@@ -292,7 +292,13 @@ final class PrayerAlarmScheduler {
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
         if (show != null) show.cancel();
         prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT)
-                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT).apply();
+                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT)
+                .putInt("prayerAdhanRequestedCount", 0)
+                .putInt("prayerAdhanScheduledCount", 0)
+                .putInt("prayerReminderRequestedCount", 0)
+                .putInt("prayerReminderScheduledCount", 0)
+                .putString("prayerAlarmScheduleStatus", "disabled")
+                .apply();
     }
 
     private static boolean scheduleOne(Context context, AlarmManager manager, JSONArray ids,
