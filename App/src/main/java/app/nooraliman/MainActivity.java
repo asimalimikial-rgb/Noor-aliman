@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private static final int LOCATION_REQUEST = 41;
     private static final int NOTIFICATION_REQUEST = 42;
     private static final int CAMERA_REQUEST = 43;
+    private static final int ADHAN_IMAGE_REQUEST = 44;
     private static final String WEB_CONTENT_REVISION_KEY = "noor_web_content_revision";
     private static final int WEB_CONTENT_REVISION = 2;
     private static final String APP_ASSET_URL = "https://appassets.androidplatform.net/assets/noor-aliman.html";
@@ -611,6 +612,31 @@ public class MainActivity extends Activity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != ADHAN_IMAGE_REQUEST || resultCode != RESULT_OK
+                || data == null || data.getData() == null) return;
+        Uri selected = data.getData();
+        try {
+            int flags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            getContentResolver().takePersistableUriPermission(selected,
+                    flags & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            AlarmPrefs.get(this).edit()
+                    .putString("adhanBackgroundImageUri", selected.toString()).apply();
+            Log.i("NoorAdhanImage", "A persistent adhan background image was selected");
+            if (webView != null && !webViewRendererGone) {
+                webView.evaluateJavascript(
+                        "if(window.refreshNoorAdhanImageStatus)window.refreshNoorAdhanImageStatus();",
+                        null);
+            }
+        } catch (SecurityException error) {
+            Log.w("NoorAdhanImage", "Could not persist access to the selected image", error);
+            AlarmPrefs.get(this).edit().remove("adhanBackgroundImageUri").apply();
+        }
+    }
+
     public final class AlarmBridge {
         @JavascriptInterface
         public void reportWebError(String kind, String message) {
@@ -779,6 +805,49 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean canPostNotifications() {
             return hasNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void pickAdhanBackgroundImage() {
+            runOnUiThread(() -> {
+                try {
+                    Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    picker.addCategory(Intent.CATEGORY_OPENABLE);
+                    picker.setType("image/*");
+                    picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    startActivityForResult(picker, ADHAN_IMAGE_REQUEST);
+                } catch (Exception error) {
+                    Log.e("NoorAdhanImage", "Could not open the image picker", error);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public String getAdhanBackgroundImageUri() {
+            return AlarmPrefs.get(MainActivity.this)
+                    .getString("adhanBackgroundImageUri", "");
+        }
+
+        @JavascriptInterface
+        public void clearAdhanBackgroundImage() {
+            String previous = AlarmPrefs.get(MainActivity.this)
+                    .getString("adhanBackgroundImageUri", "");
+            if (previous != null && !previous.isEmpty()) {
+                try {
+                    getContentResolver().releasePersistableUriPermission(
+                            Uri.parse(previous), Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception ignored) { }
+            }
+            AlarmPrefs.get(MainActivity.this).edit()
+                    .remove("adhanBackgroundImageUri").apply();
+            runOnUiThread(() -> {
+                if (webView != null && !webViewRendererGone) {
+                    webView.evaluateJavascript(
+                            "if(window.refreshNoorAdhanImageStatus)window.refreshNoorAdhanImageStatus();",
+                            null);
+                }
+            });
         }
 
         @JavascriptInterface
