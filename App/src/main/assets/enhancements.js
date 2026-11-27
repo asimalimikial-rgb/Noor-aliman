@@ -1536,8 +1536,42 @@ document.head.append(settingsHubStyle);
     </div>`;
   document.body.append(centre);
   const rowsHost = centre.querySelector('#noor-permission-rows');
+  const readDiagnostics = () => {
+    try { return JSON.parse(native.getAlarmDiagnostics?.() || '{}'); }
+    catch (_) { return {}; }
+  };
+  const getBlockingIssues = diagnostics => {
+    const issues = [];
+    const adhanEnabled = diagnostics.prayerAdhanEnabled === true;
+    const reminderEnabled = diagnostics.prayerReminderEnabled === true;
+    if ((adhanEnabled || reminderEnabled) && safeCheck('canPostNotifications') === false) {
+      issues.push('إشعارات التطبيق محظورة؛ لن تظهر إشعارات الأذان أو التذكير.');
+    }
+    if (adhanEnabled && safeCheck('canScheduleExactAlarms') === false) {
+      issues.push('إذن التنبيهات الدقيقة غير مفعّل؛ لن يُجدول الأذان الصوتي تلقائياً.');
+    }
+    if (adhanEnabled && safeCheck('canUseFullScreenIntent') === false) {
+      issues.push('إذن شاشة الأذان الكاملة غير مفعّل؛ قد لا تظهر شاشة الأذان على القفل.');
+    }
+    if (adhanEnabled) {
+      const requested = Number(diagnostics.prayerAdhanRequestedCount || 0);
+      const scheduled = Number(diagnostics.prayerAdhanScheduledCount || 0);
+      const state = String(diagnostics.prayerAlarmScheduleStatus || 'unknown');
+      if (diagnostics.prayerScheduleInProgress === true) {
+        issues.push('ما زالت جدولة تنبيهات الصلاة قيد التنفيذ؛ أعد الفحص بعد لحظات.');
+      } else if (['schedule_failed','partial_schedule_failure','alarm_manager_unavailable',
+          'exact_permission_required'].includes(state) || (requested > 0 && scheduled < requested)) {
+        issues.push('هناك خلل في جدولة الأذان: ' + scheduled + ' من ' + requested +
+          ' تنبيهاً فقط تم جدولته. راجع الأذونات ثم أعد الفحص.');
+      } else if (state === 'no_future_alarms' || (requested === 0 && scheduled === 0)) {
+        issues.push('لم تُسجّل مواعيد أذان قادمة للجدولة. تحقق من المدينة والموقع وإعدادات الصلاة.');
+      }
+    }
+    return issues;
+  };
   const render = () => {
     rowsHost.replaceChildren();
+    const diagnostics = readDiagnostics();
     for (const item of rows) {
       const state = item.check();
       const row = document.createElement('article');
@@ -1564,6 +1598,36 @@ document.head.append(settingsHubStyle);
       });
       row.append(info, action);
       rowsHost.append(row);
+    }
+    const issues = getBlockingIssues(diagnostics);
+    if (issues.length) {
+      const issueRow = document.createElement('article');
+      issueRow.className = 'noor-permission-row noor-permission-schedule-issue';
+      const info = document.createElement('div');
+      info.className = 'noor-permission-info';
+      const title = document.createElement('strong');
+      title.textContent = 'مشكلة في جدولة المنبّهات';
+      const description = document.createElement('small');
+      description.textContent = issues.join(' ');
+      const status = document.createElement('span');
+      status.className = 'noor-permission-status is-missing';
+      status.textContent = 'يتطلب الانتباه';
+      info.append(title, description, status);
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'noor-permission-action';
+      action.textContent = 'فتح إعدادات الأذان';
+      action.addEventListener('click', () => {
+        const settingsButton = document.querySelector('[data-page="settings"]');
+        settingsButton?.click();
+        $('settings')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+        const adhanAccordion = [...document.querySelectorAll('.settings-accordion')]
+          .find(el => el.textContent.includes('الأذان والتنبيهات'));
+        if (adhanAccordion) adhanAccordion.open = true;
+        window.setTimeout(() => document.querySelector('#exactAlarmAccessButton')?.focus(), 250);
+      });
+      issueRow.append(info, action);
+      rowsHost.prepend(issueRow);
     }
   };
   const close = () => {
@@ -1615,12 +1679,22 @@ document.head.append(settingsHubStyle);
     @media(max-width:560px){.noor-permission-row{align-items:stretch;flex-direction:column}.noor-permission-action{width:100%}.noor-permission-panel h2{font-size:23px}}
   `;
   document.head.append(style);
-  try {
-    if (!store.get('permissionsCenterSeen', false)) {
-      window.setTimeout(() => window.openNoorPermissionCenter(), 250);
+  const showAtLaunchIfNeeded = () => {
+    render();
+    let firstRun = false;
+    try { firstRun = !store.get('permissionsCenterSeen', false); } catch (_) {}
+    const issues = getBlockingIssues(readDiagnostics());
+    if (firstRun || issues.length) window.openNoorPermissionCenter();
+  };
+  // Check on every fresh app launch. A dismissed warning is shown again on
+  // the next launch until all required permissions and alarm scheduling recover.
+  window.setTimeout(showAtLaunchIfNeeded, 350);
+  window.addEventListener('focus', () => {
+    render();
+    if (!centre.hidden && getBlockingIssues(readDiagnostics()).length === 0) {
+      // Keep the centre open so the user can review the now-granted statuses.
     }
-  } catch (_) {}
-  window.addEventListener('focus', render);
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') render();
   });
