@@ -462,10 +462,9 @@ public class MainActivity extends Activity {
     }
 
     private void openExactAlarmSettings() {
-        // Android 13+ uses USE_EXACT_ALARM (normal install-time permission).
-        // The user-facing special-access screen applies only to SCHEDULE_EXACT_ALARM on API 31-32.
-        if (Build.VERSION.SDK_INT < 31 || Build.VERSION.SDK_INT >= 33
-                || hasExactAlarmPermission()) return;
+        // Use the user-granted SCHEDULE_EXACT_ALARM special access on Android 12+.
+        // This avoids the Play-restricted USE_EXACT_ALARM permission for a multi-purpose prayer app.
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
         try {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                     Uri.parse("package:" + getPackageName()));
