@@ -74,8 +74,8 @@ jobs:
           assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'ordinary reminders and daily refresh must retain an inexact wakeup path'
           assert 'EXTRA_EXACT, false' in prayer, 'inexact reminder fallback must be marked for receiver diagnostics'
           assert 'shouldScheduleAdhanAudio' in prayer and 'exact_permission_required' in prayer, 'automatic adhan audio must require exact-alarm access'
-          assert 'shouldStartAdhan' in receiver and 'adhan_requires_exact_alarm' in receiver, 'receiver must reject inexact adhan playback'
           receiver = Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text()
+          assert 'shouldStartAdhan' in receiver and 'adhan_requires_exact_alarm' in receiver, 'receiver must reject inexact adhan playback'
           activity = Path('App/src/main/java/app/nooraliman/AdhanAlertActivity.java').read_text()
           service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
           main = Path('App/src/main/java/app/nooraliman/MainActivity.java').read_text()
