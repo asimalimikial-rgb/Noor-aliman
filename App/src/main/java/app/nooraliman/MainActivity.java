@@ -651,6 +651,14 @@ public class MainActivity extends Activity {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
                 result.put("prayerAlarmScheduleStatus",
                         prefs.getString("prayerAlarmScheduleStatus", "unknown"));
+                result.put("prayerAdhanRequestedCount",
+                        prefs.getInt("prayerAdhanRequestedCount", 0));
+                result.put("prayerAdhanScheduledCount",
+                        prefs.getInt("prayerAdhanScheduledCount", 0));
+                result.put("prayerReminderRequestedCount",
+                        prefs.getInt("prayerReminderRequestedCount", 0));
+                result.put("prayerReminderScheduledCount",
+                        prefs.getInt("prayerReminderScheduledCount", 0));
                 result.put("lastAlarmDroppedReason", prefs.getString("lastAlarmDroppedReason", "none"));
                 android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
                 result.put("batteryOptimizationExempt", Build.VERSION.SDK_INT < 23
