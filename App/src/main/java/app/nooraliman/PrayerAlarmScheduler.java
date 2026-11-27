@@ -308,7 +308,12 @@ final class PrayerAlarmScheduler {
                 ids.put(uri);
                 return true;
             } catch (SecurityException denied) {
-                Log.w(TAG, "Exact alarm rejected; falling back to inexact alarm: " + uri, denied);
+                Log.w(TAG, "Exact alarm rejected: " + uri, denied);
+                if ("adhan".equals(type)) {
+                    pending.cancel();
+                    return false;
+                }
+                // An ordinary reminder may degrade to an inexact notification.
             } catch (RuntimeException failure) {
                 pending.cancel();
                 Log.e(TAG, "Could not schedule exact prayer alarm: " + uri, failure);
