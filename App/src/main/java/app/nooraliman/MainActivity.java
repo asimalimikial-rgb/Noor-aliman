@@ -593,6 +593,11 @@ public class MainActivity extends Activity {
             locationOrigin = null;
         } else if (requestCode == NOTIFICATION_REQUEST) {
             syncAlarmSchedule();
+            if (webView != null && !webViewRendererGone) {
+                webView.post(() -> webView.evaluateJavascript(
+                        "if(window.refreshNoorPermissionCenter)window.refreshNoorPermissionCenter();",
+                        null));
+            }
         } else if (requestCode == CAMERA_REQUEST) {
             PermissionRequest request = cameraPermissionRequest;
             cameraPermissionRequest = null;
@@ -777,14 +782,40 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void requestNotificationPermission() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
+                    AlarmPrefs.get(MainActivity.this).edit()
+                            .putBoolean("notificationPermissionAsked", true).apply();
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                            NOTIFICATION_REQUEST);
+                } else {
+                    openNotificationSettings();
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void openNotificationSettings() {
             runOnUiThread(() -> {
                 try {
-                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.parse("package:" + getPackageName()));
+                    Intent intent;
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                    } else {
+                        intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName()));
+                    }
                     startActivity(intent);
                 } catch (Exception error) {
                     Log.e("NoorPrayerAlarm", "Could not open notification settings", error);
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (Exception fallbackError) {
+                        Log.e("NoorPrayerAlarm", "Could not open application settings", fallbackError);
+                    }
                 }
             });
         }
