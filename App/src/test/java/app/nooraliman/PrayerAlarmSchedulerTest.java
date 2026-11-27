@@ -35,9 +35,9 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.shouldUseExactAlarms(false));
     }
 
-    @Test public void prayerAlertsRemainSchedulableWithoutExactAlarmPermission() {
-        assertTrue(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(true));
-        assertTrue(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(false));
+    @Test public void adhanAudioRequiresExactAlarmPermission() {
+        assertTrue(PrayerAlarmScheduler.shouldScheduleAdhanAudio(true));
+        assertFalse(PrayerAlarmScheduler.shouldScheduleAdhanAudio(false));
     }
 
     @Test public void nextEventSelectionKeepsTheEarliestFutureEvent() {
