@@ -1620,7 +1620,7 @@ document.head.append(settingsHubStyle);
       action.addEventListener('click', () => {
         const settingsButton = document.querySelector('[data-page="settings"]');
         settingsButton?.click();
-        $('settings')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+        document.getElementById('settings')?.scrollIntoView?.({behavior:'smooth',block:'start'});
         const adhanAccordion = [...document.querySelectorAll('.settings-accordion')]
           .find(el => el.textContent.includes('الأذان والتنبيهات'));
         if (adhanAccordion) adhanAccordion.open = true;
