@@ -47,11 +47,22 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             SharedPreferences prefs = AlarmPrefs.get(context);
             boolean wasExact = intent.getBooleanExtra(PrayerAlarmScheduler.EXTRA_EXACT, true);
             AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (Build.VERSION.SDK_INT >= 31
-                    && (!wasExact || alarms == null || !alarms.canScheduleExactAlarms())) {
+            boolean exactStillAllowed = Build.VERSION.SDK_INT < 31
+                    || (alarms != null && alarms.canScheduleExactAlarms());
+            if (Build.VERSION.SDK_INT >= 31 && (!wasExact || !exactStillAllowed)) {
                 Log.w(TAG, "Prayer alert fired via inexact fallback: " + type + "/" + key);
                 prefs.edit().putString("lastAlarmDroppedReason",
                         "inexact_fallback_used").apply();
+            }
+            if ("adhan".equals(type) && prefs.getBoolean("adhan", false)
+                    && !shouldStartAdhan(wasExact, exactStillAllowed, Build.VERSION.SDK_INT)) {
+                String detail = "Adhan audio was blocked because the alarm was not exact or exact-alarm access was revoked";
+                recordPlaybackFailure(context, "exact-alarm-required", detail, key);
+                prefs.edit().putString("lastAlarmDroppedReason",
+                        "adhan_requires_exact_alarm").apply();
+                showAdhanFailure(context, "exact-alarm-required", name, key,
+                        "لم يبدأ الأذان تلقائياً لأن التنبيه لم يكن دقيقاً. فعّل إذن «التنبيهات الدقيقة» من إعدادات التطبيق.");
+                return;
             }
             if ("adhan".equals(type) && prefs.getBoolean("adhan", false)) {
                 long receivedAt = System.currentTimeMillis();
@@ -101,6 +112,11 @@ public class PrayerAlarmReceiver extends BroadcastReceiver {
             try { DhikrAlarmScheduler.schedule(context); }
             catch (RuntimeException error) { Log.e(TAG, "Could not refresh timed dhikr", error); }
         }
+    }
+
+    static boolean shouldStartAdhan(boolean wasExact, boolean exactPermissionAllowed,
+                                     int sdkInt) {
+        return sdkInt < 31 || (wasExact && exactPermissionAllowed);
     }
 
     static long expectedAlarmAt(Intent intent) {
