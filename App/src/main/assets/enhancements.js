@@ -1546,4 +1546,12 @@ document.head.append(settingsHubStyle);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') render();
   });
+  const previousAndroidBack = window.handleAndroidBack;
+  window.handleAndroidBack = () => {
+    if (!centre.hidden) {
+      close();
+      return true;
+    }
+    return typeof previousAndroidBack === 'function' ? previousAndroidBack() : false;
+  };
 })();
