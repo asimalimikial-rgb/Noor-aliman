@@ -1071,11 +1071,23 @@ document.head.append(settingsHubStyle);
         no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
         alarm_manager_unavailable: 'خدمة AlarmManager غير متاحة'
       })[d.prayerAlarmScheduleStatus] || 'حالة الجدولة غير معروفة';
+      const adhanCount = Number(d.prayerAdhanScheduledCount || 0) + '/' +
+        Number(d.prayerAdhanRequestedCount || 0);
+      const reminderCount = Number(d.prayerReminderScheduledCount || 0) + '/' +
+        Number(d.prayerReminderRequestedCount || 0);
+      const droppedReason = ({
+        adhan_requires_exact_alarm:'لم يبدأ الأذان لأن التنبيه الدقيق غير متاح',
+        adhan_late_over_5_minutes:'وصل تنبيه الأذان متأخراً بأكثر من خمس دقائق',
+        inexact_fallback_used:'وصل تنبيه تقريبي لا يضمن الموعد'
+      })[d.lastAlarmDroppedReason] || (d.lastAlarmDroppedReason && d.lastAlarmDroppedReason !== 'none'
+        ? String(d.lastAlarmDroppedReason) : 'لا يوجد سبب تجاوز مسجل');
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
-        scheduleState + '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
+        scheduleState + '؛ الأذان المجدول: ' + adhanCount +
+        '؛ التذكيرات المجدولة: ' + reminderCount +
+        '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
         '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback +
-        '؛ استقرار عرض الصفحة: ' + renderer;
+        '؛ آخر سبب تجاوز: ' + droppedReason + '؛ استقرار عرض الصفحة: ' + renderer;
     } catch (error) {
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent = 'تعذّر قراءة سجل التنبيهات.';
     }
