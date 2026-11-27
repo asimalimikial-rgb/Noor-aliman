@@ -1492,12 +1492,29 @@ document.head.append(settingsHubStyle);
       label:'ضبط شاشة القفل'
     },
     {
+      id:'location', title:'إذن الموقع (اختياري)',
+      description:'يُستخدم فقط عند اختيار تحديد الموقع تلقائياً لمواقيت الصلاة، ويُطلب عند تشغيل الميزة.',
+      check:() => safeCheck('hasLocationPermissionForApp'),
+      action:() => native.openAppDetailsSettings?.(),
+      label:'إعدادات التطبيق',
+      optional:true
+    },
+    {
+      id:'camera', title:'إذن الكاميرا (اختياري)',
+      description:'يُستخدم فقط عند تشغيل ميزة القبلة بالكاميرا، ولا يحتاجه تشغيل الأذان.',
+      check:() => safeCheck('hasCameraPermissionForApp'),
+      action:() => native.openAppDetailsSettings?.(),
+      label:'إعدادات التطبيق',
+      optional:true
+    },
+    {
       id:'battery', title:'قيود تحسين البطارية',
       description:'هذا ليس إذناً إلزامياً. قد تؤخر بعض هواتف Android، ومنها بعض إعدادات Samsung، التنبيهات في الخلفية.',
       check:() => safeCheck('isIgnoringBatteryOptimizations'),
       action:() => native.openBatteryOptimizationSettings?.(),
       label:'إدارة إعدادات البطارية',
-      optional:true
+      optional:true,
+      missingLabel:'اختياري · غير مستثنى'
     }
   ];
   const centre = document.createElement('section');
@@ -1533,7 +1550,9 @@ document.head.append(settingsHubStyle);
       description.textContent = item.description;
       const status = document.createElement('span');
       status.className = 'noor-permission-status ' + (state === true ? 'is-granted' : state === false ? 'is-missing' : 'is-unknown');
-      status.textContent = state === true ? 'مفعّل' : state === false ? (item.optional ? 'اختياري · غير مستثنى' : 'غير مفعّل') : 'غير متاح للتحقق';
+      status.textContent = state === true ? 'مفعّل' : state === false
+        ? (item.missingLabel || (item.optional ? 'اختياري · غير مفعّل' : 'غير مفعّل'))
+        : 'غير متاح للتحقق';
       info.append(title, description, status);
       const action = document.createElement('button');
       action.type = 'button';
