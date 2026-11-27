@@ -156,11 +156,8 @@ final class PrayerAlarmScheduler {
                     }
                 }
             }
-        String status = exactPermissionRequired ? "exact_permission_required"
-                : requestedAlarms == 0 ? "no_future_alarms"
-                : scheduledAlarms == requestedAlarms
-                    ? (exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback")
-                : scheduledAlarms == 0 ? "schedule_failed" : "partial_schedule_failure";
+        String status = resolveScheduleStatus(exactPermissionRequired, requestedAlarms,
+                scheduledAlarms, exactAlarmsAllowed);
         if (failedAlarms > 0) {
             refreshAt = retryRefreshAt(refreshAt, now);
             Log.w(TAG, "Some prayer alarms failed; retry target set to 15 minutes");
@@ -217,6 +214,16 @@ final class PrayerAlarmScheduler {
 
     static boolean shouldScheduleAdhanAudio(boolean exactAlarmsAllowed) {
         return exactAlarmsAllowed;
+    }
+
+    static String resolveScheduleStatus(boolean exactPermissionRequired, int requested,
+                                         int scheduled, boolean exactAlarmsAllowed) {
+        if (exactPermissionRequired) return "exact_permission_required";
+        if (requested <= 0) return "no_future_alarms";
+        if (scheduled == requested) {
+            return exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback";
+        }
+        return scheduled <= 0 ? "schedule_failed" : "partial_schedule_failure";
     }
 
     static boolean isFutureAlarm(long alarmAt, long now) {
