@@ -1,4 +1,4 @@
-# v1.22.2 maintenance build: compile, unit tests, signed APK and signature verification
+# CI: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -71,8 +71,10 @@ jobs:
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
           assert 'setAlarmClock' in prayer, 'prayer scheduler must use exact alarm-clock events when permitted'
-          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'prayer scheduler must provide an inexact wakeup fallback and daily refresh'
-          assert 'EXTRA_EXACT, false' in prayer, 'inexact fallback must be marked for receiver diagnostics'
+          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'ordinary reminders and daily refresh must retain an inexact wakeup path'
+          assert 'EXTRA_EXACT, false' in prayer, 'inexact reminder fallback must be marked for receiver diagnostics'
+          assert 'shouldScheduleAdhanAudio' in prayer and 'exact_permission_required' in prayer, 'automatic adhan audio must require exact-alarm access'
+          assert 'shouldStartAdhan' in receiver and 'adhan_requires_exact_alarm' in receiver, 'receiver must reject inexact adhan playback'
           receiver = Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text()
           activity = Path('App/src/main/java/app/nooraliman/AdhanAlertActivity.java').read_text()
           service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
@@ -94,8 +96,9 @@ jobs:
           assert Path('App/src/test/java/app/nooraliman/AlarmPrefsTest.java').is_file(), 'Direct Boot preference tests must exist'
           assert 'ADHAN_LATE_GRACE_MS = 5L * MINUTE' in receiver, 'adhan late grace must remain exactly five minutes'
           assert '5L * 60_000L' in Path('App/src/test/java/app/nooraliman/PrayerAlarmReceiverTest.java').read_text(), 'five-minute cutoff tests are required'
-          assert 'android.permission.USE_EXACT_ALARM' in manifest, 'Android 13+ exact-alarm permission is required'
-          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' in manifest, 'SCHEDULE_EXACT_ALARM must be limited to API 32 and below'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM' in manifest, 'user-granted exact-alarm access must be declared for Android 12+'
+          assert 'android.permission.USE_EXACT_ALARM' not in manifest, 'multi-purpose prayer app must not use the Play-restricted USE_EXACT_ALARM permission'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' not in manifest, 'SCHEDULE_EXACT_ALARM must remain available on Android 13+'
           assert 'android:foregroundServiceType="mediaPlayback"' in manifest, 'adhan service must declare mediaPlayback FGS type'
           assert 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' in manifest, 'mediaPlayback FGS permission is required'
           assert 'android:name=".AdhanAlertActivity"' in manifest, 'lock-screen adhan activity must be declared'
