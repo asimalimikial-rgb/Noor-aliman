@@ -759,7 +759,7 @@
   }
 
   const prayerEnhancements = document.createElement('section');
-  prayerEnhancements.className = 'prayer-enhancements pro-only';
+  prayerEnhancements.className = 'prayer-enhancements';
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
     <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
@@ -802,28 +802,19 @@
   
 document.head.append(prayerEnhancementStyle);
 
-  // Present settings as a dedicated page with six expandable categories.
+  // Consolidate every existing setting into one vertically stacked, expandable settings page.
   if (settingsList && !settingsList.dataset.organized) {
     settingsList.dataset.organized = 'true';
     settingsList.classList.add('settings-hub');
-    const groups = [
-      {title:'الموقع ومواقيت الصلاة', icon:'⌖', ids:['settingCity','sMethod','sAsr']},
-      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','stopAdhanScreenOffToggle','fullScreenAccessButton']},
-      {title:'الأذكار والتسبيح', icon:'☀', ids:['tsOn','tsEvery','tsType','tsFrom','tsTo','tsVol']},
-      {title:'المصحف والقبلة', icon:'۞', ids:['sCont','quranAudioToggle','compassToggle']},
-      {title:'المظهر واللغة', icon:'◐', ids:['darkToggle','sLang']}
-    ];
-    const rowFor = id => [...settingsList.children].find(node =>
-      node.classList?.contains('setting') && node.querySelector('#' + id));
     let accordionIndex = 0;
-    const makeAccordion = (title, icon, wide = false) => {
+    const makeAccordion = (title, icon) => {
       const details = document.createElement('details');
       const stateKey = 'settingsAccordion' + (++accordionIndex);
       details.open = store.get(stateKey, false) === true;
       details.addEventListener('toggle', () => store.set(stateKey, details.open));
-      details.className = 'settings-group settings-accordion' + (wide ? ' settings-accordion--wide' : '');
+      details.className = 'settings-accordion';
       const summary = document.createElement('summary');
-      summary.className = 'settings-group-title settings-accordion-summary';
+      summary.className = 'settings-accordion-summary';
       const mark = document.createElement('span');
       mark.className = 'settings-group-icon';
       mark.setAttribute('aria-hidden', 'true');
@@ -836,24 +827,73 @@ document.head.append(prayerEnhancementStyle);
       details.append(summary, panel);
       return {details, panel};
     };
-    for (const group of groups) {
-      const {details, panel} = makeAccordion(group.title, group.icon);
-      for (const id of group.ids) {
-        const row = rowFor(id);
-        if (row) panel.append(row);
+    const appendSection = (id, panel, keepSubtitle = false) => {
+      const section = $(id);
+      if (!section) return;
+      section.classList.remove('settings-group');
+      section.classList.add('settings-subsection');
+      const heading = section.querySelector('.settings-group-title');
+      if (heading) {
+        if (keepSubtitle) heading.className = 'settings-subtitle';
+        else heading.remove();
       }
-      if (panel.querySelector('.setting')) settingsList.append(details);
+      panel.append(section);
+    };
+    const takeRow = (id, panel) => {
+      const target = $(id);
+      const row = target?.classList.contains('setting') ? target : target?.closest('.setting');
+      if (!row || !settingsList.contains(row)) return;
+      if (row.closest('.pro-only')) row.classList.add('pro-only');
+      panel.append(row);
+    };
+
+    const location = makeAccordion('الموقع ومواقيت الصلاة', '⌖');
+    const adhan = makeAccordion('الأذان والتنبيهات', '◖');
+    const dhikr = makeAccordion('الأذكار والتسبيح', '☀');
+    const quran = makeAccordion('المصحف والقبلة', '۞');
+    const appearance = makeAccordion('المظهر واللغة', '◐');
+
+    appendSection('basicLocationGroup', location.panel);
+    appendSection('proFiqhGroup', location.panel, true);
+
+    appendSection('basicAdhanGroup', adhan.panel);
+    appendSection('proAudioGroup', adhan.panel, true);
+    if (prayerEnhancements) {
+      prayerEnhancements.classList.remove('pro-only');
+      adhan.panel.append(prayerEnhancements);
     }
-    const {details: adjustmentCard, panel: adjustmentPanel} = makeAccordion('تخصيص مواقيت الصلاة', '◷', true);
-    if (prayerEnhancements) adjustmentPanel.append(prayerEnhancements);
-    if (adjustmentPanel.children.length) settingsList.append(adjustmentCard);
+    const diagnostics = $('proDiagCard');
+    if (diagnostics) {
+      diagnostics.classList.remove('pro-only');
+      adhan.panel.append(diagnostics);
+    }
+
+    appendSection('basicDhikrGroup', dhikr.panel);
+    appendSection('proDhikrGroup', dhikr.panel, true);
+
+    takeRow('sCont', quran.panel);
+    takeRow('quranAudioToggle', quran.panel);
+    takeRow('compassToggle', quran.panel);
+
+    appendSection('basicAppearanceGroup', appearance.panel);
+
+    const extras = makeAccordion('إعدادات إضافية', '⚙');
     for (const node of [...settingsList.children]) {
+      if (node.classList?.contains('settings-accordion')) continue;
       if (node.classList?.contains('setting')) {
-        const {details, panel} = makeAccordion('إعدادات إضافية', '⚙');
-        panel.append(node);
-        settingsList.append(details);
+        extras.panel.append(node);
+      } else if (node !== extras.details) {
+        const heading = node.querySelector?.('.settings-group-title');
+        if (heading) heading.className = 'settings-subtitle';
+        node.classList?.remove('settings-group');
+        node.classList?.add('settings-subsection');
+        extras.panel.append(node);
       }
     }
+
+    settingsList.append(location.details, adhan.details, dhikr.details,
+      quran.details, appearance.details);
+    if (extras.panel.children.length) settingsList.append(extras.details);
   }
 
 const settingsHubStyle = document.createElement('style');
@@ -878,7 +918,7 @@ settingsHubStyle.textContent = `
   .settings-shortcut:hover,.settings-shortcut.active{border-color:#caa766;background:#f8f4e9}
   .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
   @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
-  .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
+  .settings-list.settings-hub{display:grid;grid-template-columns:1fr;gap:12px;padding:0;background:transparent;border:0;box-shadow:none}
 
   .dark .counter{color:#f1d58f;text-shadow:0 2px 18px #e6c87924}
   .dark .tasbeeh{background:#1b3029;border-color:#40584b}
@@ -889,6 +929,10 @@ settingsHubStyle.textContent = `
   .dark .settings-close{background:#20332c;border-color:#40584b;color:#f0eadc}
   .dark .settings-close span{background:#34473d;color:#e6c77f}
   .settings-list.settings-hub{gap:13px}
+  .settings-subsection{min-width:0;padding:9px 0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .settings-subtitle{margin:5px 0 9px;color:var(--ink);font:700 15px Amiri,serif}
+  .settings-subsection .setting{gap:12px;padding:12px 0}
+  .settings-subsection .settings-help{line-height:1.7}
   .settings-accordion{overflow:hidden;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
   .settings-accordion[open]{border-color:#caa76699;box-shadow:0 12px 32px #17352e12}
   .settings-accordion-summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:76px;padding:13px 16px;cursor:pointer;color:var(--ink);font:700 17px Amiri,serif}
