@@ -1369,3 +1369,151 @@ document.head.append(settingsHubStyle);
   `;
   document.head.append(style);
 })();
+
+
+// First-run Android permission centre. Optional permissions are explained, not forced.
+(() => {
+  if (!window.NativeAlarms || document.getElementById('noor-permission-centre')) return;
+  const native = window.NativeAlarms;
+  const safeCheck = fn => {
+    try { return typeof native[fn] === 'function' ? !!native[fn]() : null; }
+    catch (_) { return null; }
+  };
+  const rows = [
+    {
+      id:'notifications', title:'إذن الإشعارات',
+      description:'لعرض إشعارات الأذان والتذكير وأدوات التحكم أثناء التشغيل.',
+      check:() => safeCheck('canPostNotifications'),
+      action:() => typeof native.requestNotificationPermission === 'function'
+        ? native.requestNotificationPermission() : native.openNotificationSettings?.(),
+      label:'تفعيل الإشعارات'
+    },
+    {
+      id:'exact', title:'التنبيهات الدقيقة (Exact Alarms)',
+      description:'مهم لجدولة الأذان قريباً من وقت الصلاة. على بعض إصدارات Android يفتح إعداداً خاصاً.',
+      check:() => safeCheck('canScheduleExactAlarms'),
+      action:() => native.requestExactAlarmAccess?.(),
+      label:'ضبط التنبيهات الدقيقة'
+    },
+    {
+      id:'fullscreen', title:'شاشة الأذان على شاشة القفل',
+      description:'يسمح للنظام بعرض شاشة الأذان الكاملة عندما يدعم ذلك. قد يظل الإشعار العادي متاحاً إذا منع النظام العرض الكامل.',
+      check:() => safeCheck('canUseFullScreenIntent'),
+      action:() => native.requestFullScreenIntentAccess?.(),
+      label:'ضبط شاشة القفل'
+    },
+    {
+      id:'battery', title:'قيود تحسين البطارية',
+      description:'هذا ليس إذناً إلزامياً. قد تؤخر بعض هواتف Android، ومنها بعض إعدادات Samsung، التنبيهات في الخلفية.',
+      check:() => safeCheck('isIgnoringBatteryOptimizations'),
+      action:() => native.openBatteryOptimizationSettings?.(),
+      label:'إدارة إعدادات البطارية',
+      optional:true
+    }
+  ];
+  const centre = document.createElement('section');
+  centre.id = 'noor-permission-centre';
+  centre.className = 'noor-permission-centre';
+  centre.hidden = true;
+  centre.setAttribute('role','dialog');
+  centre.setAttribute('aria-modal','true');
+  centre.setAttribute('aria-labelledby','noor-permission-title');
+  centre.innerHTML = `
+    <div class="noor-permission-panel">
+      <div class="noor-permission-brand">نور الإيمان</div>
+      <h2 id="noor-permission-title">إعداد أذونات التطبيق</h2>
+      <p class="noor-permission-intro">راجع الأذونات التالية حتى تعمل تنبيهات الصلاة بأفضل صورة. كل زر يفتح الإجراء المناسب في Android، ويمكنك الرجوع إلى هذه الصفحة من الإعدادات لاحقاً.</p>
+      <div class="noor-permission-rows" id="noor-permission-rows"></div>
+      <div class="noor-permission-note"><strong>مهم:</strong> لا نطلب إذن «الظهور فوق التطبيقات الأخرى»؛ فهو غير مطلوب لشاشة الأذان التي تعتمد على إشعار ملء الشاشة (Full-screen notification). إذنا الموقع والكاميرا اختياريان، ويُطلب كلٌ منهما عند استخدام ميزته فقط.</div>
+      <button type="button" class="noor-permission-continue" id="noor-permission-continue">متابعة إلى التطبيق</button>
+      <button type="button" class="noor-permission-later" id="noor-permission-later">لاحقاً</button>
+    </div>`;
+  document.body.append(centre);
+  const rowsHost = centre.querySelector('#noor-permission-rows');
+  const render = () => {
+    rowsHost.replaceChildren();
+    for (const item of rows) {
+      const state = item.check();
+      const row = document.createElement('article');
+      row.className = 'noor-permission-row';
+      const info = document.createElement('div');
+      info.className = 'noor-permission-info';
+      const title = document.createElement('strong');
+      title.textContent = item.title;
+      const description = document.createElement('small');
+      description.textContent = item.description;
+      const status = document.createElement('span');
+      status.className = 'noor-permission-status ' + (state === true ? 'is-granted' : state === false ? 'is-missing' : 'is-unknown');
+      status.textContent = state === true ? 'مفعّل' : state === false ? (item.optional ? 'اختياري · غير مستثنى' : 'غير مفعّل') : 'غير متاح للتحقق';
+      info.append(title, description, status);
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'noor-permission-action';
+      action.textContent = state === true ? 'مفعّل' : item.label;
+      action.disabled = state === true;
+      action.addEventListener('click', () => {
+        try { item.action(); } finally { window.setTimeout(render, 700); }
+      });
+      row.append(info, action);
+      rowsHost.append(row);
+    }
+  };
+  const close = () => {
+    centre.hidden = true;
+    try { store.set('permissionsCenterSeen', true); } catch (_) {}
+  };
+  centre.querySelector('#noor-permission-continue').addEventListener('click', close);
+  centre.querySelector('#noor-permission-later').addEventListener('click', close);
+  window.refreshNoorPermissionCenter = render;
+  window.openNoorPermissionCenter = () => { render(); centre.hidden = false; };
+  const toolbar = document.querySelector('#settings .settings-toolbar');
+  if (toolbar) {
+    const reopen = document.createElement('button');
+    reopen.type = 'button';
+    reopen.className = 'noor-permission-reopen';
+    reopen.textContent = 'مركز أذونات التطبيق';
+    reopen.addEventListener('click', window.openNoorPermissionCenter);
+    toolbar.append(reopen);
+  }
+  const style = document.createElement('style');
+  style.textContent = `
+    .noor-permission-centre{position:fixed;inset:0;z-index:12000;overflow:auto;background:rgba(6,20,16,.82);backdrop-filter:blur(8px);padding: max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));display:grid;place-items:center}
+    .noor-permission-centre[hidden]{display:none}
+    .noor-permission-panel{width:min(100%,680px);max-height:100%;overflow:auto;box-sizing:border-box;padding:clamp(20px,4vw,34px);border:1px solid #d6c49a;border-radius:26px;background:#fbfaf6;color:#20332c;box-shadow:0 24px 80px #0006}
+    .noor-permission-brand{text-align:center;color:#967744;font-weight:800;letter-spacing:.12em;margin-bottom:8px}
+    .noor-permission-panel h2{text-align:center;font:700 27px/1.4 Amiri,serif;margin:0 0 8px}
+    .noor-permission-intro{text-align:center;color:#68766e;line-height:1.8;margin:0 auto 18px;max-width:560px}
+    .noor-permission-rows{display:grid;gap:10px}
+    .noor-permission-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #e4e3d9;border-radius:16px;background:#fff}
+    .noor-permission-info{display:grid;gap:5px;min-width:0}
+    .noor-permission-info strong{font-size:15px}
+    .noor-permission-info small{font-size:12px;line-height:1.65;color:#6c7971}
+    .noor-permission-status{font-size:12px;font-weight:800}
+    .noor-permission-status.is-granted{color:#23724e}
+    .noor-permission-status.is-missing{color:#a35b2b}
+    .noor-permission-status.is-unknown{color:#737d77}
+    .noor-permission-action{flex:0 0 auto;min-height:40px;padding:0 12px;border:1px solid #d8c79e;border-radius:11px;background:#f5efdf;color:#594b2d;font-weight:700;font-size:12px}
+    .noor-permission-action:disabled{opacity:.65}
+    .noor-permission-note{margin:15px 0;padding:12px 14px;border-radius:13px;background:#f1eee4;color:#59665f;font-size:12px;line-height:1.8}
+    .noor-permission-continue,.noor-permission-reopen{min-height:46px;padding:0 18px;border:0;border-radius:13px;background:#174638;color:#fff;font-weight:800}
+    .noor-permission-continue{width:100%;margin-top:4px}
+    .noor-permission-later{display:block;margin:9px auto 0;padding:8px 16px;border:0;background:transparent;color:#68766e;font-weight:700}
+    .noor-permission-reopen{width:100%;margin-top:10px}
+    .dark .noor-permission-panel{background:#172820;color:#f0eee5;border-color:#756744}
+    .dark .noor-permission-intro,.dark .noor-permission-info small{color:#b6c1b9}
+    .dark .noor-permission-row{background:#20352b;border-color:#405448}
+    .dark .noor-permission-note{background:#26382e;color:#d3d8d1}
+    .dark .noor-permission-action{background:#394333;color:#f0e4c6;border-color:#71633e}
+    @media(max-width:560px){.noor-permission-row{align-items:stretch;flex-direction:column}.noor-permission-action{width:100%}.noor-permission-panel h2{font-size:23px}}
+  `;
+  document.head.append(style);
+  try {
+    if (!store.get('permissionsCenterSeen', false)) {
+      window.setTimeout(() => window.openNoorPermissionCenter(), 250);
+    }
+  } catch (_) {}
+  window.addEventListener('focus', render);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') render();
+  });
+})();
