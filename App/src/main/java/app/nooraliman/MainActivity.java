@@ -672,6 +672,14 @@ public class MainActivity extends Activity {
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("prayerAdhanEnabled", prefs.getBoolean("adhan", false));
+                result.put("prayerReminderEnabled", prefs.getBoolean("reminder", false));
+                result.put("prayerScheduleInProgress",
+                        prefs.getBoolean("prayer_schedule_in_progress", false));
+                result.put("fullScreenIntentPermission", Build.VERSION.SDK_INT < 34
+                        || (getSystemService(NOTIFICATION_SERVICE) instanceof android.app.NotificationManager
+                        && ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                        .canUseFullScreenIntent()));
                 result.put("prayerAlarmScheduleStatus",
                         prefs.getString("prayerAlarmScheduleStatus", "unknown"));
                 result.put("prayerAdhanRequestedCount",
