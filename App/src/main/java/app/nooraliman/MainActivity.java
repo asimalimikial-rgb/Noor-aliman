@@ -618,10 +618,9 @@ public class MainActivity extends Activity {
                 || data == null || data.getData() == null) return;
         Uri selected = data.getData();
         try {
-            int flags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            getContentResolver().takePersistableUriPermission(selected,
-                    flags & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            int readGrant = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+            if (readGrant == 0) throw new SecurityException("Image provider did not grant read access");
+            getContentResolver().takePersistableUriPermission(selected, readGrant);
             AlarmPrefs.get(this).edit()
                     .putString("adhanBackgroundImageUri", selected.toString()).apply();
             Log.i("NoorAdhanImage", "A persistent adhan background image was selected");
@@ -630,7 +629,7 @@ public class MainActivity extends Activity {
                         "if(window.refreshNoorAdhanImageStatus)window.refreshNoorAdhanImageStatus();",
                         null);
             }
-        } catch (SecurityException error) {
+        } catch (Exception error) {
             Log.w("NoorAdhanImage", "Could not persist access to the selected image", error);
             AlarmPrefs.get(this).edit().remove("adhanBackgroundImageUri").apply();
         }
@@ -853,8 +852,14 @@ public class MainActivity extends Activity {
         public void requestNotificationPermission() {
             runOnUiThread(() -> {
                 if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission()) {
-                    AlarmPrefs.get(MainActivity.this).edit()
-                            .putBoolean("notificationPermissionAsked", true).apply();
+                    android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
+                    boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
+                    if (alreadyAsked && !shouldShowRequestPermissionRationale(
+                            Manifest.permission.POST_NOTIFICATIONS)) {
+                        openNotificationSettings();
+                        return;
+                    }
+                    prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
                     requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
                             NOTIFICATION_REQUEST);
                 } else {
