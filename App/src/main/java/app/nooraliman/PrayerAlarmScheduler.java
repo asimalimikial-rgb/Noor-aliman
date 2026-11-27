@@ -171,7 +171,8 @@ final class PrayerAlarmScheduler {
                 .putLong(NEXT_REFRESH_AT, refreshAt)
                 .putLong(NEXT_EVENT_AT, nextEvent == null ? 0L : nextEvent.at)
                 .putBoolean(IN_PROGRESS, false)
-                .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed)
+                .putBoolean("exactAlarmPermissionGranted",
+                        exactAlarmsAllowed && !exactPermissionRequired)
                 .putString("prayerScheduleRefreshStatus",
                         refreshScheduled ? "scheduled_wakeup" : "schedule_failed")
                 .putInt("prayerAdhanRequestedCount", requestedAdhanAlarms)
