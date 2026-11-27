@@ -832,6 +832,28 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean hasLocationPermissionForApp() {
+            return hasLocationPermission();
+        }
+
+        @JavascriptInterface
+        public boolean hasCameraPermissionForApp() {
+            return hasCameraPermission();
+        }
+
+        @JavascriptInterface
+        public void openAppDetailsSettings() {
+            runOnUiThread(() -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName())));
+                } catch (Exception error) {
+                    Log.e("NoorPermissions", "Could not open application settings", error);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean canPostNotifications() {
             return hasNotificationPermission();
         }
