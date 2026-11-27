@@ -919,6 +919,7 @@ settingsHubStyle.textContent = `
   .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
   @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
   .settings-list.settings-hub{display:grid;grid-template-columns:1fr;gap:12px;padding:0;background:transparent;border:0;box-shadow:none}
+  #settings .settings-search{display:block}
 
   .dark .counter{color:#f1d58f;text-shadow:0 2px 18px #e6c87924}
   .dark .tasbeeh{background:#1b3029;border-color:#40584b}
