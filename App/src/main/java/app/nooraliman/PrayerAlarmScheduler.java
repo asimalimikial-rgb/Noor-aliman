@@ -133,6 +133,10 @@ final class PrayerAlarmScheduler {
                                         new AlarmEvent(prayerAt, prayerAt, "adhan", key, name), now);
                             } else {
                                 failedAlarms++;
+                                if (Build.VERSION.SDK_INT >= 31
+                                        && !manager.canScheduleExactAlarms()) {
+                                    exactPermissionRequired = true;
+                                }
                             }
                         }
                     }
