@@ -460,7 +460,21 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 24) {
             android.app.NotificationManager manager =
                     (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            return manager == null || manager.areNotificationsEnabled();
+            if (manager != null && !manager.areNotificationsEnabled()) return false;
+            if (manager != null && Build.VERSION.SDK_INT >= 26) {
+                String[] criticalChannels = {
+                        "adhan_playback_controls_v3",
+                        "prayer_reminders_v2"
+                };
+                for (String channelId : criticalChannels) {
+                    android.app.NotificationChannel channel =
+                            manager.getNotificationChannel(channelId);
+                    if (channel != null
+                            && channel.getImportance() == android.app.NotificationManager.IMPORTANCE_NONE) {
+                        return false;
+                    }
+                }
+            }
         }
         return true;
     }
