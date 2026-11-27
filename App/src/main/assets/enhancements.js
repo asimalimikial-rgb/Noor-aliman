@@ -728,6 +728,36 @@
     });
   };
 
+  const basicAdhanGroup = document.getElementById('basicAdhanGroup');
+  if (basicAdhanGroup && !document.getElementById('adhanBackgroundImageRow')) {
+    const imageRow = document.createElement('div');
+    imageRow.id = 'adhanBackgroundImageRow';
+    imageRow.className = 'setting adhan-background-image-row';
+    imageRow.innerHTML = '<div><strong>صورة شاشة الأذان</strong><small id="adhanBackgroundImageStatus">تظهر الرسمة الافتراضية، ويمكنك اختيار صورة مسجد من المعرض.</small></div><div class="sound-controls"><button class="sound-preview" id="pickAdhanBackgroundImage" type="button">اختيار صورة</button><button class="sound-preview" id="clearAdhanBackgroundImage" type="button">إزالة</button></div>';
+    basicAdhanGroup.append(imageRow);
+    const status = document.getElementById('adhanBackgroundImageStatus');
+    const refresh = () => {
+      let uri = '';
+      try { uri = nativeImageBridge?.getAdhanBackgroundImageUri?.() || ''; } catch (_) {}
+      if (status) status.textContent = uri
+        ? 'تم اختيار صورة مخصصة لشاشة الأذان.'
+        : 'تظهر الرسمة الافتراضية، ويمكنك اختيار صورة مسجد من المعرض.';
+      const clear = document.getElementById('clearAdhanBackgroundImage');
+      if (clear) clear.disabled = !uri;
+    };
+    const nativeImageBridge = window.NativeAlarms;
+    document.getElementById('pickAdhanBackgroundImage')?.addEventListener('click', () => {
+      nativeImageBridge?.pickAdhanBackgroundImage?.();
+    });
+    document.getElementById('clearAdhanBackgroundImage')?.addEventListener('click', () => {
+      nativeImageBridge?.clearAdhanBackgroundImage?.();
+      refresh();
+    });
+    window.refreshNoorAdhanImageStatus = refresh;
+    window.addEventListener('focus', refresh);
+    refresh();
+  }
+
   const prayerEnhancements = document.createElement('section');
   prayerEnhancements.className = 'prayer-enhancements pro-only';
   prayerEnhancements.innerHTML = `
