@@ -1064,7 +1064,9 @@ document.head.append(settingsHubStyle);
           '؛ ذاكرة العملية: ' + Math.round(Number(d.lastWebviewRendererPssKb || 0) / 1024) + ' MB'
         : 'لم يُسجّل توقف WebView';
       const scheduleState = ({
-        exact_permission_required: 'لم تُجدول تنبيهات الصلاة: يلزم إذن التنبيه الدقيق',
+        exact_permission_required: 'لم يُجدول الأذان تلقائياً: يلزم إذن التنبيه الدقيق',
+        disabled: 'تنبيهات الصلاة متوقفة',
+        no_future_alarms: 'لا توجد تنبيهات قادمة ضمن فترة الجدولة',
         scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
         partial_schedule_failure: 'بعض تنبيهات الصلاة لم تُجدول؛ راجع سجل النظام',
         schedule_failed: 'فشلت جدولة تنبيهات الصلاة؛ راجع سجل النظام',
