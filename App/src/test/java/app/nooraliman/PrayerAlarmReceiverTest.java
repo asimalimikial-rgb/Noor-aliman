@@ -20,4 +20,15 @@ public class PrayerAlarmReceiverTest {
         assertEquals(0, PrayerAlarmReceiver.remainingReminderMinutes(1_000_000L, 1_000_000L));
         assertEquals(0, PrayerAlarmReceiver.remainingReminderMinutes(900_000L, 1_000_000L));
     }
+    @Test public void inexactOrRevokedExactPermissionNeverStartsAdhanAudio() {
+        assertFalse(PrayerAlarmReceiver.shouldStartAdhan(false, false, 34));
+        assertFalse(PrayerAlarmReceiver.shouldStartAdhan(true, false, 34));
+        assertFalse(PrayerAlarmReceiver.shouldStartAdhan(false, true, 34));
+    }
+
+    @Test public void exactAdhanCanStartAndOlderAndroidNeedsNoSpecialAccess() {
+        assertTrue(PrayerAlarmReceiver.shouldStartAdhan(true, true, 34));
+        assertTrue(PrayerAlarmReceiver.shouldStartAdhan(false, false, 30));
+    }
+
 }
