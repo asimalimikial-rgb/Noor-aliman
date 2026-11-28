@@ -48,6 +48,13 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                 } catch (RuntimeException error) {
                     Log.e(TAG, "Dhikr alarm reschedule failed after " + reason, error);
                 }
+                if (!"android.intent.action.LOCKED_BOOT_COMPLETED".equals(reason)) {
+                    try {
+                        PrayerScheduleWatchdog.ensureScheduled(context);
+                    } catch (RuntimeException error) {
+                        Log.e(TAG, "Could not ensure prayer schedule watchdog after " + reason, error);
+                    }
+                }
             } finally {
                 pendingResult.finish();
             }
