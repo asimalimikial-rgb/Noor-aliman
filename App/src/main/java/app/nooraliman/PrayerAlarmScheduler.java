@@ -216,6 +216,10 @@ final class PrayerAlarmScheduler {
         return exactAlarmsAllowed;
     }
 
+    static boolean shouldUseAlarmClockForType(String type) {
+        return "adhan".equals(type);
+    }
+
     static String resolveScheduleStatus(boolean exactPermissionRequired, int requested,
                                          int scheduled, boolean exactAlarmsAllowed) {
         if (exactPermissionRequired) return "exact_permission_required";
@@ -318,11 +322,16 @@ final class PrayerAlarmScheduler {
 
         if (exactAlarmsAllowed) {
             try {
-                Intent launchIntent = new Intent(context, MainActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                PendingIntent showIntent = PendingIntent.getActivity(context, 0, launchIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                manager.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showIntent), pending);
+                if (shouldUseAlarmClockForType(type)) {
+                    Intent launchIntent = new Intent(context, MainActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    PendingIntent showIntent = PendingIntent.getActivity(context, 0, launchIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    manager.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showIntent), pending);
+                } else {
+                    // Reminders remain exact during Doze without appearing as user-visible alarm-clock events.
+                    manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+                }
                 ids.put(uri);
                 return true;
             } catch (SecurityException denied) {
@@ -331,10 +340,10 @@ final class PrayerAlarmScheduler {
                     pending.cancel();
                     return false;
                 }
-                // An ordinary reminder may degrade to an inexact notification.
+                // A reminder may degrade to an inexact notification when exact access is unavailable.
             } catch (RuntimeException failure) {
                 pending.cancel();
-                Log.e(TAG, "Could not schedule exact prayer alarm: " + uri, failure);
+                Log.e(TAG, "Could not schedule exact prayer alert: " + uri, failure);
                 return false;
             }
         }
