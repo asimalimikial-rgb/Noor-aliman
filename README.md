@@ -4,12 +4,12 @@
 
 **رفيقك اليومي للصلاة والقرآن والأذكار والقبلة — في تطبيق عربي يجمع أهم ما تحتاجه في مكان واحد.**
 
-[![الإصدار](https://img.shields.io/badge/الإصدار-1.23.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.23.0)
+[![الإصدار](https://img.shields.io/badge/الإصدار-1.24.0-16865B?style=for-the-badge)](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.24.0)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 
 [🌐 الموقع الرسمي](https://noor-aliman-psi.vercel.app/) · [استكشف التطبيق مباشرة](https://noor-aliman-psi.vercel.app/demo/)
 
-[**تنزيل نور الإيمان 1.23.0**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
+[**صفحة إصدارات نور الإيمان**](https://github.com/asimalimikial-rgb/Noor-aliman/releases) · [جميع الإصدارات](https://github.com/asimalimikial-rgb/Noor-aliman/releases)
 
 </div>
 
@@ -27,7 +27,9 @@
 - ضبط مستقل لموعد كل صلاة بالدقائق.
 - مجموعة من تسجيلات الأذان، مع إمكانية تخصيص صوت الفجر.
 - تذكير اختياري قبل الصلاة، والتحكم في تشغيل الأذان وإيقافه.
-- إرشادات لمراجعة أذونات التنبيه وإعدادات البطارية.
+- جدولة الأذان عبر AlarmManager.setAlarmClock() عند توفر الإذن الدقيق، دون تشغيل أذان تلقائي بمسار غير دقيق.
+- مراقبة دورية عبر WorkManager كل 6 ساعات لاستعادة الجدولة المفقودة كطبقة احتياطية؛ ولا تحل محل المنبه الدقيق.
+- مركز أذونات يوضح حالة الإشعارات والمنبهات الدقيقة وشاشة القفل وتحسينات البطارية، مع طلب استثناء البطارية اختيارياً بعد موافقة المستخدم.
 
 ### 📖 القرآن الكريم والتفسير
 - مصحف المدينة في 604 صفحات.
@@ -62,11 +64,11 @@
 
 ## تنزيل التطبيق
 
-1. افتح [صفحة الإصدار 1.23.0](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.23.0).
-2. نزّل الملف **Noor-Al-Iman-v1.23.0.apk** من قسم الملفات.
+1. افتح [صفحة إصدارات نور الإيمان](https://github.com/asimalimikial-rgb/Noor-aliman/releases).
+2. اختر أحدث إصدار منشور ونزّل ملف APK المرفق به.
 3. افتح الملف على هاتف Android واتبع تعليمات التثبيت.
 
-[**تنزيل APK مباشرة**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.23.0/Noor-Al-Iman-v1.23.0.apk)
+سيُحدّث رابط التنزيل المباشر إلى ملف v1.24.0 بعد اعتماد الإصدار ونشره رسمياً.
 
 ## استكشف التطبيق قبل التثبيت
 
@@ -77,8 +79,8 @@
 | البيان | التفاصيل |
 |---|---|
 | اسم التطبيق | نور الإيمان — Noor Al-Iman |
-| الإصدار | 1.23.0 |
-| Version Code | 29 |
+| الإصدار | 1.24.0 |
+| Version Code | 30 |
 | نظام التشغيل | Android 6.0 أو أحدث |
 | Package ID | `app.nooraliman` |
 
