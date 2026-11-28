@@ -47,7 +47,7 @@ jobs:
           assert 'compassCalibrate' in ui and 'حرّك الهاتف' in Path('App/src/main/assets/scripts/compass.js').read_text()
           assert 'sFajrAdhanSound' in ui and 'adhanVolume' in ui
           assert 'S.adhanFajrSound,S.adhanVolume' in js
-          assert "versionCode 29" in gradle and "versionName '1.23.0'" in gradle
+          assert "versionCode 30" in gradle and "versionName '1.24.0'" in gradle
           assert Path('App/src/main/assets/adhan-quseir.mp3').is_file()
           assert 'adhan-quseir.mp3' in js
           PY
@@ -159,17 +159,17 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK"
-          RELEASE_APK="App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk"
+          RELEASE_APK="App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk"
           cp "$APK" "$RELEASE_APK"
           sha256sum "$RELEASE_APK" > "$RELEASE_APK.sha256"
 
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.23.0-signed-apk
+          name: noor-al-iman-v1.24.0-signed-apk
           path: |
-            App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk
-            App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk.sha256
+            App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk
+            App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk.sha256
           if-no-files-found: error
           retention-days: 30
 
@@ -556,7 +556,7 @@ jobs:
       - name: Download signed v1.23.0 APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: noor-al-iman-v1.23.0-signed-apk
+          name: noor-al-iman-v1.24.0-signed-apk
           path: release-assets
       - name: Publish Noor Al-Iman v1.23.0 GitHub Release
         uses: softprops/action-gh-release@v2
@@ -576,8 +576,45 @@ jobs:
 
             يتطلب Android 6.0 أو أحدث.
           files: |
-            release-assets/Noor-Al-Iman-v1.23.0.apk
-            release-assets/Noor-Al-Iman-v1.23.0.apk.sha256
+            release-assets/Noor-Al-Iman-v1.24.0.apk
+            release-assets/Noor-Al-Iman-v1.24.0.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+
+  publish-v1-24-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.24.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.24.0 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.24.0-signed-apk
+          path: release-assets
+      - name: Publish Noor Al-Iman v1.24.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.24.0
+          name: Noor Al-Iman v1.24.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            نور الإيمان 1.24.0 — موثوقية الأذان ومركز الأذونات.
+
+            - استخدام AlarmManager.setAlarmClock() للأذان الدقيق عند منح الإذن.
+            - عدم تشغيل الأذان تلقائياً عبر مسار غير دقيق عند غياب إذن المنبهات الدقيقة.
+            - إضافة WorkManager لمراجعة الجدولة دورياً ومحاولة استعادة الحالات المفقودة كطبقة احتياطية.
+            - توضيح حالة الإشعارات والمنبهات الدقيقة وشاشة القفل وتحسينات البطارية في مركز الأذونات.
+            - طلب استثناء تحسينات البطارية اختيارياً وبعد موافقة المستخدم فقط.
+            - الحفاظ على إعدادات التوقيع وملفات الصوت والبيانات الحالية.
+
+            اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. يلزم اختبار الجهاز الفعلي للتحقق من Doze وإعادة التشغيل وتغير الأذونات.
+          files: |
+            release-assets/Noor-Al-Iman-v1.24.0.apk
+            release-assets/Noor-Al-Iman-v1.24.0.apk.sha256
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
