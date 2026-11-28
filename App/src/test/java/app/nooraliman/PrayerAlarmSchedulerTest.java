@@ -40,6 +40,12 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.shouldScheduleAdhanAudio(false));
     }
 
+    @Test public void onlyAudioAdhanUsesVisibleAlarmClockScheduling() {
+        assertTrue(PrayerAlarmScheduler.shouldUseAlarmClockForType("adhan"));
+        assertFalse(PrayerAlarmScheduler.shouldUseAlarmClockForType("reminder"));
+        assertFalse(PrayerAlarmScheduler.shouldUseAlarmClockForType("other"));
+    }
+
     @Test public void scheduleStatusExplainsMissingExactAccessSeparatelyFromReminderFallback() {
         assertEquals("exact_permission_required",
                 PrayerAlarmScheduler.resolveScheduleStatus(true, 0, 0, false));
