@@ -1088,6 +1088,8 @@ document.head.append(settingsHubStyle);
         '؛ التذكيرات المجدولة: ' + reminderCount +
         '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
+        '؛ تحسين البطارية: ' + (d.batteryOptimizationExempt ? 'مستثنى' : 'مقيّد بالنظام') +
+        '؛ Watchdog: ' + (d.watchdogLastResult || 'لم يعمل بعد') +
         '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback +
         '؛ آخر سبب تجاوز: ' + droppedReason + '؛ استقرار عرض الصفحة: ' + renderer;
     } catch (error) {
