@@ -8,9 +8,7 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.work.BackoffPolicy;
-import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
