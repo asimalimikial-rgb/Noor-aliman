@@ -1509,10 +1509,11 @@ document.head.append(settingsHubStyle);
     },
     {
       id:'battery', title:'قيود تحسين البطارية',
-      description:'هذا ليس إذناً إلزامياً. قد تؤخر بعض هواتف Android، ومنها بعض إعدادات Samsung، التنبيهات في الخلفية.',
+      description:'استثناء اختياري قد يقلل تقييد التطبيق في الخلفية على بعض الأجهزة. لا يضمن وصول الأذان ولا يغني عن التنبيهات الدقيقة؛ سيطلب Android موافقتك قبل تطبيقه.',
       check:() => safeCheck('isIgnoringBatteryOptimizations'),
-      action:() => native.openBatteryOptimizationSettings?.(),
-      label:'إدارة إعدادات البطارية',
+      action:() => typeof native.requestBatteryOptimizationExemption === 'function'
+        ? native.requestBatteryOptimizationExemption() : native.openBatteryOptimizationSettings?.(),
+      label:'طلب استثناء اختياري',
       optional:true,
       missingLabel:'اختياري · غير مستثنى'
     }
