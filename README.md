@@ -68,7 +68,7 @@
 2. اختر أحدث إصدار منشور ونزّل ملف APK المرفق به.
 3. افتح الملف على هاتف Android واتبع تعليمات التثبيت.
 
-سيُحدّث رابط التنزيل المباشر إلى ملف v1.24.0 بعد اعتماد الإصدار ونشره رسمياً.
+[**تنزيل APK v1.24.0 مباشرة**](https://github.com/asimalimikial-rgb/Noor-aliman/releases/download/v1.24.0/Noor-Al-Iman-v1.24.0.apk) · [التحقق من SHA-256 وملفات الإصدار](https://github.com/asimalimikial-rgb/Noor-aliman/releases/tag/v1.24.0).
 
 ## استكشف التطبيق قبل التثبيت
 
