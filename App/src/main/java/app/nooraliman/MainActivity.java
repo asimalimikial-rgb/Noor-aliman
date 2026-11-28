@@ -696,6 +696,10 @@ public class MainActivity extends Activity {
                 android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
                 result.put("batteryOptimizationExempt", Build.VERSION.SDK_INT < 23
                         || (power != null && power.isIgnoringBatteryOptimizations(getPackageName())));
+                result.put("watchdogLastRunAt", prefs.getLong("watchdogLastRunAt", 0L));
+                result.put("watchdogLastRepairAt", prefs.getLong("watchdogLastRepairAt", 0L));
+                result.put("watchdogLastResult", prefs.getString("watchdogLastResult", "not_run"));
+                result.put("watchdogLastAction", prefs.getString("watchdogLastAction", "not_scheduled"));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
