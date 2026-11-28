@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private static final int LOCATION_REQUEST = 41;
     private static final int NOTIFICATION_REQUEST = 42;
     private static final int CAMERA_REQUEST = 43;
+    private static final int ADHAN_IMAGE_REQUEST = 44;
     private static final String WEB_CONTENT_REVISION_KEY = "noor_web_content_revision";
     private static final int WEB_CONTENT_REVISION = 2;
     private static final String APP_ASSET_URL = "https://appassets.androidplatform.net/assets/noor-aliman.html";
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PrayerScheduleWatchdog.ensureScheduled(this);
         logRecentProcessExits();
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
@@ -448,10 +450,34 @@ public class MainActivity extends Activity {
                 || AlarmPrefs.get(MainActivity.this).getBoolean("dhikrOn", false);
     }
 
-    private boolean hasNotificationPermission() {
+    private boolean hasPostNotificationsRuntimePermission() {
         return Build.VERSION.SDK_INT < 33
                 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasNotificationPermission() {
+        if (!hasPostNotificationsRuntimePermission()) return false;
+        if (Build.VERSION.SDK_INT >= 24) {
+            android.app.NotificationManager manager =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (manager != null && !manager.areNotificationsEnabled()) return false;
+            if (manager != null && Build.VERSION.SDK_INT >= 26) {
+                String[] criticalChannels = {
+                        "adhan_playback_controls_v3",
+                        "prayer_reminders_v2"
+                };
+                for (String channelId : criticalChannels) {
+                    android.app.NotificationChannel channel =
+                            manager.getNotificationChannel(channelId);
+                    if (channel != null
+                            && channel.getImportance() == android.app.NotificationManager.IMPORTANCE_NONE) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private boolean hasExactAlarmPermission() {
@@ -461,10 +487,9 @@ public class MainActivity extends Activity {
     }
 
     private void openExactAlarmSettings() {
-        // Android 13+ uses USE_EXACT_ALARM (normal install-time permission).
-        // The user-facing special-access screen applies only to SCHEDULE_EXACT_ALARM on API 31-32.
-        if (Build.VERSION.SDK_INT < 31 || Build.VERSION.SDK_INT >= 33
-                || hasExactAlarmPermission()) return;
+        // Use the user-granted SCHEDULE_EXACT_ALARM special access on Android 12+.
+        // This avoids the Play-restricted USE_EXACT_ALARM permission for a multi-purpose prayer app.
+        if (Build.VERSION.SDK_INT < 31 || hasExactAlarmPermission()) return;
         try {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                     Uri.parse("package:" + getPackageName()));
@@ -481,6 +506,7 @@ public class MainActivity extends Activity {
     }
 
     private void syncAlarmSchedule() {
+        PrayerScheduleWatchdog.ensureScheduled(this);
         if (!alertsEnabled()) {
             PrayerAlarmScheduler.cancel(this);
             DhikrAlarmScheduler.cancel(this);
@@ -501,7 +527,7 @@ public class MainActivity extends Activity {
                 && prefs.getBoolean("showAdhanNotification", true));
         boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
         if (Build.VERSION.SDK_INT >= 33 && notificationsNeeded
-                && !hasNotificationPermission() && !alreadyAsked) {
+                && !hasPostNotificationsRuntimePermission() && !alreadyAsked) {
             prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
                     NOTIFICATION_REQUEST);
@@ -521,10 +547,9 @@ public class MainActivity extends Activity {
         prefs.edit().putLong("lastExactAlarmInAppPromptAt", now).apply();
         new AlertDialog.Builder(this)
                 .setTitle("يلزم تفعيل التنبيهات الدقيقة")
-                .setMessage("لن يستطيع نور الإيمان تشغيل الأذان في موعده عند إغلاق التطبيق "
-                        + "من دون إذن التنبيهات الدقيقة. يمكنك تفعيل الإذن من إعدادات أندرويد. "
-                        + "إذا لم تفعّله، ستظل مواقيت الصلاة ظاهرة داخل التطبيق، لكن التنبيه "
-                        + "الصوتي في الخلفية لن يكون مضموناً.")
+                .setMessage("من دون إذن التنبيهات الدقيقة لن يُجدول تشغيل الأذان الصوتي تلقائياً. "
+                        + "يمكنك منح الإذن من إعدادات أندرويد. ستظل مواقيت الصلاة ظاهرة داخل التطبيق، "
+                        + "وقد تعمل التذكيرات العادية بصورة تقريبية لكنها قد تتأخر.")
                 .setPositiveButton("فتح الإعدادات", (dialog, which) -> openExactAlarmSettings())
                 .setNegativeButton("لاحقاً", null)
                 .show();
@@ -593,6 +618,11 @@ public class MainActivity extends Activity {
             locationOrigin = null;
         } else if (requestCode == NOTIFICATION_REQUEST) {
             syncAlarmSchedule();
+            if (webView != null && !webViewRendererGone) {
+                webView.post(() -> webView.evaluateJavascript(
+                        "if(window.refreshNoorPermissionCenter)window.refreshNoorPermissionCenter();",
+                        null));
+            }
         } else if (requestCode == CAMERA_REQUEST) {
             PermissionRequest request = cameraPermissionRequest;
             cameraPermissionRequest = null;
@@ -603,6 +633,30 @@ public class MainActivity extends Activity {
                     request.deny();
                 }
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != ADHAN_IMAGE_REQUEST || resultCode != RESULT_OK
+                || data == null || data.getData() == null) return;
+        Uri selected = data.getData();
+        try {
+            int readGrant = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+            if (readGrant == 0) throw new SecurityException("Image provider did not grant read access");
+            getContentResolver().takePersistableUriPermission(selected, readGrant);
+            AlarmPrefs.get(this).edit()
+                    .putString("adhanBackgroundImageUri", selected.toString()).apply();
+            Log.i("NoorAdhanImage", "A persistent adhan background image was selected");
+            if (webView != null && !webViewRendererGone) {
+                webView.evaluateJavascript(
+                        "if(window.refreshNoorAdhanImageStatus)window.refreshNoorAdhanImageStatus();",
+                        null);
+            }
+        } catch (Exception error) {
+            Log.w("NoorAdhanImage", "Could not persist access to the selected image", error);
+            AlarmPrefs.get(this).edit().remove("adhanBackgroundImageUri").apply();
         }
     }
 
@@ -620,12 +674,32 @@ public class MainActivity extends Activity {
             org.json.JSONObject result = new org.json.JSONObject();
             try {
                 result.put("exactAlarmPermission", hasExactAlarmPermission());
+                result.put("prayerAdhanEnabled", prefs.getBoolean("adhan", false));
+                result.put("prayerReminderEnabled", prefs.getBoolean("reminder", false));
+                result.put("prayerScheduleInProgress",
+                        prefs.getBoolean("prayer_schedule_in_progress", false));
+                result.put("fullScreenIntentPermission", Build.VERSION.SDK_INT < 34
+                        || (getSystemService(NOTIFICATION_SERVICE) instanceof android.app.NotificationManager
+                        && ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                        .canUseFullScreenIntent()));
                 result.put("prayerAlarmScheduleStatus",
                         prefs.getString("prayerAlarmScheduleStatus", "unknown"));
+                result.put("prayerAdhanRequestedCount",
+                        prefs.getInt("prayerAdhanRequestedCount", 0));
+                result.put("prayerAdhanScheduledCount",
+                        prefs.getInt("prayerAdhanScheduledCount", 0));
+                result.put("prayerReminderRequestedCount",
+                        prefs.getInt("prayerReminderRequestedCount", 0));
+                result.put("prayerReminderScheduledCount",
+                        prefs.getInt("prayerReminderScheduledCount", 0));
                 result.put("lastAlarmDroppedReason", prefs.getString("lastAlarmDroppedReason", "none"));
                 android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
                 result.put("batteryOptimizationExempt", Build.VERSION.SDK_INT < 23
                         || (power != null && power.isIgnoringBatteryOptimizations(getPackageName())));
+                result.put("watchdogLastRunAt", prefs.getLong("watchdogLastRunAt", 0L));
+                result.put("watchdogLastRepairAt", prefs.getLong("watchdogLastRepairAt", 0L));
+                result.put("watchdogLastResult", prefs.getString("watchdogLastResult", "not_run"));
+                result.put("watchdogLastAction", prefs.getString("watchdogLastAction", "not_scheduled"));
                 result.put("notificationPermission", hasNotificationPermission());
                 result.put("lastAlarmExpectedAt", prefs.getLong("lastAlarmExpectedAt", 0L));
                 result.put("lastAlarmReceivedAt", prefs.getLong("lastAlarmReceivedAt", 0L));
@@ -772,19 +846,116 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean hasLocationPermissionForApp() {
+            return hasLocationPermission();
+        }
+
+        @JavascriptInterface
+        public boolean hasCameraPermissionForApp() {
+            return hasCameraPermission();
+        }
+
+        @JavascriptInterface
+        public void openAppDetailsSettings() {
+            runOnUiThread(() -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName())));
+                } catch (Exception error) {
+                    Log.e("NoorPermissions", "Could not open application settings", error);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean canPostNotifications() {
             return hasNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void pickAdhanBackgroundImage() {
+            runOnUiThread(() -> {
+                try {
+                    Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    picker.addCategory(Intent.CATEGORY_OPENABLE);
+                    picker.setType("image/*");
+                    picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    startActivityForResult(picker, ADHAN_IMAGE_REQUEST);
+                } catch (Exception error) {
+                    Log.e("NoorAdhanImage", "Could not open the image picker", error);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public String getAdhanBackgroundImageUri() {
+            return AlarmPrefs.get(MainActivity.this)
+                    .getString("adhanBackgroundImageUri", "");
+        }
+
+        @JavascriptInterface
+        public void clearAdhanBackgroundImage() {
+            String previous = AlarmPrefs.get(MainActivity.this)
+                    .getString("adhanBackgroundImageUri", "");
+            if (previous != null && !previous.isEmpty()) {
+                try {
+                    getContentResolver().releasePersistableUriPermission(
+                            Uri.parse(previous), Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception ignored) { }
+            }
+            AlarmPrefs.get(MainActivity.this).edit()
+                    .remove("adhanBackgroundImageUri").apply();
+            runOnUiThread(() -> {
+                if (webView != null && !webViewRendererGone) {
+                    webView.evaluateJavascript(
+                            "if(window.refreshNoorAdhanImageStatus)window.refreshNoorAdhanImageStatus();",
+                            null);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= 33 && !hasPostNotificationsRuntimePermission()) {
+                    android.content.SharedPreferences prefs = AlarmPrefs.get(MainActivity.this);
+                    boolean alreadyAsked = prefs.getBoolean("notificationPermissionAsked", false);
+                    if (alreadyAsked && !shouldShowRequestPermissionRationale(
+                            Manifest.permission.POST_NOTIFICATIONS)) {
+                        openNotificationSettings();
+                        return;
+                    }
+                    prefs.edit().putBoolean("notificationPermissionAsked", true).apply();
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                            NOTIFICATION_REQUEST);
+                } else {
+                    openNotificationSettings();
+                }
+            });
         }
 
         @JavascriptInterface
         public void openNotificationSettings() {
             runOnUiThread(() -> {
                 try {
-                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.parse("package:" + getPackageName()));
+                    Intent intent;
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                    } else {
+                        intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName()));
+                    }
                     startActivity(intent);
                 } catch (Exception error) {
                     Log.e("NoorPrayerAlarm", "Could not open notification settings", error);
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (Exception fallbackError) {
+                        Log.e("NoorPrayerAlarm", "Could not open application settings", fallbackError);
+                    }
                 }
             });
         }
@@ -801,6 +972,33 @@ public class MainActivity extends Activity {
             android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
             return power != null && power.isIgnoringBatteryOptimizations(getPackageName());
         }
+        @JavascriptInterface
+        public void requestBatteryOptimizationExemption() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT < 23 || isIgnoringBatteryOptimizations()) return;
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("استثناء اختياري من تحسين البطارية")
+                        .setMessage("قد يساعد هذا الاستثناء بعض الأجهزة على تقليل تقييد عمل نور الإيمان في الخلفية. لا يضمن وحده وصول الأذان، ولا يغني عن إذن التنبيهات الدقيقة. سيطلب Android موافقتك قبل تطبيق الاستثناء.")
+                        .setPositiveButton("متابعة إلى طلب Android", (dialog, which) -> {
+                            try {
+                                Intent request = new Intent(
+                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        Uri.parse("package:" + getPackageName()));
+                                if (request.resolveActivity(getPackageManager()) != null) {
+                                    startActivity(request);
+                                } else {
+                                    openBatteryOptimizationSettings();
+                                }
+                            } catch (Exception error) {
+                                Log.w("NoorPrayerAlarm", "Direct battery exemption request unavailable", error);
+                                openBatteryOptimizationSettings();
+                            }
+                        })
+                        .setNegativeButton("إلغاء", null)
+                        .show();
+            });
+        }
+
         @JavascriptInterface
         public void openBatteryOptimizationSettings() {
             runOnUiThread(() -> {

@@ -1,4 +1,4 @@
-# v1.22.2 maintenance build: compile, unit tests, signed APK and signature verification
+# CI: compile, unit tests, signed APK and signature verification
 name: Build and Release Noor Al Iman Android APK
 
 concurrency:
@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause, maintenance/v1.22.2-comprehensive]
+    branches: [main, improve/v1.16-reliability, improve/v1.16.1-test-feedback, fix/v1.16.2-reliability, improve/v1.17-complete-overhaul, fix/v1.18-adhan-scheduler-audit, fix/webview-background-recovery, fix/v1.19-main-alarm-reliability, fix/v1.19.1-crash-adhan-stability, fix/comprehensive-v1.20-html-adhan-reliability, noor-al-iman-v1.19.1-stability-patch, fix/v1.21.0-adhan-root-cause, maintenance/v1.22.2-comprehensive, fix/2026-adhan-reliability-permissions-settings]
   pull_request:
     branches: [main, fix/v1.19-main-alarm-reliability]
   workflow_dispatch: {}
@@ -47,7 +47,7 @@ jobs:
           assert 'compassCalibrate' in ui and 'حرّك الهاتف' in Path('App/src/main/assets/scripts/compass.js').read_text()
           assert 'sFajrAdhanSound' in ui and 'adhanVolume' in ui
           assert 'S.adhanFajrSound,S.adhanVolume' in js
-          assert "versionCode 29" in gradle and "versionName '1.23.0'" in gradle
+          assert "versionCode 30" in gradle and "versionName '1.24.0'" in gradle
           assert Path('App/src/main/assets/adhan-quseir.mp3').is_file()
           assert 'adhan-quseir.mp3' in js
           PY
@@ -71,9 +71,11 @@ jobs:
           prayer = Path('App/src/main/java/app/nooraliman/PrayerAlarmScheduler.java').read_text()
           assert 'setExactAndAllowWhileIdle' not in dhikr and 'setAndAllowWhileIdle' not in dhikr, 'dhikr must not use allow-while-idle alarms'
           assert 'setAlarmClock' in prayer, 'prayer scheduler must use exact alarm-clock events when permitted'
-          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'prayer scheduler must provide an inexact wakeup fallback and daily refresh'
-          assert 'EXTRA_EXACT, false' in prayer, 'inexact fallback must be marked for receiver diagnostics'
+          assert 'setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP' in prayer, 'ordinary reminders and daily refresh must retain an inexact wakeup path'
+          assert 'EXTRA_EXACT, false' in prayer, 'inexact reminder fallback must be marked for receiver diagnostics'
+          assert 'shouldScheduleAdhanAudio' in prayer and 'exact_permission_required' in prayer, 'automatic adhan audio must require exact-alarm access'
           receiver = Path('App/src/main/java/app/nooraliman/PrayerAlarmReceiver.java').read_text()
+          assert 'shouldStartAdhan' in receiver and 'adhan_requires_exact_alarm' in receiver, 'receiver must reject inexact adhan playback'
           activity = Path('App/src/main/java/app/nooraliman/AdhanAlertActivity.java').read_text()
           service = Path('App/src/main/java/app/nooraliman/AdhanPlaybackService.java').read_text()
           main = Path('App/src/main/java/app/nooraliman/MainActivity.java').read_text()
@@ -94,8 +96,9 @@ jobs:
           assert Path('App/src/test/java/app/nooraliman/AlarmPrefsTest.java').is_file(), 'Direct Boot preference tests must exist'
           assert 'ADHAN_LATE_GRACE_MS = 5L * MINUTE' in receiver, 'adhan late grace must remain exactly five minutes'
           assert '5L * 60_000L' in Path('App/src/test/java/app/nooraliman/PrayerAlarmReceiverTest.java').read_text(), 'five-minute cutoff tests are required'
-          assert 'android.permission.USE_EXACT_ALARM' in manifest, 'Android 13+ exact-alarm permission is required'
-          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' in manifest, 'SCHEDULE_EXACT_ALARM must be limited to API 32 and below'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM' in manifest, 'user-granted exact-alarm access must be declared for Android 12+'
+          assert 'android.permission.USE_EXACT_ALARM' not in manifest, 'multi-purpose prayer app must not use the Play-restricted USE_EXACT_ALARM permission'
+          assert 'android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' not in manifest, 'SCHEDULE_EXACT_ALARM must remain available on Android 13+'
           assert 'android:foregroundServiceType="mediaPlayback"' in manifest, 'adhan service must declare mediaPlayback FGS type'
           assert 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK' in manifest, 'mediaPlayback FGS permission is required'
           assert 'android:name=".AdhanAlertActivity"' in manifest, 'lock-screen adhan activity must be declared'
@@ -156,17 +159,17 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK"
-          RELEASE_APK="App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk"
+          RELEASE_APK="App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk"
           cp "$APK" "$RELEASE_APK"
           sha256sum "$RELEASE_APK" > "$RELEASE_APK.sha256"
 
       - name: Upload signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: noor-al-iman-v1.23.0-signed-apk
+          name: noor-al-iman-v1.24.0-signed-apk
           path: |
-            App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk
-            App/build/outputs/apk/release/Noor-Al-Iman-v1.23.0.apk.sha256
+            App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk
+            App/build/outputs/apk/release/Noor-Al-Iman-v1.24.0.apk.sha256
           if-no-files-found: error
           retention-days: 30
 
@@ -553,7 +556,7 @@ jobs:
       - name: Download signed v1.23.0 APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: noor-al-iman-v1.23.0-signed-apk
+          name: noor-al-iman-v1.24.0-signed-apk
           path: release-assets
       - name: Publish Noor Al-Iman v1.23.0 GitHub Release
         uses: softprops/action-gh-release@v2
@@ -573,8 +576,45 @@ jobs:
 
             يتطلب Android 6.0 أو أحدث.
           files: |
-            release-assets/Noor-Al-Iman-v1.23.0.apk
-            release-assets/Noor-Al-Iman-v1.23.0.apk.sha256
+            release-assets/Noor-Al-Iman-v1.24.0.apk
+            release-assets/Noor-Al-Iman-v1.24.0.apk.sha256
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+
+  publish-v1-24-0:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'Publish v1.24.0 release')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed v1.24.0 APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: noor-al-iman-v1.24.0-signed-apk
+          path: release-assets
+      - name: Publish Noor Al-Iman v1.24.0 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.24.0
+          name: Noor Al-Iman v1.24.0
+          target_commitish: ${{ github.sha }}
+          body: |
+            نور الإيمان 1.24.0 — موثوقية الأذان ومركز الأذونات.
+
+            - استخدام AlarmManager.setAlarmClock() للأذان الدقيق عند منح الإذن.
+            - عدم تشغيل الأذان تلقائياً عبر مسار غير دقيق عند غياب إذن المنبهات الدقيقة.
+            - إضافة WorkManager لمراجعة الجدولة دورياً ومحاولة استعادة الحالات المفقودة كطبقة احتياطية.
+            - توضيح حالة الإشعارات والمنبهات الدقيقة وشاشة القفل وتحسينات البطارية في مركز الأذونات.
+            - طلب استثناء تحسينات البطارية اختيارياً وبعد موافقة المستخدم فقط.
+            - الحفاظ على إعدادات التوقيع وملفات الصوت والبيانات الحالية.
+
+            اجتاز البناء والاختبارات الآلية والتحقق من توقيع APK عبر GitHub Actions. يلزم اختبار الجهاز الفعلي للتحقق من Doze وإعادة التشغيل وتغير الأذونات.
+          files: |
+            release-assets/Noor-Al-Iman-v1.24.0.apk
+            release-assets/Noor-Al-Iman-v1.24.0.apk.sha256
           fail_on_unmatched_files: true
           draft: false
           prerelease: false

@@ -35,10 +35,29 @@ public class PrayerAlarmSchedulerTest {
         assertFalse(PrayerAlarmScheduler.shouldUseExactAlarms(false));
     }
 
-    @Test public void prayerAlertsRemainSchedulableWithoutExactAlarmPermission() {
-        assertTrue(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(true));
-        assertTrue(PrayerAlarmScheduler.shouldSchedulePrayerAlerts(false));
+    @Test public void adhanAudioRequiresExactAlarmPermission() {
+        assertTrue(PrayerAlarmScheduler.shouldScheduleAdhanAudio(true));
+        assertFalse(PrayerAlarmScheduler.shouldScheduleAdhanAudio(false));
     }
+
+    @Test public void onlyAudioAdhanUsesVisibleAlarmClockScheduling() {
+        assertTrue(PrayerAlarmScheduler.shouldUseAlarmClockForType("adhan"));
+        assertFalse(PrayerAlarmScheduler.shouldUseAlarmClockForType("reminder"));
+        assertFalse(PrayerAlarmScheduler.shouldUseAlarmClockForType("other"));
+    }
+
+    @Test public void scheduleStatusExplainsMissingExactAccessSeparatelyFromReminderFallback() {
+        assertEquals("exact_permission_required",
+                PrayerAlarmScheduler.resolveScheduleStatus(true, 0, 0, false));
+        assertEquals("scheduled_inexact_fallback",
+                PrayerAlarmScheduler.resolveScheduleStatus(false, 5, 5, false));
+        assertEquals("partial_schedule_failure",
+                PrayerAlarmScheduler.resolveScheduleStatus(false, 5, 3, true));
+        assertEquals("no_future_alarms",
+                PrayerAlarmScheduler.resolveScheduleStatus(false, 0, 0, true));
+    }
+
+
 
     @Test public void nextEventSelectionKeepsTheEarliestFutureEvent() {
         long now = 1_000_000L;

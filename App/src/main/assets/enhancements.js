@@ -728,8 +728,38 @@
     });
   };
 
+  const basicAdhanGroup = document.getElementById('basicAdhanGroup');
+  if (basicAdhanGroup && !document.getElementById('adhanBackgroundImageRow')) {
+    const imageRow = document.createElement('div');
+    imageRow.id = 'adhanBackgroundImageRow';
+    imageRow.className = 'setting adhan-background-image-row';
+    imageRow.innerHTML = '<div><strong>صورة شاشة الأذان</strong><small id="adhanBackgroundImageStatus">تظهر الرسمة الافتراضية، ويمكنك اختيار صورة مسجد من المعرض.</small></div><div class="sound-controls"><button class="sound-preview" id="pickAdhanBackgroundImage" type="button">اختيار صورة</button><button class="sound-preview" id="clearAdhanBackgroundImage" type="button">إزالة</button></div>';
+    basicAdhanGroup.append(imageRow);
+    const status = document.getElementById('adhanBackgroundImageStatus');
+    const refresh = () => {
+      let uri = '';
+      try { uri = nativeImageBridge?.getAdhanBackgroundImageUri?.() || ''; } catch (_) {}
+      if (status) status.textContent = uri
+        ? 'تم اختيار صورة مخصصة لشاشة الأذان.'
+        : 'تظهر الرسمة الافتراضية، ويمكنك اختيار صورة مسجد من المعرض.';
+      const clear = document.getElementById('clearAdhanBackgroundImage');
+      if (clear) clear.disabled = !uri;
+    };
+    const nativeImageBridge = window.NativeAlarms;
+    document.getElementById('pickAdhanBackgroundImage')?.addEventListener('click', () => {
+      nativeImageBridge?.pickAdhanBackgroundImage?.();
+    });
+    document.getElementById('clearAdhanBackgroundImage')?.addEventListener('click', () => {
+      nativeImageBridge?.clearAdhanBackgroundImage?.();
+      refresh();
+    });
+    window.refreshNoorAdhanImageStatus = refresh;
+    window.addEventListener('focus', refresh);
+    refresh();
+  }
+
   const prayerEnhancements = document.createElement('section');
-  prayerEnhancements.className = 'prayer-enhancements pro-only';
+  prayerEnhancements.className = 'prayer-enhancements';
   prayerEnhancements.innerHTML = `
     <div class="setting setting-head"><div><strong>إعدادات الأذان ومواقيت الصلاة</strong><small>تحكم مستقل في التنبيه والتوقيت</small></div></div>
     <div class="setting"><div><strong>إظهار أدوات التحكم في الإشعار</strong><small>هذا الخيار لا يوقف صوت الأذان. قد يعرض Android إشعارًا عامًا إلزاميًا أثناء تشغيل الخدمة.</small></div><input class="toggle" id="adhanNotificationToggle" type="checkbox" aria-label="إظهار أدوات التحكم في الإشعار"></div>
@@ -772,28 +802,19 @@
   
 document.head.append(prayerEnhancementStyle);
 
-  // Present settings as a dedicated page with six expandable categories.
+  // Consolidate every existing setting into one vertically stacked, expandable settings page.
   if (settingsList && !settingsList.dataset.organized) {
     settingsList.dataset.organized = 'true';
     settingsList.classList.add('settings-hub');
-    const groups = [
-      {title:'الموقع ومواقيت الصلاة', icon:'⌖', ids:['settingCity','sMethod','sAsr']},
-      {title:'الأذان والتنبيهات', icon:'◖', ids:['sNotify','sReminder','sAdhanSound','adhanNotificationToggle','stopAdhanFaceDownToggle','stopAdhanVolumeKeysToggle','stopAdhanScreenOffToggle','fullScreenAccessButton']},
-      {title:'الأذكار والتسبيح', icon:'☀', ids:['tsOn','tsEvery','tsType','tsFrom','tsTo','tsVol']},
-      {title:'المصحف والقبلة', icon:'۞', ids:['sCont','quranAudioToggle','compassToggle']},
-      {title:'المظهر واللغة', icon:'◐', ids:['darkToggle','sLang']}
-    ];
-    const rowFor = id => [...settingsList.children].find(node =>
-      node.classList?.contains('setting') && node.querySelector('#' + id));
     let accordionIndex = 0;
-    const makeAccordion = (title, icon, wide = false) => {
+    const makeAccordion = (title, icon) => {
       const details = document.createElement('details');
       const stateKey = 'settingsAccordion' + (++accordionIndex);
       details.open = store.get(stateKey, false) === true;
       details.addEventListener('toggle', () => store.set(stateKey, details.open));
-      details.className = 'settings-group settings-accordion' + (wide ? ' settings-accordion--wide' : '');
+      details.className = 'settings-accordion';
       const summary = document.createElement('summary');
-      summary.className = 'settings-group-title settings-accordion-summary';
+      summary.className = 'settings-accordion-summary';
       const mark = document.createElement('span');
       mark.className = 'settings-group-icon';
       mark.setAttribute('aria-hidden', 'true');
@@ -806,24 +827,73 @@ document.head.append(prayerEnhancementStyle);
       details.append(summary, panel);
       return {details, panel};
     };
-    for (const group of groups) {
-      const {details, panel} = makeAccordion(group.title, group.icon);
-      for (const id of group.ids) {
-        const row = rowFor(id);
-        if (row) panel.append(row);
+    const appendSection = (id, panel, keepSubtitle = false) => {
+      const section = $(id);
+      if (!section) return;
+      section.classList.remove('settings-group');
+      section.classList.add('settings-subsection');
+      const heading = section.querySelector('.settings-group-title');
+      if (heading) {
+        if (keepSubtitle) heading.className = 'settings-subtitle';
+        else heading.remove();
       }
-      if (panel.querySelector('.setting')) settingsList.append(details);
+      panel.append(section);
+    };
+    const takeRow = (id, panel) => {
+      const target = $(id);
+      const row = target?.classList.contains('setting') ? target : target?.closest('.setting');
+      if (!row) return;
+      if (row.closest('.pro-only')) row.classList.add('pro-only');
+      panel.append(row);
+    };
+
+    const location = makeAccordion('الموقع ومواقيت الصلاة', '⌖');
+    const adhan = makeAccordion('الأذان والتنبيهات', '◖');
+    const dhikr = makeAccordion('الأذكار والتسبيح', '☀');
+    const quran = makeAccordion('المصحف والقبلة', '۞');
+    const appearance = makeAccordion('المظهر واللغة', '◐');
+
+    appendSection('basicLocationGroup', location.panel);
+    appendSection('proFiqhGroup', location.panel, true);
+
+    appendSection('basicAdhanGroup', adhan.panel);
+    appendSection('proAudioGroup', adhan.panel, true);
+    if (prayerEnhancements) {
+      prayerEnhancements.classList.remove('pro-only');
+      adhan.panel.append(prayerEnhancements);
     }
-    const {details: adjustmentCard, panel: adjustmentPanel} = makeAccordion('تخصيص مواقيت الصلاة', '◷', true);
-    if (prayerEnhancements) adjustmentPanel.append(prayerEnhancements);
-    if (adjustmentPanel.children.length) settingsList.append(adjustmentCard);
+    const diagnostics = $('proDiagCard');
+    if (diagnostics) {
+      diagnostics.classList.remove('pro-only');
+      adhan.panel.append(diagnostics);
+    }
+
+    appendSection('basicDhikrGroup', dhikr.panel);
+    appendSection('proDhikrGroup', dhikr.panel, true);
+
+    takeRow('sCont', quran.panel);
+    takeRow('quranAudioToggle', quran.panel);
+    takeRow('compassToggle', quran.panel);
+
+    appendSection('basicAppearanceGroup', appearance.panel);
+
+    const extras = makeAccordion('إعدادات إضافية', '⚙');
     for (const node of [...settingsList.children]) {
+      if (node.classList?.contains('settings-accordion')) continue;
       if (node.classList?.contains('setting')) {
-        const {details, panel} = makeAccordion('إعدادات إضافية', '⚙');
-        panel.append(node);
-        settingsList.append(details);
+        extras.panel.append(node);
+      } else if (node !== extras.details) {
+        const heading = node.querySelector?.('.settings-group-title');
+        if (heading) heading.className = 'settings-subtitle';
+        node.classList?.remove('settings-group');
+        node.classList?.add('settings-subsection');
+        extras.panel.append(node);
       }
     }
+
+    settingsList.append(location.details, adhan.details, dhikr.details,
+      quran.details, appearance.details);
+    if (extras.panel.children.length) settingsList.append(extras.details);
   }
 
 const settingsHubStyle = document.createElement('style');
@@ -848,7 +918,8 @@ settingsHubStyle.textContent = `
   .settings-shortcut:hover,.settings-shortcut.active{border-color:#caa766;background:#f8f4e9}
   .settings-shortcut:focus-visible{outline:3px solid #caa76688;outline-offset:2px}
   @media(max-width:650px){.settings-shortcut{width:40px;min-width:40px;height:40px;padding:0;border-radius:12px}.settings-shortcut small{display:none}}
-  .settings-list.settings-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0;background:transparent;border:0;box-shadow:none}
+  .settings-list.settings-hub{display:grid;grid-template-columns:1fr;gap:12px;padding:0;background:transparent;border:0;box-shadow:none}
+  #settings .settings-search{display:block}
 
   .dark .counter{color:#f1d58f;text-shadow:0 2px 18px #e6c87924}
   .dark .tasbeeh{background:#1b3029;border-color:#40584b}
@@ -859,6 +930,10 @@ settingsHubStyle.textContent = `
   .dark .settings-close{background:#20332c;border-color:#40584b;color:#f0eadc}
   .dark .settings-close span{background:#34473d;color:#e6c77f}
   .settings-list.settings-hub{gap:13px}
+  .settings-subsection{min-width:0;padding:9px 0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .settings-subtitle{margin:5px 0 9px;color:var(--ink);font:700 15px Amiri,serif}
+  .settings-subsection .setting{gap:12px;padding:12px 0}
+  .settings-subsection .settings-help{line-height:1.7}
   .settings-accordion{overflow:hidden;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
   .settings-accordion[open]{border-color:#caa76699;box-shadow:0 12px 32px #17352e12}
   .settings-accordion-summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:76px;padding:13px 16px;cursor:pointer;color:var(--ink);font:700 17px Amiri,serif}
@@ -989,18 +1064,34 @@ document.head.append(settingsHubStyle);
           '؛ ذاكرة العملية: ' + Math.round(Number(d.lastWebviewRendererPssKb || 0) / 1024) + ' MB'
         : 'لم يُسجّل توقف WebView';
       const scheduleState = ({
-        exact_permission_required: 'لم تُجدول تنبيهات الصلاة: يلزم إذن التنبيه الدقيق',
+        exact_permission_required: 'لم يُجدول الأذان تلقائياً: يلزم إذن التنبيه الدقيق',
+        disabled: 'تنبيهات الصلاة متوقفة',
+        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
         scheduled_exact: 'تنبيهات الصلاة مجدولة بدقة',
+        scheduled_inexact_fallback: 'التذكيرات مجدولة تقريبياً وقد تتأخر',
         partial_schedule_failure: 'بعض تنبيهات الصلاة لم تُجدول؛ راجع سجل النظام',
         schedule_failed: 'فشلت جدولة تنبيهات الصلاة؛ راجع سجل النظام',
-        no_future_alarms: 'لا توجد تنبيهات مستقبلية ضمن نطاق الجدولة',
         alarm_manager_unavailable: 'خدمة AlarmManager غير متاحة'
       })[d.prayerAlarmScheduleStatus] || 'حالة الجدولة غير معروفة';
+      const adhanCount = Number(d.prayerAdhanScheduledCount || 0) + '/' +
+        Number(d.prayerAdhanRequestedCount || 0);
+      const reminderCount = Number(d.prayerReminderScheduledCount || 0) + '/' +
+        Number(d.prayerReminderRequestedCount || 0);
+      const droppedReason = ({
+        adhan_requires_exact_alarm:'لم يبدأ الأذان لأن التنبيه الدقيق غير متاح',
+        adhan_late_over_5_minutes:'وصل تنبيه الأذان متأخراً بأكثر من خمس دقائق',
+        inexact_fallback_used:'وصل تنبيه تقريبي لا يضمن الموعد'
+      })[d.lastAlarmDroppedReason] || (d.lastAlarmDroppedReason && d.lastAlarmDroppedReason !== 'none'
+        ? String(d.lastAlarmDroppedReason) : 'لا يوجد سبب تجاوز مسجل');
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent =
-        scheduleState + '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
+        scheduleState + '؛ الأذان المجدول: ' + adhanCount +
+        '؛ التذكيرات المجدولة: ' + reminderCount +
+        '؛ إذن التنبيه الدقيق: ' + (d.exactAlarmPermission ? 'مفعّل' : 'غير مفعّل') +
         '؛ الإشعارات: ' + (d.notificationPermission ? 'مسموحة' : 'غير مسموحة') +
+        '؛ تحسين البطارية: ' + (d.batteryOptimizationExempt ? 'مستثنى' : 'مقيّد بالنظام') +
+        '؛ Watchdog: ' + (d.watchdogLastResult || 'لم يعمل بعد') +
         '؛ آخر وصول: ' + alarm + '؛ تشغيل الأذان: ' + playback +
-        '؛ استقرار عرض الصفحة: ' + renderer;
+        '؛ آخر سبب تجاوز: ' + droppedReason + '؛ استقرار عرض الصفحة: ' + renderer;
     } catch (error) {
       if (alarmDiagnosticsStatus) alarmDiagnosticsStatus.textContent = 'تعذّر قراءة سجل التنبيهات.';
     }
@@ -1368,4 +1459,254 @@ document.head.append(settingsHubStyle);
     }
   `;
   document.head.append(style);
+})();
+
+
+// First-run Android permission centre. Optional permissions are explained, not forced.
+(() => {
+  if (!window.NativeAlarms || document.getElementById('noor-permission-centre')) return;
+  const native = window.NativeAlarms;
+  const safeCheck = fn => {
+    try { return typeof native[fn] === 'function' ? !!native[fn]() : null; }
+    catch (_) { return null; }
+  };
+  const rows = [
+    {
+      id:'notifications', title:'إذن الإشعارات',
+      description:'لعرض إشعارات الأذان والتذكير وأدوات التحكم أثناء التشغيل.',
+      check:() => safeCheck('canPostNotifications'),
+      action:() => typeof native.requestNotificationPermission === 'function'
+        ? native.requestNotificationPermission() : native.openNotificationSettings?.(),
+      label:'تفعيل الإشعارات'
+    },
+    {
+      id:'exact', title:'التنبيهات الدقيقة (Exact Alarms)',
+      description:'مهم لجدولة الأذان قريباً من وقت الصلاة. على بعض إصدارات Android يفتح إعداداً خاصاً.',
+      check:() => safeCheck('canScheduleExactAlarms'),
+      action:() => native.requestExactAlarmAccess?.(),
+      label:'ضبط التنبيهات الدقيقة'
+    },
+    {
+      id:'fullscreen', title:'شاشة الأذان على شاشة القفل',
+      description:'يسمح للنظام بعرض شاشة الأذان الكاملة عندما يدعم ذلك. قد يظل الإشعار العادي متاحاً إذا منع النظام العرض الكامل.',
+      check:() => safeCheck('canUseFullScreenIntent'),
+      action:() => native.requestFullScreenIntentAccess?.(),
+      label:'ضبط شاشة القفل'
+    },
+    {
+      id:'location', title:'إذن الموقع (اختياري)',
+      description:'يُستخدم فقط عند اختيار تحديد الموقع تلقائياً لمواقيت الصلاة، ويُطلب عند تشغيل الميزة.',
+      check:() => safeCheck('hasLocationPermissionForApp'),
+      action:() => native.openAppDetailsSettings?.(),
+      label:'إعدادات التطبيق',
+      optional:true
+    },
+    {
+      id:'camera', title:'إذن الكاميرا (اختياري)',
+      description:'يُستخدم فقط عند تشغيل ميزة القبلة بالكاميرا، ولا يحتاجه تشغيل الأذان.',
+      check:() => safeCheck('hasCameraPermissionForApp'),
+      action:() => native.openAppDetailsSettings?.(),
+      label:'إعدادات التطبيق',
+      optional:true
+    },
+    {
+      id:'battery', title:'قيود تحسين البطارية',
+      description:'استثناء اختياري قد يقلل تقييد التطبيق في الخلفية على بعض الأجهزة. لا يضمن وصول الأذان ولا يغني عن التنبيهات الدقيقة؛ سيطلب Android موافقتك قبل تطبيقه.',
+      check:() => safeCheck('isIgnoringBatteryOptimizations'),
+      action:() => typeof native.requestBatteryOptimizationExemption === 'function'
+        ? native.requestBatteryOptimizationExemption() : native.openBatteryOptimizationSettings?.(),
+      label:'طلب استثناء اختياري',
+      optional:true,
+      missingLabel:'اختياري · غير مستثنى'
+    }
+  ];
+  const centre = document.createElement('section');
+  centre.id = 'noor-permission-centre';
+  centre.className = 'noor-permission-centre';
+  centre.hidden = true;
+  centre.setAttribute('role','dialog');
+  centre.setAttribute('aria-modal','true');
+  centre.setAttribute('aria-labelledby','noor-permission-title');
+  centre.innerHTML = `
+    <div class="noor-permission-panel">
+      <div class="noor-permission-brand">نور الإيمان</div>
+      <h2 id="noor-permission-title">إعداد أذونات التطبيق</h2>
+      <p class="noor-permission-intro">راجع الأذونات التالية حتى تعمل تنبيهات الصلاة بأفضل صورة. كل زر يفتح الإجراء المناسب في Android، ويمكنك الرجوع إلى هذه الصفحة من الإعدادات لاحقاً.</p>
+      <div class="noor-permission-rows" id="noor-permission-rows"></div>
+      <div class="noor-permission-note"><strong>مهم:</strong> لا نطلب إذن «الظهور فوق التطبيقات الأخرى»؛ فهو غير مطلوب لشاشة الأذان التي تعتمد على إشعار ملء الشاشة (Full-screen notification). إذنا الموقع والكاميرا اختياريان، ويُطلب كلٌ منهما عند استخدام ميزته فقط.</div>
+      <button type="button" class="noor-permission-continue" id="noor-permission-continue">متابعة إلى التطبيق</button>
+      <button type="button" class="noor-permission-later" id="noor-permission-later">لاحقاً</button>
+    </div>`;
+  document.body.append(centre);
+  const rowsHost = centre.querySelector('#noor-permission-rows');
+  const readDiagnostics = () => {
+    try { return JSON.parse(native.getAlarmDiagnostics?.() || '{}'); }
+    catch (_) { return {}; }
+  };
+  const getBlockingIssues = diagnostics => {
+    const issues = [];
+    const adhanEnabled = diagnostics.prayerAdhanEnabled === true;
+    const reminderEnabled = diagnostics.prayerReminderEnabled === true;
+    if ((adhanEnabled || reminderEnabled) && safeCheck('canPostNotifications') === false) {
+      issues.push('إشعارات التطبيق محظورة؛ لن تظهر إشعارات الأذان أو التذكير.');
+    }
+    if (adhanEnabled && safeCheck('canScheduleExactAlarms') === false) {
+      issues.push('إذن التنبيهات الدقيقة غير مفعّل؛ لن يُجدول الأذان الصوتي تلقائياً.');
+    }
+    if (adhanEnabled && safeCheck('canUseFullScreenIntent') === false) {
+      issues.push('إذن شاشة الأذان الكاملة غير مفعّل؛ قد لا تظهر شاشة الأذان على القفل.');
+    }
+    if (adhanEnabled) {
+      const requested = Number(diagnostics.prayerAdhanRequestedCount || 0);
+      const scheduled = Number(diagnostics.prayerAdhanScheduledCount || 0);
+      const state = String(diagnostics.prayerAlarmScheduleStatus || 'unknown');
+      if (diagnostics.prayerScheduleInProgress === true) {
+        issues.push('ما زالت جدولة تنبيهات الصلاة قيد التنفيذ؛ أعد الفحص بعد لحظات.');
+      } else if (['schedule_failed','partial_schedule_failure','alarm_manager_unavailable',
+          'exact_permission_required'].includes(state) || (requested > 0 && scheduled < requested)) {
+        issues.push('هناك خلل في جدولة الأذان: ' + scheduled + ' من ' + requested +
+          ' تنبيهاً فقط تم جدولته. راجع الأذونات ثم أعد الفحص.');
+      } else if (state === 'no_future_alarms' || (requested === 0 && scheduled === 0)) {
+        issues.push('لم تُسجّل مواعيد أذان قادمة للجدولة. تحقق من المدينة والموقع وإعدادات الصلاة.');
+      }
+    }
+    return issues;
+  };
+  const render = () => {
+    rowsHost.replaceChildren();
+    const diagnostics = readDiagnostics();
+    for (const item of rows) {
+      const state = item.check();
+      const row = document.createElement('article');
+      row.className = 'noor-permission-row';
+      const info = document.createElement('div');
+      info.className = 'noor-permission-info';
+      const title = document.createElement('strong');
+      title.textContent = item.title;
+      const description = document.createElement('small');
+      description.textContent = item.description;
+      const status = document.createElement('span');
+      status.className = 'noor-permission-status ' + (state === true ? 'is-granted' : state === false ? 'is-missing' : 'is-unknown');
+      status.textContent = state === true ? 'مفعّل' : state === false
+        ? (item.missingLabel || (item.optional ? 'اختياري · غير مفعّل' : 'غير مفعّل'))
+        : 'غير متاح للتحقق';
+      info.append(title, description, status);
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'noor-permission-action';
+      action.textContent = state === true ? 'مفعّل' : item.label;
+      action.disabled = state === true;
+      action.addEventListener('click', () => {
+        try { item.action(); } finally { window.setTimeout(render, 700); }
+      });
+      row.append(info, action);
+      rowsHost.append(row);
+    }
+    const issues = getBlockingIssues(diagnostics);
+    if (issues.length) {
+      const issueRow = document.createElement('article');
+      issueRow.className = 'noor-permission-row noor-permission-schedule-issue';
+      const info = document.createElement('div');
+      info.className = 'noor-permission-info';
+      const title = document.createElement('strong');
+      title.textContent = 'مشكلة في جدولة المنبّهات';
+      const description = document.createElement('small');
+      description.textContent = issues.join(' ');
+      const status = document.createElement('span');
+      status.className = 'noor-permission-status is-missing';
+      status.textContent = 'يتطلب الانتباه';
+      info.append(title, description, status);
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'noor-permission-action';
+      action.textContent = 'فتح إعدادات الأذان';
+      action.addEventListener('click', () => {
+        const settingsButton = document.querySelector('[data-page="settings"]');
+        settingsButton?.click();
+        document.getElementById('settings')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+        const adhanAccordion = [...document.querySelectorAll('.settings-accordion')]
+          .find(el => el.textContent.includes('الأذان والتنبيهات'));
+        if (adhanAccordion) adhanAccordion.open = true;
+        window.setTimeout(() => document.querySelector('#exactAlarmAccessButton')?.focus(), 250);
+      });
+      issueRow.append(info, action);
+      rowsHost.prepend(issueRow);
+    }
+  };
+  const close = () => {
+    centre.hidden = true;
+    try { store.set('permissionsCenterSeen', true); } catch (_) {}
+  };
+  centre.querySelector('#noor-permission-continue').addEventListener('click', close);
+  centre.querySelector('#noor-permission-later').addEventListener('click', close);
+  window.refreshNoorPermissionCenter = render;
+  window.openNoorPermissionCenter = () => { render(); centre.hidden = false; };
+  const toolbar = document.querySelector('#settings .settings-toolbar');
+  if (toolbar) {
+    const reopen = document.createElement('button');
+    reopen.type = 'button';
+    reopen.className = 'noor-permission-reopen';
+    reopen.textContent = 'مركز أذونات التطبيق';
+    reopen.addEventListener('click', window.openNoorPermissionCenter);
+    toolbar.append(reopen);
+  }
+  const style = document.createElement('style');
+  style.textContent = `
+    .noor-permission-centre{position:fixed;inset:0;z-index:12000;overflow:auto;background:rgba(6,20,16,.82);backdrop-filter:blur(8px);padding: max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));display:grid;place-items:center}
+    .noor-permission-centre[hidden]{display:none}
+    .noor-permission-panel{width:min(100%,680px);max-height:100%;overflow:auto;box-sizing:border-box;padding:clamp(20px,4vw,34px);border:1px solid #d6c49a;border-radius:26px;background:#fbfaf6;color:#20332c;box-shadow:0 24px 80px #0006}
+    .noor-permission-brand{text-align:center;color:#967744;font-weight:800;letter-spacing:.12em;margin-bottom:8px}
+    .noor-permission-panel h2{text-align:center;font:700 27px/1.4 Amiri,serif;margin:0 0 8px}
+    .noor-permission-intro{text-align:center;color:#68766e;line-height:1.8;margin:0 auto 18px;max-width:560px}
+    .noor-permission-rows{display:grid;gap:10px}
+    .noor-permission-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #e4e3d9;border-radius:16px;background:#fff}
+    .noor-permission-info{display:grid;gap:5px;min-width:0}
+    .noor-permission-info strong{font-size:15px}
+    .noor-permission-info small{font-size:12px;line-height:1.65;color:#6c7971}
+    .noor-permission-status{font-size:12px;font-weight:800}
+    .noor-permission-status.is-granted{color:#23724e}
+    .noor-permission-status.is-missing{color:#a35b2b}
+    .noor-permission-status.is-unknown{color:#737d77}
+    .noor-permission-action{flex:0 0 auto;min-height:40px;padding:0 12px;border:1px solid #d8c79e;border-radius:11px;background:#f5efdf;color:#594b2d;font-weight:700;font-size:12px}
+    .noor-permission-action:disabled{opacity:.65}
+    .noor-permission-note{margin:15px 0;padding:12px 14px;border-radius:13px;background:#f1eee4;color:#59665f;font-size:12px;line-height:1.8}
+    .noor-permission-continue,.noor-permission-reopen{min-height:46px;padding:0 18px;border:0;border-radius:13px;background:#174638;color:#fff;font-weight:800}
+    .noor-permission-continue{width:100%;margin-top:4px}
+    .noor-permission-later{display:block;margin:9px auto 0;padding:8px 16px;border:0;background:transparent;color:#68766e;font-weight:700}
+    .noor-permission-reopen{width:100%;margin-top:10px}
+    .dark .noor-permission-panel{background:#172820;color:#f0eee5;border-color:#756744}
+    .dark .noor-permission-intro,.dark .noor-permission-info small{color:#b6c1b9}
+    .dark .noor-permission-row{background:#20352b;border-color:#405448}
+    .dark .noor-permission-note{background:#26382e;color:#d3d8d1}
+    .dark .noor-permission-action{background:#394333;color:#f0e4c6;border-color:#71633e}
+    @media(max-width:560px){.noor-permission-row{align-items:stretch;flex-direction:column}.noor-permission-action{width:100%}.noor-permission-panel h2{font-size:23px}}
+  `;
+  document.head.append(style);
+  const showAtLaunchIfNeeded = () => {
+    render();
+    let firstRun = false;
+    try { firstRun = !store.get('permissionsCenterSeen', false); } catch (_) {}
+    const issues = getBlockingIssues(readDiagnostics());
+    if (firstRun || issues.length) window.openNoorPermissionCenter();
+  };
+  // Check on every fresh app launch. A dismissed warning is shown again on
+  // the next launch until all required permissions and alarm scheduling recover.
+  window.setTimeout(showAtLaunchIfNeeded, 350);
+  window.addEventListener('focus', () => {
+    render();
+    if (!centre.hidden && getBlockingIssues(readDiagnostics()).length === 0) {
+      // Keep the centre open so the user can review the now-granted statuses.
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') render();
+  });
+  const previousAndroidBack = window.handleAndroidBack;
+  window.handleAndroidBack = () => {
+    if (!centre.hidden) {
+      close();
+      return true;
+    }
+    return typeof previousAndroidBack === 'function' ? previousAndroidBack() : false;
+  };
 })();

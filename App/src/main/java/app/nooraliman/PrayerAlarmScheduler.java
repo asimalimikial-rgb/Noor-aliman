@@ -100,9 +100,16 @@ final class PrayerAlarmScheduler {
         JSONArray ids = new JSONArray();
         int requestedAlarms = 0;
         int scheduledAlarms = 0;
+        int failedAlarms = 0;
+        int requestedAdhanAlarms = 0;
+        int scheduledAdhanAlarms = 0;
+        int requestedReminderAlarms = 0;
+        int scheduledReminderAlarms = 0;
+        boolean exactPermissionRequired = false;
         prefs.edit().putBoolean(IN_PROGRESS, true).commit();
         if (!exactAlarmsAllowed) {
-            Log.w(TAG, "Exact-alarm access is missing; scheduling inexact fallback prayer alerts");
+            Log.w(TAG, "Exact-alarm access is missing; adhan audio will not use an inexact fallback. "
+                    + "Only ordinary reminder notifications may use inexact alarms.");
         }
         for (int day = 0; day < DAYS_AHEAD; day++) {
                 Calendar date = (Calendar) localDay.clone();
@@ -113,31 +120,45 @@ final class PrayerAlarmScheduler {
                     String key = PRAYERS[i][0], name = PRAYERS[i][1];
                     long prayerAt = prayerTimes[i] + adjustmentMinutes(prefs, key) * MINUTE;
                     if (adhanEnabled && isFutureAlarm(prayerAt, now)) {
-                        requestedAlarms++;
-                        if (scheduleOne(context, manager, ids, prayerAt, prayerAt,
-                                "adhan", key, name, exactAlarmsAllowed)) {
-                            scheduledAlarms++;
-                            nextEvent = earlierFutureEvent(nextEvent,
-                                    new AlarmEvent(prayerAt, prayerAt, "adhan", key, name), now);
+                        requestedAdhanAlarms++;
+                        if (!shouldScheduleAdhanAudio(exactAlarmsAllowed)) {
+                            exactPermissionRequired = true;
+                        } else {
+                            requestedAlarms++;
+                            if (scheduleOne(context, manager, ids, prayerAt, prayerAt,
+                                    "adhan", key, name, true)) {
+                                scheduledAlarms++;
+                                scheduledAdhanAlarms++;
+                                nextEvent = earlierFutureEvent(nextEvent,
+                                        new AlarmEvent(prayerAt, prayerAt, "adhan", key, name), now);
+                            } else {
+                                failedAlarms++;
+                                if (Build.VERSION.SDK_INT >= 31
+                                        && !manager.canScheduleExactAlarms()) {
+                                    exactPermissionRequired = true;
+                                }
+                            }
                         }
                     }
                     long reminderAt = prayerAt - 10 * MINUTE;
                     if (reminderEnabled && isFutureAlarm(reminderAt, now)) {
+                        requestedReminderAlarms++;
                         requestedAlarms++;
                         if (scheduleOne(context, manager, ids, reminderAt, prayerAt,
                                 "reminder", key, name, exactAlarmsAllowed)) {
                             scheduledAlarms++;
+                            scheduledReminderAlarms++;
                             nextEvent = earlierFutureEvent(nextEvent,
                                     new AlarmEvent(reminderAt, prayerAt, "reminder", key, name), now);
+                        } else {
+                            failedAlarms++;
                         }
                     }
                 }
             }
-        String status = requestedAlarms == 0 ? "no_future_alarms"
-                : scheduledAlarms == requestedAlarms
-                    ? (exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback")
-                : scheduledAlarms == 0 ? "schedule_failed" : "partial_schedule_failure";
-        if (requestedAlarms > 0 && scheduledAlarms < requestedAlarms) {
+        String status = resolveScheduleStatus(exactPermissionRequired, requestedAlarms,
+                scheduledAlarms, exactAlarmsAllowed);
+        if (failedAlarms > 0) {
             refreshAt = retryRefreshAt(refreshAt, now);
             Log.w(TAG, "Some prayer alarms failed; retry target set to 15 minutes");
         }
@@ -147,13 +168,20 @@ final class PrayerAlarmScheduler {
                 .putLong(NEXT_REFRESH_AT, refreshAt)
                 .putLong(NEXT_EVENT_AT, nextEvent == null ? 0L : nextEvent.at)
                 .putBoolean(IN_PROGRESS, false)
-                .putBoolean("exactAlarmPermissionGranted", exactAlarmsAllowed)
+                .putBoolean("exactAlarmPermissionGranted",
+                        exactAlarmsAllowed && !exactPermissionRequired)
                 .putString("prayerScheduleRefreshStatus",
                         refreshScheduled ? "scheduled_wakeup" : "schedule_failed")
+                .putInt("prayerAdhanRequestedCount", requestedAdhanAlarms)
+                .putInt("prayerAdhanScheduledCount", scheduledAdhanAlarms)
+                .putInt("prayerReminderRequestedCount", requestedReminderAlarms)
+                .putInt("prayerReminderScheduledCount", scheduledReminderAlarms)
                 .putString("prayerAlarmScheduleStatus", status).apply();
         Log.i(TAG, "Prayer schedule refreshed; exact=" + exactAlarmsAllowed
-                + ", status=" + status + ", scheduled=" + scheduledAlarms
-                + "/" + requestedAlarms + ", refresh=" + refreshScheduled);
+                + ", status=" + status + ", adhan=" + scheduledAdhanAlarms
+                + "/" + requestedAdhanAlarms + ", reminders=" + scheduledReminderAlarms
+                + "/" + requestedReminderAlarms + ", failed=" + failedAlarms
+                + ", refresh=" + refreshScheduled);
     }
     static final class AlarmEvent {
         final long at, prayerAt;
@@ -184,8 +212,22 @@ final class PrayerAlarmScheduler {
         return exactAlarmsAllowed;
     }
 
-    static boolean shouldSchedulePrayerAlerts(boolean exactAlarmsAllowed) {
-        return true;
+    static boolean shouldScheduleAdhanAudio(boolean exactAlarmsAllowed) {
+        return exactAlarmsAllowed;
+    }
+
+    static boolean shouldUseAlarmClockForType(String type) {
+        return "adhan".equals(type);
+    }
+
+    static String resolveScheduleStatus(boolean exactPermissionRequired, int requested,
+                                         int scheduled, boolean exactAlarmsAllowed) {
+        if (exactPermissionRequired) return "exact_permission_required";
+        if (requested <= 0) return "no_future_alarms";
+        if (scheduled == requested) {
+            return exactAlarmsAllowed ? "scheduled_exact" : "scheduled_inexact_fallback";
+        }
+        return scheduled <= 0 ? "schedule_failed" : "partial_schedule_failure";
     }
 
     static boolean isFutureAlarm(long alarmAt, long now) {
@@ -254,7 +296,13 @@ final class PrayerAlarmScheduler {
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
         if (show != null) show.cancel();
         prefs.edit().remove(IDS).remove(SCHEDULE_SIGNATURE).remove(NEXT_REFRESH_AT)
-                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT).apply();
+                .remove(IN_PROGRESS).remove(NEXT_EVENT_AT)
+                .putInt("prayerAdhanRequestedCount", 0)
+                .putInt("prayerAdhanScheduledCount", 0)
+                .putInt("prayerReminderRequestedCount", 0)
+                .putInt("prayerReminderScheduledCount", 0)
+                .putString("prayerAlarmScheduleStatus", "disabled")
+                .apply();
     }
 
     private static boolean scheduleOne(Context context, AlarmManager manager, JSONArray ids,
@@ -274,18 +322,28 @@ final class PrayerAlarmScheduler {
 
         if (exactAlarmsAllowed) {
             try {
-                Intent launchIntent = new Intent(context, MainActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                PendingIntent showIntent = PendingIntent.getActivity(context, 0, launchIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                manager.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showIntent), pending);
+                if (shouldUseAlarmClockForType(type)) {
+                    Intent launchIntent = new Intent(context, MainActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    PendingIntent showIntent = PendingIntent.getActivity(context, 0, launchIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    manager.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showIntent), pending);
+                } else {
+                    // Reminders remain exact during Doze without appearing as user-visible alarm-clock events.
+                    manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+                }
                 ids.put(uri);
                 return true;
             } catch (SecurityException denied) {
-                Log.w(TAG, "Exact alarm rejected; falling back to inexact alarm: " + uri, denied);
+                Log.w(TAG, "Exact alarm rejected: " + uri, denied);
+                if ("adhan".equals(type)) {
+                    pending.cancel();
+                    return false;
+                }
+                // A reminder may degrade to an inexact notification when exact access is unavailable.
             } catch (RuntimeException failure) {
                 pending.cancel();
-                Log.e(TAG, "Could not schedule exact prayer alarm: " + uri, failure);
+                Log.e(TAG, "Could not schedule exact prayer alert: " + uri, failure);
                 return false;
             }
         }
