@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PrayerScheduleWatchdog.ensureScheduled(this);
         logRecentProcessExits();
         getWindow().setStatusBarColor(0xFF102C26);
         getWindow().setNavigationBarColor(0xFF102C26);
@@ -505,6 +506,7 @@ public class MainActivity extends Activity {
     }
 
     private void syncAlarmSchedule() {
+        PrayerScheduleWatchdog.ensureScheduled(this);
         if (!alertsEnabled()) {
             PrayerAlarmScheduler.cancel(this);
             DhikrAlarmScheduler.cancel(this);
@@ -966,6 +968,33 @@ public class MainActivity extends Activity {
             android.os.PowerManager power = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
             return power != null && power.isIgnoringBatteryOptimizations(getPackageName());
         }
+        @JavascriptInterface
+        public void requestBatteryOptimizationExemption() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT < 23 || isIgnoringBatteryOptimizations()) return;
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("استثناء اختياري من تحسين البطارية")
+                        .setMessage("قد يساعد هذا الاستثناء بعض الأجهزة على تقليل تقييد عمل نور الإيمان في الخلفية. لا يضمن وحده وصول الأذان، ولا يغني عن إذن التنبيهات الدقيقة. سيطلب Android موافقتك قبل تطبيق الاستثناء.")
+                        .setPositiveButton("متابعة إلى طلب Android", (dialog, which) -> {
+                            try {
+                                Intent request = new Intent(
+                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        Uri.parse("package:" + getPackageName()));
+                                if (request.resolveActivity(getPackageManager()) != null) {
+                                    startActivity(request);
+                                } else {
+                                    openBatteryOptimizationSettings();
+                                }
+                            } catch (Exception error) {
+                                Log.w("NoorPrayerAlarm", "Direct battery exemption request unavailable", error);
+                                openBatteryOptimizationSettings();
+                            }
+                        })
+                        .setNegativeButton("إلغاء", null)
+                        .show();
+            });
+        }
+
         @JavascriptInterface
         public void openBatteryOptimizationSettings() {
             runOnUiThread(() -> {
